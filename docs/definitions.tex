@@ -1,0 +1,186 @@
+
+
+
+%Math operators
+
+%TV-TGV related
+\DeclareMathOperator{\TV}{TV}
+\DeclareMathOperator{\TD}{TD}
+\DeclareMathOperator{\BV}{BV}
+\DeclareMathOperator{\TGV}{TGV}
+\DeclareMathOperator{\aTGV}{aTGV}
+\DeclareMathOperator{\BGV}{BGV}
+\DeclareMathOperator{\fold}{f}
+\DeclareMathOperator{\foldn}{fold,n}
+\DeclareMathOperator*{\argmin}{argmin}
+
+\newcommand{\TGVak}{{\TGV_\alpha ^k}}
+\newcommand{\TGVakm}{\TGV_\alpha ^{k^m}}
+\newcommand{\TGVatth}{\TGV_\alpha ^{2^3}}
+\newcommand{\BGVk}{\BGV^k}
+\newcommand{\TGVat}{\TGV_\alpha ^2}
+\newcommand{\BGVt}{\BGV^2}
+\newcommand{\BGVkm}{\BGV^{k}(\Omega;\mathbb{R}^m)}
+\newcommand{\BGVakm}{\BGV^{k} _\alpha (\Omega;\mathbb{R}^m)}
+\newcommand{\TGVkn}{\TGV^{k^n}}
+
+
+\newcommand{\ctc}{\emph{CT-cvx}}
+\newcommand{\ctsc}{\emph{CT-scvx}}
+\newcommand{\txt}{\emph{TXT}}
+\newcommand{\tgv}{\emph{TGV}}
+\newcommand{\bmtd}{\emph{BM3D}}
+\newcommand{\cl}{\emph{CL}}
+
+
+%General
+\DeclareMathOperator{\BD}{BD}
+\DeclareMathOperator{\KL}{KL}
+\DeclareMathOperator{\supp}{supp}
+\DeclareMathOperator{\range}{Rg}
+\DeclareMathOperator{\dive}{div}
+%\DeclareMathOperator{\subdif}{\partial}
+\newcommand{\subdif}{\partial}
+\DeclareMathOperator{\dint}{D_{\text{int}}}
+\DeclareMathOperator{\dpoint}{D_{\text{point}}}
+\DeclareMathOperator{\domain}{\text{dom}}
+\DeclareMathOperator{\sym}{Sym}
+\DeclareMathOperator{\tr}{tr}
+\DeclareMathOperator{\loc}{loc}
+\DeclareMathOperator{\vspan}{span}
+\DeclareMathOperator{\epi}{epi}
+\DeclareMathOperator{\proj}{proj}
+\DeclareMathOperator{\assign}{assign}
+\DeclareMathOperator{\shrink}{shrink}
+\DeclareMathOperator{\conv}{conv}
+\DeclareMathOperator{\BDCT}{BDCT}
+\DeclareMathOperator{\IBDCT}{IBDCT}
+\DeclareMathOperator{\Ass}{(A)}
+
+\DeclareMathOperator{\Ck}{(C_k)}
+\DeclareMathOperator{\id}{I}
+\DeclareMathOperator{\sgn}{sgn}
+\DeclareMathOperator{\Sgn}{Sgn}
+\DeclareMathOperator{\grad}{\nabla}
+%\DeclareMathOperator{\wgrad}{D}
+\newcommand{\wgrad}{\mathrm{D}}
+
+\DeclareMathOperator{\inner}{int}
+
+\DeclareMathOperator{\prox}{prox}
+\DeclareMathOperator{\diag}{diag}
+\newcommand{\dkl}{D_{\text{KL}}}
+\newcommand{\dklg}{D^\gamma_{\text{KL}}}
+
+\newcommand{\ds}{{d^ *}}
+
+
+\newcommand{\infcon}{\,\Box\,}
+
+%\newcommand{\reshape}[2][NM,nn]{\text{reshape}(#2,[#1])}
+\newcommand{\reshape}[2][NM,nn]{[#2_{(#1)}]}
+%Commands
+
+%Spaces
+\newcommand{\C}{ \mathcal{C} }
+\newcommand{\B}{ \mathcal{B} }
+\newcommand{\G}{ \mathcal{G} }
+\newcommand{\symkd}{\sym ^k (\mathbb{R}^d) }
+\newcommand{\symkdm}{\sym ^k (\mathbb{R}^d)^m }
+\newcommand{\Ccinfty}{C^{\infty} _c (\Omega)}
+\newcommand{\Cinfty}{C^{\infty} (\Omega)}
+\newcommand{\Coinfty}{C^{\infty} (\overline{\Omega})}
+\newcommand{\Lp}{L^p (\Omega)}
+\newcommand{\Lq}{L^q (\Omega)}
+\newcommand{\D}{ \mathcal{D} }
+\newcommand{\st}{ \, \left|\right.\, }
+\newcommand{\logl}{L\log L(\Sigma)}
+\newcommand{\loglp}{L\log L(\Sigma)_+}
+
+\newcommand{\rank}{\text{rank}}
+
+\newcommand{\tp}{\otimes_\pi}
+\newcommand{\itp}{\otimes_\mathfrak{i}}
+\newcommand{\itn}{\mathfrak{i}}
+
+\newcommand{\htp}{{\otimes_\sigma}}
+
+
+
+%\newcommand{\ctp}{\hat{\otimes}_\pi}
+\newcommand{\ctp}{\otimes_\pi}
+
+
+
+
+
+
+%Shortcut for vector
+\makeatletter
+\newcommand{\vc}[2][r]{%
+  \gdef\@VORNE{1}
+  \left(\hskip-\arraycolsep%
+  %\bigg(\hskip-\arraycolsep%
+    \begin{array}{#1}\vekSp@lten{#2}\end{array}%
+  \hskip-\arraycolsep\right)}
+  %\hskip-\arraycolsep\bigg)}
+
+\def\vekSp@lten#1{\xvekSp@lten#1;vekL@stLine;}
+\def\vekL@stLine{vekL@stLine}
+\def\xvekSp@lten#1;{\def\temp{#1}%
+  \ifx\temp\vekL@stLine
+  \else
+    \ifnum\@VORNE=1\gdef\@VORNE{0}
+    \else\@arraycr\fi%
+    #1%
+    \expandafter\xvekSp@lten
+  \fi}
+\makeatother
+
+%Usage:
+%\vc{1;-2} \quad \vc[l]{1;-2;3}\quad \vc[c]{1;-2;-3}\quad\vc{1;2;-3;4}
+
+
+\newcommand{\K}{\mathcal{K}}
+\newcommand{\Nuc}{\mathcal{N}}
+\newcommand{\Lin}{\mathcal{L}}
+\newcommand{\HS}{\mathcal{HS}}
+\newcommand{\trace}{\text{tr}}
+\newcommand{\nuc}{\text{nuc}}
+
+
+
+\newcommand{\ncl}{N_\text{cl,s}}
+
+%Sets
+\newcommand*{\bigtimes}{\mathop{\raisebox{-.5ex}{\hbox{\huge{$\times$}}}}}
+\newcommand{\uint}{U_{\text{int}}}
+\newcommand{\upoint}{U_{\text{point}}}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\Q}{\mathbb{Q}}
+
+\newcommand{\EXk}{(\text{EX}_k)}
+\newcommand{\Du}{\mathrm{D} u }
+\newcommand{\vDu}{\vert \mathrm{D} u \vert}
+\newcommand{\symgrad}{\mathcal{E}}
+\newcommand{\wrt}{\:\mathrm{d}}
+\newcommand{\Wrt}{\mathrm{D}}
+\newcommand{\limn}{\underset{n\rightarrow \infty }{\lim}}
+\newcommand{\wdiv}{W^q(\dive;\Omega)}
+\newcommand{\beq}{\begin{equation}}
+\newcommand{\eeq}{\end{equation}}
+\newcommand{\linear}{\mathcal{L}}
+\newcommand{\I}{\mathcal{I}}
+\newcommand{\M}{\mathcal{M}}
+\newcommand{\T}{\mathcal{T}}
+\newcommand{\Pol}{\mathcal{P}}
+\newcommand{\embed}{\hookrightarrow}
+
+\newcommand{\vunew}{u_{+}}
+\newcommand{\vvnew}{v_{+}}
+
+\newcommand{\note}[1]{\textcolor{red}{NOTE: {#1}}}
+\newcommand{\todo}[1]{\textcolor{red}{TODO: {#1}}}

@@ -1,0 +1,133 @@
+\documentclass{article}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{tikz}
+%\usepackage{float}
+\usepackage{booktabs}
+%\usepackage{listings}
+%\usepackage{algorithmicx}
+%\usepackage{algpseudocode}
+\usepackage{setspace} 
+\usepackage{enumerate}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{xcolor}
+%\usepackage[utf8]{inputenc}
+\usepackage{ifthen}
+\usepackage[hidelinks]{hyperref}
+
+\usepackage{float}
+\floatstyle{ruled}
+\newfloat{algorithm}{h}{loa}
+\floatname{algorithm}{Algorithm}
+\usepackage{algpseudocode}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{array}
+
+
+
+\newtheorem{prop}{Proposition}
+\newtheorem{rem}[prop]{Remark}
+\newtheorem{thm}[prop]{Theorem}
+\newtheorem{defn}[prop]{Definition}
+\newtheorem{lem}[prop]{Lemma}
+\newtheorem{cor}[prop]{Corollary}
+
+\include{definitions}
+
+\title{Some notes on TOF-PET reconstruction}
+
+\author{}
+\date{}
+
+\begin{document}
+
+\section{A simplification of the stochastic primal-dual algorithm by Ehrhardt for TOF-PET with many zero measurements}
+Our aim is to solve the following optimization problem
+\[ \min _{u\geq 0} \beta \|\nabla u\|_1 + \sum_j (Pu)_ j -  (d)_j \log( (Pu)_ j + s_ j ) ,\]
+where $d$ denotes the given PET data, $s$ the given correction terms. A saddle-point reformulation of this problem reads as follows:
+\[ \min _{u\geq 0} (\nabla u,q) - \I_{\|\cdot \|_\infty \leq \beta} (q) + \sum_j (Pu)_jy_j + s_jy_j - D_j^*(y_j) \]
+where $D_j^*$ is the convex conjugate of $D_j(y) = y - d_j \log(y)$. 
+
+To solve this problem, we follow the paper \cite{Ehrhardt2019}: Choose subsets $(B_i)_{i=1}^m$ of the PET data corresponding to partial PET-forward operators $(P_i)_{i=1}^m$. To simplify notation, we set $P_{m+1} = \nabla$ and choose some probabilities $(p_i)_{i=1}^{m+1}$ which sum up to one. Then, for $\rho<1$ (we expect that $\rho\approx 1$ is best), define, for $i=1,\ldots,m$
+\[ S_i = \text{diag}(\frac{\rho}{P_i 1} )\qquad  T_i = \text{diag}(\frac{\rho p_i}{P^T_i 1}) \]
+and $S_{m+1} = \frac{\rho}{\|\nabla\|}$, $T_{m+1} = \frac{p_i\rho}{\|\nabla\|}$ where we can estimate $\|\nabla \| \leq \sqrt{8}$. Further, choose $T = \min_{i=1,\ldots,m+1} T_i$ pointwise and save $(S_i)_i$ and $T$ (which is of dimension of one image and one sinogram (we will see later that we don not need to save bins with zero data). A good choice for the $(p_i)_i$, according to \cite{Ehrhardt2019}, is $p_i = 1/(2m)$ for $i=1,\ldots,m$ and $p_{m+1} = 1/2$. The direct application of the algorithm of \cite{Ehrhardt2019} then can be found in Algorithm  \ref{alg:algorithm_general}, where we set $(s)_{m+1} = 0$.  Here, for $i=1,\ldots,m$, 
+\[ (\prox_{D_i^*}(y))_j = y_j - \frac{y_j - 1 + \sqrt{ (y_j-1)^2 + 4 (S_i)_j \mu d_j}}{2}\]
+and 
+\[ (\prox_{D_{m+1}^*}(y) )_j = y_j /\max(\beta,|y_j|) \]
+where for the latter $y_j \in \R^d$ (with $d \in \{2,3\}$ the dimension), $|\cdot |$ is the Euclidean norm on $\R^d$ and the division is taken pointwise.
+
+\begin{algorithm}[t]
+  \begin{algorithmic}[1]
+\onehalfspacing
+
+\Function{direct\_tof\_pet}{$d_0,c_0$}
+
+\State \textbf{Initialize} $u,y$, $(S_i)_i,T,(p_i)_i$, $\overline{z}= z = P^T y$
+\Repeat
+	\State $u = \proj_{\geq 0} (u - T \overline{z})$
+	\State Select $i \in \{ 1,\ldots,m+1\} $ randomly according to $(p_i)_i$
+	\State \quad $y_i^+ \gets \prox_{D_i^*} ( y_i + S_i  ( P_i u + s_i))$
+	\State \quad $\delta z \gets P_i^T (y_i^+ - y_i)$
+	\State \quad $y_i \gets y_i^+$
+	\State $z \gets z + \delta z, $
+	\State $\overline{z} \gets  z + (1/p_i) \delta z$
+\Until{Stopping criterion fulfilled}
+\State \Return{$x$)}
+\EndFunction
+\end{algorithmic}
+\caption{Direct algorithm for TOF-PET}\label{alg:algorithm_general}
+\end{algorithm}
+
+Now we can observe that, for data points $j$ where $d_j = 0$, $(\prox_{D_i^*}(a))_j = 1$ for $a_j \geq 1$ and $(\prox_{D_i^*}(a))_j = a_j$ otherwise. Also, we see that $ a_j = (y_i + S_i (P_iu + s_i) )_j \geq 1$ provided that $(y_i)_j \geq 1$ since all the other quantities are positive. Hence, if we initialize all bins $y_j = 1$ for which the data is zero, it remains constantly equal to $1$ during all iterations. Looking at the algorithm, we see that this means we can just completely ignore these points during the iterations and reduce the dimension of $y$ and the operators $(P_i)_i$ accordingly. Note that the only point where zero bins enter is in the initialization of $z = \overline{z} = P^Ty$, since here $y = 1$ for zero-bins and arbitrary else. Hence we need to carry out one backprojection of the zero bins (which is the best one can expect...).
+
+\section{List-mode reconstruction}
+
+Let $L^1(\Omega)$ be the space of image data on a domain $\Omega \subset \R^3$ and let $S = \{ (s_i)_{i \in M} \st s_i \geq 0 \}$ be the data space in Sinogram representation. That is, the image space is divided into $|M|$ bins (sections of LORs depending on the time of flight) and $s_i$ is the number of counts detected in bin $i \in M$. We assume that we are given a datum in list-mode representation, that is we are provided with a list $N$ of events $e \in N $ where each event corresponds to a count that was detected in a certain bin $i_e \in M$. Further, after a preprocessing step, we assume that for each event $e \in M$ the number of total counts that was detected in the bin $i_e$ is available and we denote this number by $\mu_e \in \N$. (This means, for example, if there are two events $e_1,e_2$ that correspond to the same bin $i_{e_1} = i_{e_2}$ we have that $\mu_{e_1} = \mu_{e_2} = 2$. 
+
+Furthermore, we assume, for each $i \in M$, $s_i$ to be a given estimate of scatter and randoms. Also, we assume that we have a list-mode representation of the $(s_i)_i$ which (abusing notation) is given as $s_e = s_{i_e}/\mu_e$. 
+
+
+From the statistical perspective, the correct data fidelity term for image reconstruction from a list-mode dataset $N$ with sinogram representation $d= (d_i)_{ i \in M}$ is 
+\[ u \mapsto \KL_d(\hat{K}u):=  \sum_{i \in M} (\hat{K}u)_i + s_i  - d_i -d_i \log(\frac{(\hat{K}u)_i + s_i}{d_i} ) ,\]
+where $\hat{K}:L^1(\Omega) \rightarrow S$ is the X-ray transform as mapping from image to Sinogram space. Now we observe that this data term can be reformulated to include the list-mode representation of the data as follows:
+
+\begin{align*}
+\KL_d(Ku) 
+& = \sum_{i \in M} \sum_{e \in N: i_e = i} \frac{(Ku + s)_i}{\mu_{e}} - 1 - \log \left(\frac{(Ku + s)_i}{\mu_{e}} \right) + \sum_{i \in M: d_i = 0} (Ku)_i  \\
+& =  \sum_{e \in N} \frac{(Ku+s)_{i_e}}{\mu_{e}} - 1 - \log \left(\frac{(Ku+s)_{i_e}}{\mu_{e}} \right)
++ \sum_{i \in M: d_i = 0} (Ku)_i \\ 
+& = \sum_{e \in N} (Pu+s)_e - 1 - \log \left((Pu+s)_e \right)
++ (Pu)_0
+\end{align*}
+where we define the linear operator $P$ mapping from $L^1(\Omega)$ to the extended list-mode data $N \cup \{0\}$ as
+
+\[ (Pu) _e = \begin{cases}
+ \frac{(Ku)_{i_e}}{\mu_e} & \text{if } e \in N \\
+ \sum_{i: \nexists e \in N: i_e = i} (Ku)_{i_e} & \text{else.}
+\end{cases}
+\]
+
+
+Within a variation model (e.g., with TV regularization) we can use the reduced data fidelity
+\[ D(Pu):= \sum_{e \in N \cup \{ 0 \}} (Pu)_e - d_e \log ( (Pu+s)_e) \]
+where $d_e = 1$ for $e \in N$ and $d_0 = 0$. 
+
+With this notation, the update step 6-8 of Algorithm \ref{alg:algorithm_general} for a subset $N_i \subset N$ only operate on the list-mode entries of this subset. That is, they map the image data forward to these list-mode entries (via $P_i= P_{N_i}$), carry out the prox on these entries, an project the data back to image space via $P_{N_i}^T$. The zero-entries only have to be incorporated once at the initialization step, where we have to initialize all list mode entries in $N \cup \{ 0\}$ with $\mu$ (or any value above $\mu$) and have to map back those entries via the adjoint transform $P^T$.
+The latter can be done as follows: Denote by $P_N$ the restriction of $P$ to $N$, i.e., $P_N:L^1(\Omega) \rightarrow N$, and by $P_0$ the mapping $u \mapsto \sum_{i: \nexists e \in N: i_e = i} (Ku)_{i_e}$. Then the adjoint of $P$ is given for $(a,b) \in \R^{|N|} \times \R$  as
+\[ P^T(a,b) = P_N^T a + P_0^T b \]
+with $P_N^T$ the regular adjoint of the list-mode operator and 
+\[ P_0^Tb:= \sum_{i: \nexists e \in N: i_e = i} K_i^T b
+\]
+where $K_iu = (Ku)_i$ and $K_i^T$ is its adjoint (=transpose).
+
+
+
+
+\bibliography{mh_lit_dat}
+\bibliographystyle{abbrv}
+
+\end{document}
+
