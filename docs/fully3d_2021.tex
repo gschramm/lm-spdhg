@@ -17,19 +17,31 @@
 
 %%%%%% add your extra packages here (if needed)                                       %%%%%
 %%%%%% before, have a look which packages are already imported by the fully3d package %%%%%
-%\usepackage{mypackage}
 
+\usepackage{amssymb}
+\usepackage{algorithmicx}
+\usepackage{algpseudocode}
+
+% define float env for algorithm
+\usepackage{float}
+\floatstyle{ruled}
+\newfloat{algorithm}{h}{loa}
+\floatname{algorithm}{Algorithm}
 
 %%%%% add your bibtex file that contains the bibtex entries here %%%%%
 %%%%% please include DOIs in the bibtex entries if possible      %%%%%
 \addbibresource{fully3d_2021.bib}
+
+% custom definitions
+\DeclareMathOperator{\proj}{proj}
+\DeclareMathOperator{\prox}{prox}
 
 \begin{document}
 
 
 %-------------------------------------------------------------------------------------------
 %%%%% add your title here %%%%%
-\title{Fast and memory-efficient reconstruction of low count TOF PET data with non-smooth priors} 
+\title{Fast and memory-efficient reconstruction of sparse TOF PET data with non-smooth priors} 
 
 %%%%% add authors and affiliations here %%%%%
 \author[1]{Georg~Schramm}
@@ -54,7 +66,7 @@
 
 
 \begin{customabstract}
-Foo bar \cite{Chambolle2011,Chambolle2018,Ehrhardt2019}.
+Foo bar.
 \end{customabstract}
 
 
@@ -66,7 +78,33 @@ Foo bar \cite{Chambolle2011,Chambolle2018,Ehrhardt2019}.
 
 % dummy_content.tex shows how to add sections, figures, tables, formulas, and references
 % remove the following line, it just adds dummy content
-Foo bar
+
+Foo bar %\cite{Chambolle2011,Chambolle2018,Ehrhardt2019}.
+
+%-----------------------------------------------------------------------------
+\begin{algorithm}[t]
+\begin{algorithmic}[1]
+%\Function{direct\_tof\_pet}{$d_0,c_0$}
+
+\State \textbf{Initialize} $x,y$, $(S_i)_i,T,(p_i)_i$,
+\State $\overline{z} = z = A^T y$
+\Repeat
+	\State $x = \proj_{\geq 0} (x - T \overline{z})$
+	\State Select $i \in \{ 1,\ldots,m+1\} $ randomly according to $(p_i)_i$
+	\State \quad $y_i^+ \gets \prox_{D_i^*}^{S_i} ( y_i + S_i  ( A_i x + s_i))$
+	\State \quad $\delta z \gets A_i^T (y_i^+ - y_i)$
+	\State \quad $y_i \gets y_i^+$
+	\State $z \gets z + \delta z$
+	\State $\overline{z} \gets  z + (\delta z/p_i)$
+\Until{Stopping criterion fulfilled}
+\State \Return{$x$}
+%\EndFunction
+\end{algorithmic}
+\caption{SPDHG for PET reconstruction \cite{Ehrhardt2019}}
+\label{alg:algorithm_general}
+\end{algorithm}
+%-----------------------------------------------------------------------------
+
 
 
 %-------------------------------------------------------------------------------------------
