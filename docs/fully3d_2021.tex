@@ -1,0 +1,75 @@
+% Latex template for submission to the 16th International Meeting on Fully 3D Image Reconstruction 
+% in Radiology and Nuclear Medicine (Fully3D 2021)
+%
+% Author: G.Schramm
+% Date:   Oct 2020
+%
+% In case you encouter problems, you can raise a github issue here:
+% https://github.com/gschramm/fully3d_2021_templates/issues
+%
+% 
+% To build this document, we recommend to use latexmk via:
+% ```latexmk -pdf fully3d_template.tex```
+% Building in the online editor overleaf also works.
+
+\documentclass[11pt,twocolumn,twoside]{article}
+\usepackage{fully3d}
+
+%%%%%% add your extra packages here (if needed)                                       %%%%%
+%%%%%% before, have a look which packages are already imported by the fully3d package %%%%%
+%\usepackage{mypackage}
+
+
+%%%%% add your bibtex file that contains the bibtex entries here %%%%%
+%%%%% please include DOIs in the bibtex entries if possible      %%%%%
+\addbibresource{fully3d_2021.bib}
+
+\begin{document}
+
+
+%-------------------------------------------------------------------------------------------
+%%%%% add your title here %%%%%
+\title{Fast and memory-efficient reconstruction of low count TOF PET data with non-smooth priors} 
+
+%%%%% add authors and affiliations here %%%%%
+\author[1]{Georg~Schramm}
+\author[2]{Martin~Holler}
+
+\affil[1]{Department of Imaging and Pathology, Division of Nuclear Medicine,
+          KU Leven, Belgium}
+
+\affil[2]{Institute for Mathematics and Scientific Computing, 
+          University of Graz, Austria}
+
+%%%%% don't change these 2 lines %%%%%
+\maketitle
+\thispagestyle{fancy}
+
+
+
+%-------------------------------------------------------------------------------------------
+%%%%% add your summary (abstract) here               %%%%%%
+%%%%% use footnotesize for this section              %%%%%%
+%%%%% please stick to the customabstract environment %%%%%% 
+
+
+\begin{customabstract}
+Foo bar \cite{Chambolle2011,Chambolle2018,Ehrhardt2019}.
+\end{customabstract}
+
+
+%-------------------------------------------------------------------------------------------
+%%%%% main text                                                %%%%%    
+%%%%% remove the dummy content and put your own content here   %%%%% 
+%%%%% feel free to choose your own section titles              %%%%% 
+%%%%% you don't need to put the content in a separate tex file %%%%%
+
+% dummy_content.tex shows how to add sections, figures, tables, formulas, and references
+% remove the following line, it just adds dummy content
+Foo bar
+
+
+%-------------------------------------------------------------------------------------------
+\printbibliography
+
+\end{document}
