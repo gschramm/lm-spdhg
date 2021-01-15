@@ -51,9 +51,15 @@ where $d$ denotes the given PET data, $s$ the given correction terms. A saddle-p
 \[ \min _{u\geq 0} (\nabla u,q) - \I_{\|\cdot \|_\infty \leq \beta} (q) + \sum_j (Pu)_jy_j + s_jy_j - D_j^*(y_j) \]
 where $D_j^*$ is the convex conjugate of $D_j(y) = y - d_j \log(y)$. 
 
-To solve this problem, we follow the paper \cite{Ehrhardt2019}: Choose subsets $(B_i)_{i=1}^m$ of the PET data corresponding to partial PET-forward operators $(P_i)_{i=1}^m$. To simplify notation, we set $P_{m+1} = \nabla$ and choose some probabilities $(p_i)_{i=1}^{m+1}$ which sum up to one. Then, for $\rho<1$ (we expect that $\rho\approx 1$ is best), define, for $i=1,\ldots,m$
+To solve this problem, we follow the paper \cite{Ehrhardt2019}: Choose subsets $(B_i)_{i=1}^m$ of the PET data corresponding to partial PET-forward operators $(P_i)_{i=1}^m$. 
+To simplify notation, we set $P_{m+1} = \nabla$ and choose some probabilities $(p_i)_{i=1}^{m+1}$ which sum up to one. 
+Then, for $\rho<1$ (we expect that $\rho\approx 1$ is best), define, for $i=1,\ldots,m$
 \[ S_i = \text{diag}(\frac{\rho}{P_i 1} )\qquad  T_i = \text{diag}(\frac{\rho p_i}{P^T_i 1}) \]
-and $S_{m+1} = \frac{\rho}{\|\nabla\|}$, $T_{m+1} = \frac{p_i\rho}{\|\nabla\|}$ where we can estimate $\|\nabla \| \leq \sqrt{8}$. Further, choose $T = \min_{i=1,\ldots,m+1} T_i$ pointwise and save $(S_i)_i$ and $T$ (which is of dimension of one image and one sinogram (we will see later that we don not need to save bins with zero data). A good choice for the $(p_i)_i$, according to \cite{Ehrhardt2019}, is $p_i = 1/(2m)$ for $i=1,\ldots,m$ and $p_{m+1} = 1/2$. The direct application of the algorithm of \cite{Ehrhardt2019} then can be found in Algorithm  \ref{alg:algorithm_general}, where we set $(s)_{m+1} = 0$.  Here, for $i=1,\ldots,m$, 
+and $S_{m+1} = \frac{\rho}{\|\nabla\|}$, $T_{m+1} = \frac{p_i\rho}{\|\nabla\|}$ where we can estimate 
+$\|\nabla \| \leq \sqrt{8}$. Further, choose $T = \min_{i=1,\ldots,m+1} T_i$ pointwise and 
+save $(S_i)_i$ and $T$ (which is of dimension of one image and one sinogram 
+
+(we will see later that we don not need to save bins with zero data). A good choice for the $(p_i)_i$, according to \cite{Ehrhardt2019}, is $p_i = 1/(2m)$ for $i=1,\ldots,m$ and $p_{m+1} = 1/2$. The direct application of the algorithm of \cite{Ehrhardt2019} then can be found in Algorithm  \ref{alg:algorithm_general}, where we set $(s)_{m+1} = 0$.  Here, for $i=1,\ldots,m$, 
 \[ (\prox_{D_i^*}(y))_j = y_j - \frac{y_j - 1 + \sqrt{ (y_j-1)^2 + 4 (S_i)_j \mu d_j}}{2}\]
 and 
 \[ (\prox_{D_{m+1}^*}(y) )_j = y_j /\max(\beta,|y_j|) \]

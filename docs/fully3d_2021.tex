@@ -35,6 +35,7 @@
 % custom definitions
 \DeclareMathOperator{\proj}{proj}
 \DeclareMathOperator{\prox}{prox}
+\DeclareMathOperator*{\argmin}{arg\,min}
 
 \begin{document}
 
@@ -71,28 +72,78 @@ Foo bar.
 
 
 %-------------------------------------------------------------------------------------------
-%%%%% main text                                                %%%%%    
-%%%%% remove the dummy content and put your own content here   %%%%% 
-%%%%% feel free to choose your own section titles              %%%%% 
-%%%%% you don't need to put the content in a separate tex file %%%%%
+%%%%% main text %%%%%    
+\section{Introduction}
 
-% dummy_content.tex shows how to add sections, figures, tables, formulas, and references
-% remove the following line, it just adds dummy content
+Due to limitations in acquisition time, injectable dose and scanner sensitivity,
+acquired data in positron emission tomography (PET) suffer from high levels of
+Poisson noise that is transfered into the reconstructed image necessitating
+noise suppression during or post reconstruction.
+One possible way of noise suppression is the maximum a posteriori approach
+where a smoothing prior added next to the data fidelity term (the negative
+Poisson loglikelihood) in the cost function optimized in iterative image 
+reconstruction.
+Unfortunately, many advanced smoothing priors such as e.g. Total Variation (TV) [XXX],
+Generalized TV [XXX], Directional TV [XXX] or Parallel Level Sets [XXX] are non-smooth 
+functions which permits the use of simple and efficient purely gradient-based
+optimization algortihms.
+Moreover, due to the large number of data bins in a (time-of-flight) sinogram
+of modern PET scanners, the compution time for a single evaluation of the complete
+forward (and adjoint) model is usually slow favoring optimiztion algorithms that
+use only a subset of the data ine every update step like maximum expectation maximization
+with ordered subsets (OSEM).
 
-Foo bar %\cite{Chambolle2011,Chambolle2018,Ehrhardt2019}.
+Recently, Chambolle et al. \cite{Chambolle2018} and  Ehrhardt et al. \cite{Ehrhardt2019} introduced 
+the stochastic primal dual hybrid gradient (SPDHG) algorithm which is a convergent algorithms
+to allows to solve the PET reconstruction problem inlcuding many non-smooth priors with
+only a few iterations. 
+Algorithm \ref{alg:spdhg} shows SPDHG using a typical PET forward model.
+As seen in line 6 and 7, in every update only a forward and backprojection of subset
+of the data is required.
+Using two clinical FDG and Fluorbetapir data sets from the Siemens mMR, 
+it was shown in \cite{Ehrhardt2019}, that approximately 10 iterations, meaning 10 complete 
+forward and back projections of the data, are sufficient to reach reasonable convergence
+for clinical purposes when using preconditioning and proper sampling of the subsets.
+
+Without loss of generality, we focus in this work on the time-of-flight (TOF) PET reconstruction 
+using TV regularization yielding the optimization problem
+%
+\begin{equation}
+\argmin _{x\geq 0} \sum_j \underbrace{(Px)_j -  d_j \log \left( (Px)_ j + s_j \right)}_{D_j(x)} + \beta \, \|\nabla x\|_{1,2},
+\end{equation}
+where $x$ is the PET image to be reconstructed, $P$ is the TOF forward projector including the effects
+of attenuation and normalization, $d$ are the acquired prompt TOF coincidences (the emission sinogram),
+and $s$ are additive contaminations including random and scattered coincidences. $\nabla$ is the gradient
+operator, and $\beta$ is a scalar controlling the level of regularization.
+
+In the application of Algorithm~\ref{alg:spdhg}, we follow the approach if \cite{Ehrhardt2019}
+by splitting the data into n non-overlapping subsets with the corresponding 
+sequence of partial PET forwad operators denoted as $(P_i)_{i=1}^n$.
+To simplify notation, we set $P_{n+1} = \nabla$ and choose the probabilities $p_1=\ldots=p_n = 1/(2n)$
+and $p_{n+1} = 1/2$.
+For $\rho<1$, we define preconditioned step sizes for the partial PET operators, for $i=1,\ldots,n$
+\[ S_i = \text{diag}(\frac{\rho}{P_i 1} )\qquad  T_i = \text{diag}(\frac{\rho p_i}{P^T_i 1}) \]
+and for the gradient opertator
+\[ S_{n+1} = \frac{\rho}{\|\nabla\|} \qquad T_{n+1} = \frac{p_i\rho}{\|\nabla\|} \]  
+As metioned in \cite{Ehrhardt2019}, if we set $T = \min_{i=1,\ldots,n+1} T_i$ pointwise,
+SPDHG converges.
+
+\begin{itemize}
+\item define prox dual D
+\item mention memory problem
+\item introduce new init for y
+\end{itemize}
 
 %-----------------------------------------------------------------------------
 \begin{algorithm}[t]
 \begin{algorithmic}[1]
-%\Function{direct\_tof\_pet}{$d_0,c_0$}
-
-\State \textbf{Initialize} $x,y$, $(S_i)_i,T,(p_i)_i$,
-\State $\overline{z} = z = A^T y$
+\State \textbf{Initialize} $x(=0),y(=0)$, $(S_i)_i,T,(p_i)_i$,
+\State $\overline{z} = z = P^T y$
 \Repeat
 	\State $x = \proj_{\geq 0} (x - T \overline{z})$
 	\State Select $i \in \{ 1,\ldots,m+1\} $ randomly according to $(p_i)_i$
-	\State \quad $y_i^+ \gets \prox_{D_i^*}^{S_i} ( y_i + S_i  ( A_i x + s_i))$
-	\State \quad $\delta z \gets A_i^T (y_i^+ - y_i)$
+	\State \quad $y_i^+ \gets \prox_{D_i^*}^{S_i} ( y_i + S_i  ( P_i x + s_i))$
+	\State \quad $\delta z \gets P_i^T (y_i^+ - y_i)$
 	\State \quad $y_i \gets y_i^+$
 	\State $z \gets z + \delta z$
 	\State $\overline{z} \gets  z + (\delta z/p_i)$
@@ -100,14 +151,15 @@ Foo bar %\cite{Chambolle2011,Chambolle2018,Ehrhardt2019}.
 \State \Return{$x$}
 %\EndFunction
 \end{algorithmic}
-\caption{SPDHG for PET reconstruction \cite{Ehrhardt2019}}
-\label{alg:algorithm_general}
+\caption{SPDHG algorithm for PET reconstruction \cite{Ehrhardt2019}}
+\label{alg:spdhg}
 \end{algorithm}
 %-----------------------------------------------------------------------------
 
 
 
 %-------------------------------------------------------------------------------------------
+\clearpage
 \printbibliography
 
 \end{document}
