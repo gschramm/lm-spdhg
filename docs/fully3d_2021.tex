@@ -83,8 +83,9 @@ One possible way of noise suppression is the maximum a posteriori approach
 where a smoothing prior added next to the data fidelity term (the negative
 Poisson loglikelihood) in the cost function optimized in iterative image 
 reconstruction.
-Unfortunately, many advanced smoothing priors such as e.g. Total Variation (TV) [XXX],
-Generalized TV [XXX], Directional TV [XXX] or Parallel Level Sets [XXX] are non-smooth 
+Unfortunately, many advanced smoothing priors such as e.g. Total Variation (TV) \cite{Rudin1992},
+Generalized TV \cite{Bredies2010}, Directional TV \cite{Ehrhardt2016} or Parallel Level 
+Sets \cite{Ehrhardt2016a,Schramm2017} are non-smooth 
 functions which permits the use of simple and efficient purely gradient-based
 optimization algorithms.
 Moreover, due to the large number of data bins in a (time-of-flight) sinogram
