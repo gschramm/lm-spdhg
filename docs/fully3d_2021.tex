@@ -195,6 +195,29 @@ the ratio between the primal an dual step sizes, on the convergence of SPDHG.
 
 
 
+%-----------------------
+%-----------------------
+%-----------------------
+
+
+\section{Materials and Methods}
+
+\subsection{Memory efficient TOF PET SPDHG through better initialization}
+
+In~\cite{Ehrhardt2019}, the authors propose to initialize $x$ and $y$ with zeros everywhere.
+However, we can observe from Eq.~(\ref{eq:proxD}) that for data bins $j$ where $d_j = 0$ 
+(empty TOF sinogram bins), 
+$(\prox_{D_j^*}(a))_j = 1$ for $a_j \geq 1$ and $(\prox_{D_i^*}(a))_j = a_j$ otherwise. 
+Moreover, we see that $ a_j = (y_i + S_i (P_i x + s_i) )_j \geq 1$ provided that $(y_i)_j \geq 1$ 
+since all other quantities are positive. 
+Hence, if we initialize all bins of $y$ where the data $d$ equals zero with $1$, 
+these bins remain equal to $1$ during all iterations. 
+This in turn means that these bins do not contribute to the solution, since only the change
+in $y$ is backprojected in line 7 of algorithm~\ref{alg:spdhg}.
+Consequently, this implies that these bins do not need to be kept in memory after the initialization
+of the $z$ and $\bar{z}$ with the backprojection of $y$ which dramatically reduces the memory
+requirement and also the number of projections that need to be calculated keeping in mind that
+for most acquisitions with modern TOF PET scanners most of the data bins are 0.
 
 %-------------------------------------------------------------------------------------------
 \printbibliography
