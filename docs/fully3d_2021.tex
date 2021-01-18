@@ -49,7 +49,7 @@
 \author[2]{Martin~Holler}
 
 \affil[1]{Department of Imaging and Pathology, Division of Nuclear Medicine,
-          KU Leven, Belgium}
+          KU Leuven, Belgium}
 
 \affil[2]{Institute for Mathematics and Scientific Computing, 
           University of Graz, Austria}
@@ -77,7 +77,7 @@ Foo bar.
 
 Due to limitations in acquisition time, injectable dose and scanner sensitivity,
 acquired data in positron emission tomography (PET) suffer from high levels of
-Poisson noise that is transfered into the reconstructed image necessitating
+Poisson noise that is transferred into the reconstructed image necessitating
 noise suppression during or post reconstruction.
 One possible way of noise suppression is the maximum a posteriori approach
 where a smoothing prior added next to the data fidelity term (the negative
@@ -86,16 +86,16 @@ reconstruction.
 Unfortunately, many advanced smoothing priors such as e.g. Total Variation (TV) [XXX],
 Generalized TV [XXX], Directional TV [XXX] or Parallel Level Sets [XXX] are non-smooth 
 functions which permits the use of simple and efficient purely gradient-based
-optimization algortihms.
+optimization algorithms.
 Moreover, due to the large number of data bins in a (time-of-flight) sinogram
-of modern PET scanners, the compution time for a single evaluation of the complete
-forward (and adjoint) model is usually slow favoring optimiztion algorithms that
-use only a subset of the data ine every update step like maximum expectation maximization
+of modern PET scanners, the computation time for a single evaluation of the complete
+forward (and adjoint) model is usually slow favoring optimization algorithms that
+use only a subset of the data in every update step like maximum expectation maximization
 with ordered subsets (OSEM).
 
 Recently, Chambolle et al. \cite{Chambolle2018} and  Ehrhardt et al. \cite{Ehrhardt2019} introduced 
 the stochastic primal dual hybrid gradient (SPDHG) algorithm which is a convergent algorithms
-to allows to solve the PET reconstruction problem inlcuding many non-smooth priors with
+to allows to solve the PET reconstruction problem including many non-smooth priors with
 only a few iterations. 
 Algorithm \ref{alg:spdhg} shows SPDHG using a typical PET forward model.
 As seen in line 6 and 7, in every update only a forward and backprojection of subset
@@ -134,22 +134,22 @@ operator, and $\beta$ is a scalar controlling the level of regularization.
 \State \Return{$x$}
 %\EndFunction
 \end{algorithmic}
-\caption{SPDHG algorithm for PET reconstruction \cite{Ehrhardt2019}}
+\caption{SPDHG for PET reconstruction \cite{Ehrhardt2019}}
 \label{alg:spdhg}
 \end{algorithm}
 %-----------------------------------------------------------------------------
 
 In the application of Algorithm~\ref{alg:spdhg}, we follow the approach if \cite{Ehrhardt2019}
 by splitting the data into n non-overlapping subsets with the corresponding 
-sequence of partial PET forwad operators denoted as $(P_i)_{i=1}^n$.
+sequence of partial PET forward operators denoted as $(P_i)_{i=1}^n$.
 To simplify notation, we set $P_{n+1} = \nabla$ and choose the probabilities $p_1=\ldots=p_n = 1/(2n)$
 and $p_{n+1} = 1/2$.
 For $\rho<1$ and $\gamma>0$, we define preconditioned step sizes for the partial PET operators, 
 for $i=1,\ldots,n$
 \[ S_i = \gamma \, \text{diag}(\frac{\rho}{P_i 1} )\qquad  T_i = \gamma^{-1} \text{diag}(\frac{\rho p_i}{P^T_i 1}) \]
-and for the gradient opertator
+and for the gradient operator
 \[ S_{n+1} = \frac{\rho}{\|\nabla\|} \qquad T_{n+1} = \frac{p_i\rho}{\|\nabla\|} \]  
-As metioned in \cite{Ehrhardt2019}, if we set $T = \min_{i=1,\ldots,n+1} T_i$ pointwise,
+As mentioned in \cite{Ehrhardt2019}, if we set $T = \min_{i=1,\ldots,n+1} T_i$ pointwise,
 SPDHG converges.
 
 The proximal operator for the convex dual of $D_j$ is given by
@@ -168,7 +168,7 @@ Moreover, if the proposed preconditioning is used, a second complete (TOF) sinog
 (the sequence of step sizes $(S_i)_i$) needs to be stored.
 In general this is less of a problem for static single-bed non-TOF PET data where sinogram sizes, 
 are relatively small.
-However, for simulataneous multi-bed, dynamic or TOF PET data, the size of complete sinograms
+However, for simultaneous multi-bed, dynamic or TOF PET data, the size of complete sinograms
 can be become problematic, especially when using GPUs.
 E.g. for modern PET TOF scanners with 25\,cm axial FOV and a TOF resolution of ca. 400\,ps, 
 a complete unmashed TOF sinogram in single precision for one bed position 
@@ -187,12 +187,11 @@ acquired 60\,min p.i., still around 70\% of the data bins are empty.
 
 \smallskip
 
-Considering the very sprase nature of TOF emission sinograms,
+Considering the very sparse nature of TOF emission sinograms,
 in this work, we propose and analyze a better initialization of SPDHG for sparse PET data
 which substantially reduces the memory requirements.
-Moreover, we also analyse the influence of the scalar hyper parameter $\gamma$, that determines
+Moreover, we also analyze the influence of the scalar hyper parameter $\gamma$, that determines
 the ratio between the primal an dual step sizes, on the convergence of SPDHG.
-
 
 
 %-----------------------
@@ -218,7 +217,7 @@ Consequently, this implies that these bins do not need to be kept in memory afte
 of the $z$ and $\bar{z}$ with the backprojection of $y$ which dramatically reduces the memory
 requirement and also the number of projections that need to be calculated keeping in mind that
 for most acquisitions with modern TOF PET scanners most of the data bins are 0 as discussed before.
-To differentiate between SPDHG with the originally proposed intilization and the initialization proposed
+To differentiate between SPDHG with the originally proposed initialization and the initialization proposed
 above, we call the latter SPDHG-S.
 
 \subsection{Numerical experiments}
@@ -227,12 +226,13 @@ To compare the convergence of SPDHG and SPDHG-S, we performed reconstructions of
 TOF PET data from a virtual 2D scanner mimicking the TOF resolution (ca. 400\,ps FWHM) and 
 geometry of one ring (direct plane) of the GE SIGNA PET/MR (sinogram dimension: 
 357 radial bins, 224 projection angles, 27 TOF bins).
-A software brain phantom with a typical grey to white matter contrast of 4:1 was created
+A software brain phantom with a typical gray to white matter contrast of 4:1 was created
 based on the brainweb phantom and used to generate simulated data including the effects
 of attenuation and flat contamination (scattered) coincidences
 with a simulated scatter fraction of 16\%.
-Noisy simualted prompt emission TOF sinograms where generated for $10^5$, $10^6$, 
-and $10^7$ counts. %%%XXX mention sparsity of sinograms
+Noisy simulated prompt emission TOF sinograms where generated for $10^5$, $10^6$, 
+and $10^7$ counts. 
+In the case of $10^5$, 80\% of the bins in the 2D TOF emission sinogram are 0.
 The simulated data were reconstructed with SPDHG and SPDHG-S using 50 iterations, 112 subsets,
 a fixed level regularization ($\beta = 0.6$ for $10^5$ counts, and $\beta = 0.2$ for $10^6$
 and $10^7$ counts), and different values for $\gamma$.
@@ -243,9 +243,76 @@ and the peak signal to noise ratio
 compared to an approximate minimizer $x^*$.
 which was calculated using the deterministic PDHG with 5000 iterations without subsets.
 In all reconstructions, the TOF PET operator $P$ was renormalized such that the norm of $P$
-equaled the number of projection angles.
-Subsets were defined via equidistant projection angles.
+equaled the number of projection angles and the
+subsets were defined via equidistant projection angles.
+The gradient operator was implemented as the finite forward difference.
 
+
+%-----------------------
+%-----------------------
+%-----------------------
+
+
+\section{Results}
+
+\begin{figure*}
+  \centering
+  \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_1.0E+05_beta_6.0E-01_niter_5000_50_nsub_112_metrics.pdf}
+  \caption{Relative cost and PSNR to the approximate minimizer of SPDHG and SPDHG-S for different
+           $\gamma$ values, using $10^5$ counts and 112 subsets.}
+  \label{fig:metrics}
+\end{figure*}
+
+\begin{figure*}
+  \centering
+  \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_1.0E+05_beta_6.0E-01_niter_5000_50_nsub_112_early_10.png}
+  \caption{Reconstruction results of SPDHG (top) and SPDHG-S (bottom) after 10 iterations with
+           112 subsets for different $\gamma$ values indicated above the reconstructions 
+           using $10^5$ counts.}
+  \label{fig:gamma}
+\end{figure*}
+
+\begin{figure*}
+  \centering
+  \includegraphics[width=1.0\textwidth]{./figs/early_iterations.png}
+  \caption{Comparison of convergence of SPDHG (top) and SPDHG-S (bottom) in early iterations 
+           using $10^5$ counts, $\gamma = 10$ and 112 subsets.}
+  \label{fig:early}
+\end{figure*}
+
+Figure~\ref{fig:metrics} shows the relative cost and PSNR to the approximate minimizer of 
+SPDHG and SPDHG-S for different $\gamma$ values, using $10^5$ counts and 112 subsets.
+First of all we see that the choice of $\gamma$ has strong influence on the convergence for
+SPDHG and SPDHG-S which can be also seen in Fig.~\ref{fig:gamma} where the reconstructions
+after 10 iterations are shown.
+Figure~\ref{fig:early} shows a comparison of SPDHG and SPDHG-S in the very early iterations
+for $\gamma = 10$.
+
+\section{Discussion}
+
+All three figures in this work demonstrate that the difference in the convergence between 
+SPDHG and SPDHG-S for appropriate $\gamma$ values (e.g. 10) after ca. 3 iterations is very small.
+As reported in \cite{Ehrhardt2019}, we can confirm that after ca. 10 iterations the visual difference
+in the image quality compared to the approximate minimizer is very small.
+The remaining small differences are mainly in low update region in the skin around the brain.
+Major differences in the convergence between SPDHG and SPDHG-S are only seen after the
+1st iterations which is explained by the impact of the initialization of $y$ on the initialization
+of $z$ and $\bar{z}$ as shown in line 2 in algorithm~\ref{alg:spdhg}.
+
+These finding were also confirmed for the higher count levels of $10^6$ and $10^7$ counts
+not shown here. 
+However, note that at $10^7$ the difference, the emission sinogram is of less sparse
+which naturally reduces the influence of our proposed initialization.
+In contrast to \cite{Ehrhardt2019}, we find that in general $\gamma = 1$ is not optimal
+in terms of convergence speed. 
+Comparing the results with different simulated count levels, we find that the optimal value
+for $\gamma$ is inversely proportional to the magnitude of the image to be reconstructed, or, 
+in other words, inversely proportional to the number of acquired counts.
+
+So far, the proposed SPDHG algorithm uses binned data (sinograms).
+However, the promising results shown in this work might help to develop a convergent
+algorithm that allows to directly reconstruct list-mode TOF PET data with non-smooth
+priors.
 
 %-------------------------------------------------------------------------------------------
 \printbibliography
