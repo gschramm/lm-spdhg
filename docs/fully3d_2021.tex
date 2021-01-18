@@ -217,7 +217,35 @@ in $y$ is backprojected in line 7 of algorithm~\ref{alg:spdhg}.
 Consequently, this implies that these bins do not need to be kept in memory after the initialization
 of the $z$ and $\bar{z}$ with the backprojection of $y$ which dramatically reduces the memory
 requirement and also the number of projections that need to be calculated keeping in mind that
-for most acquisitions with modern TOF PET scanners most of the data bins are 0.
+for most acquisitions with modern TOF PET scanners most of the data bins are 0 as discussed before.
+To differentiate between SPDHG with the originally proposed intilization and the initialization proposed
+above, we call the latter SPDHG-S.
+
+\subsection{Numerical experiments}
+
+To compare the convergence of SPDHG and SPDHG-S, we performed reconstructions of simulated
+TOF PET data from a virtual 2D scanner mimicking the TOF resolution (ca. 400\,ps FWHM) and 
+geometry of one ring (direct plane) of the GE SIGNA PET/MR (sinogram dimension: 
+357 radial bins, 224 projection angles, 27 TOF bins).
+A software brain phantom with a typical grey to white matter contrast of 4:1 was created
+based on the brainweb phantom and used to generate simulated data including the effects
+of attenuation and flat contamination (scattered) coincidences
+with a simulated scatter fraction of 16\%.
+Noisy simualted prompt emission TOF sinograms where generated for $10^5$, $10^6$, 
+and $10^7$ counts. %%%XXX mention sparsity of sinograms
+The simulated data were reconstructed with SPDHG and SPDHG-S using 50 iterations, 112 subsets,
+a fixed level regularization ($\beta = 0.6$ for $10^5$ counts, and $\beta = 0.2$ for $10^6$
+and $10^7$ counts), and different values for $\gamma$.
+As in \cite{Ehrhardt2019}, convergence was monitored by tracking the relative cost function
+\[ c_\text{rel} = (c(x) - c(x^*)) / (c(x^0) - c(x^*)). \]
+and the peak signal to noise ratio 
+\[ \text{PSNR} = 20 \log_{10} (\|x^*\|_\infty/\sqrt{\text{MSE}(x,x^*)}) \]
+compared to an approximate minimizer $x^*$.
+which was calculated using the deterministic PDHG with 5000 iterations without subsets.
+In all reconstructions, the TOF PET operator $P$ was renormalized such that the norm of $P$
+equaled the number of projection angles.
+Subsets were defined via equidistant projection angles.
+
 
 %-------------------------------------------------------------------------------------------
 \printbibliography
