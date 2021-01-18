@@ -111,28 +111,11 @@ using TV regularization yielding the optimization problem
 \begin{equation}
 \argmin _{x\geq 0} \sum_j \underbrace{(Px)_j -  d_j \log \left( (Px)_ j + s_j \right)}_{D_j(x)} + \beta \, \|\nabla x\|_{1,2},
 \end{equation}
+%
 where $x$ is the PET image to be reconstructed, $P$ is the TOF forward projector including the effects
 of attenuation and normalization, $d$ are the acquired prompt TOF coincidences (the emission sinogram),
 and $s$ are additive contaminations including random and scattered coincidences. $\nabla$ is the gradient
 operator, and $\beta$ is a scalar controlling the level of regularization.
-
-In the application of Algorithm~\ref{alg:spdhg}, we follow the approach if \cite{Ehrhardt2019}
-by splitting the data into n non-overlapping subsets with the corresponding 
-sequence of partial PET forwad operators denoted as $(P_i)_{i=1}^n$.
-To simplify notation, we set $P_{n+1} = \nabla$ and choose the probabilities $p_1=\ldots=p_n = 1/(2n)$
-and $p_{n+1} = 1/2$.
-For $\rho<1$, we define preconditioned step sizes for the partial PET operators, for $i=1,\ldots,n$
-\[ S_i = \text{diag}(\frac{\rho}{P_i 1} )\qquad  T_i = \text{diag}(\frac{\rho p_i}{P^T_i 1}) \]
-and for the gradient opertator
-\[ S_{n+1} = \frac{\rho}{\|\nabla\|} \qquad T_{n+1} = \frac{p_i\rho}{\|\nabla\|} \]  
-As metioned in \cite{Ehrhardt2019}, if we set $T = \min_{i=1,\ldots,n+1} T_i$ pointwise,
-SPDHG converges.
-
-\begin{itemize}
-\item define prox dual D
-\item mention memory problem
-\item introduce new init for y
-\end{itemize}
 
 %-----------------------------------------------------------------------------
 \begin{algorithm}[t]
@@ -156,10 +139,61 @@ SPDHG converges.
 \end{algorithm}
 %-----------------------------------------------------------------------------
 
+In the application of Algorithm~\ref{alg:spdhg}, we follow the approach if \cite{Ehrhardt2019}
+by splitting the data into n non-overlapping subsets with the corresponding 
+sequence of partial PET forwad operators denoted as $(P_i)_{i=1}^n$.
+To simplify notation, we set $P_{n+1} = \nabla$ and choose the probabilities $p_1=\ldots=p_n = 1/(2n)$
+and $p_{n+1} = 1/2$.
+For $\rho<1$ and $\gamma>0$, we define preconditioned step sizes for the partial PET operators, 
+for $i=1,\ldots,n$
+\[ S_i = \gamma \, \text{diag}(\frac{\rho}{P_i 1} )\qquad  T_i = \gamma^{-1} \text{diag}(\frac{\rho p_i}{P^T_i 1}) \]
+and for the gradient opertator
+\[ S_{n+1} = \frac{\rho}{\|\nabla\|} \qquad T_{n+1} = \frac{p_i\rho}{\|\nabla\|} \]  
+As metioned in \cite{Ehrhardt2019}, if we set $T = \min_{i=1,\ldots,n+1} T_i$ pointwise,
+SPDHG converges.
+
+The proximal operator for the convex dual of $D_j$ is given by
+\begin{equation}
+(\prox_{D_j^*}^{S}(y))_j = \frac{1}{2} \left(y_j + 1 + \sqrt{ (y_j-1)^2 + 4 S s_j d_j} \right)
+\label{eq:proxD}
+\end{equation} 
+and the proximal operator for the convex dual of the TV term is given by
+\begin{equation}
+(\prox_{D_{n+1}^*}(y) )_j = y_j /\max(\beta,|y_j|) \ .
+\end{equation}
+
+As discussed in Remark 2 of \cite{Ehrhardt2019}, a potential drawback of SPDHG is that it requires
+to keep at least one more complete (TOF) sinogram (y) in memory. 
+Moreover, if the proposed preconditioning is used, a second complete (TOF) sinogram
+(the sequence of step sizes $(S_i)_i$) needs to be stored.
+In general this is less of a problem for static single-bed non-TOF PET data where sinogram sizes, 
+are relatively small.
+However, for simulataneous multi-bed, dynamic or TOF PET data, the size of complete sinograms
+can be become problematic, especially when using GPUs.
+E.g. for modern PET TOF scanners with 25\,cm axial FOV and a TOF resolution of ca. 400\,ps, 
+a complete unmashed TOF sinogram in single precision for one bed position 
+has approximately $4.4\cdot10^9$ data bins requiring ca. 17\,GB of memory.
+Note that the memory required to store one sinogram will increase with better TOF resolution.
+Due to large number of data bins and the limitations in injected dose and acquisition time,
+modern TOF sinogram are usually very sparse, meaning that many (most) data bins no data is
+acquired.
+E.g. for a late static 10\,min FDG brain scan with 150\,MBq injected dose in modern PET/MR 
+60\,min p.i., typically $10^8$ prompt coicindences are acquired and around XXX\,\% of the
+data bins are empty.
+For a typical 2\,min whole-body FDG bed position, 60\,min p.i. only XXX prompt coincidences
+are acquired and around XXX\,\% of the data bins are empty.
+
+\smallskip
+
+In this work, we propose and analyze a better initialization of SPDHG for sparse PET data
+which leads to a substantially reduces the memory requirements.
+Moreover, we also analyse the influence of the scalar parameter $\gamma$ that determines
+the ratio between the primal an dual step sizes on the convergence of SPDHG.
+
+
 
 
 %-------------------------------------------------------------------------------------------
-\clearpage
 \printbibliography
 
 \end{document}
