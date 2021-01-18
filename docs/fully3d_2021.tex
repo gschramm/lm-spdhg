@@ -130,7 +130,7 @@ operator, and $\beta$ is a scalar controlling the level of regularization.
 	\State \quad $y_i \gets y_i^+$
 	\State $z \gets z + \delta z$
 	\State $\overline{z} \gets  z + (\delta z/p_i)$
-\Until{Stopping criterion fulfilled}
+\Until{stopping criterion fulfilled}
 \State \Return{$x$}
 %\EndFunction
 \end{algorithmic}
@@ -173,22 +173,25 @@ can be become problematic, especially when using GPUs.
 E.g. for modern PET TOF scanners with 25\,cm axial FOV and a TOF resolution of ca. 400\,ps, 
 a complete unmashed TOF sinogram in single precision for one bed position 
 has approximately $4.4\cdot10^9$ data bins requiring ca. 17\,GB of memory.
-Note that the memory required to store one sinogram will increase with better TOF resolution.
+Note that the memory required to store a complete TOF sinogram will further 
+increase with better TOF resolution.
 Due to large number of data bins and the limitations in injected dose and acquisition time,
-modern TOF sinogram are usually very sparse, meaning that many (most) data bins no data is
+modern TOF sinograms are usually very sparse, meaning that most data bins no data is
 acquired.
-E.g. for a late static 10\,min FDG brain scan with 150\,MBq injected dose in modern PET/MR 
-60\,min p.i., typically $10^8$ prompt coicindences are acquired and around XXX\,\% of the
-data bins are empty.
-For a typical 2\,min whole-body FDG bed position, 60\,min p.i. only XXX prompt coincidences
-are acquired and around XXX\,\% of the data bins are empty.
+E.g. for a typical 3\,min-per-bed-position whole-body FDG scan with an injected dose 
+of around 200\,MBq acquired 60\,min p.i. on a state-of-the-art TOF PET/MR scanner, 
+more than 95\% of the data (TOF sinogram) bins are empty.
+For short early frames in dynamic brain scans, this fraction is even higher.
+And even for ``high count'' late static 20\,min FDG brain scans with an injected dose of 150\,MBq
+acquired 60\,min p.i., still around 70\% of the data bins are empty.
 
 \smallskip
 
-In this work, we propose and analyze a better initialization of SPDHG for sparse PET data
-which leads to a substantially reduces the memory requirements.
-Moreover, we also analyse the influence of the scalar parameter $\gamma$ that determines
-the ratio between the primal an dual step sizes on the convergence of SPDHG.
+Considering the very sprase nature of TOF emission sinograms,
+in this work, we propose and analyze a better initialization of SPDHG for sparse PET data
+which substantially reduces the memory requirements.
+Moreover, we also analyse the influence of the scalar hyper parameter $\gamma$, that determines
+the ratio between the primal an dual step sizes, on the convergence of SPDHG.
 
 
 
