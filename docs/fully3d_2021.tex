@@ -69,7 +69,17 @@
 
 
 \begin{customabstract}
-Foo bar.
+in this work, we propose and analyze a modification of the stochastic primal dual hybrid gradient
+(SPDHG) algorithm which substantially reduces its memory requirements 
+for reconstruction of sparse time-of-flight (TOF) PET data with non-smooth priors.
+Moreover, we analyze the influence of the ratio of the primal an dual step sizes, 
+on the convergence of SPDHG.
+The performance of the optimization algorithm is investigated based on simulated 2D TOF
+data using a brain-like software phantom.
+We find that the memory requirement of SPDHG for sparse TOF PET data, can be
+substantially reduced by a better intialization without noticable losses in the convergence speed.
+Morevoer a careful choice of the ratio of the primal and dual step sizes 
+depending on the magnitude of the image to be reconstructed is crucial to obtain fast convergence.
 \end{customabstract}
 
 
@@ -87,7 +97,6 @@ Poisson loglikelihood) in the cost function optimized in iterative image
 reconstruction.
 Unfortunately, many advanced smoothing priors such as e.g. Total Variation (TV) \cite{Rudin1992},
 Total Generalized Variation (TGV) \cite{Bredies2010}, Joint T(G)V \cite{Rigie2015,Knoll2017}
-%Directional TV \citep{Bredies2010}ite{Ehrhardt2016}
 or Parallel Level Sets \cite{Ehrhardt2016a,Schramm2017} are non-smooth 
 functions which permits the use of simple and efficient purely gradient-based
 optimization algorithms.
@@ -192,7 +201,7 @@ acquired 60\,min p.i., still around 70\% of the data bins are empty.
 
 Considering the very sparse nature of TOF emission sinograms,
 in this work, we propose and analyze a modification of SPDHG for sparse PET data
-which substantially reduces the memory requirements.
+which substantially reduces its memory requirements.
 Moreover, we also analyze the influence of the scalar hyper parameter $\gamma$, that determines
 the ratio between the primal an dual step sizes, on the convergence of SPDHG.
 
@@ -241,9 +250,9 @@ The simulated data were reconstructed with SPDHG and SPDHG-S using 50 iterations
 a fixed level regularization ($\beta = 0.6$ for $10^5$ counts, and $\beta = 0.2$ for $10^6$
 and $10^7$ counts), and different values for $\gamma$.
 As in \cite{Ehrhardt2019}, convergence was monitored by tracking the relative cost function
-\[ c_\text{rel} = (c(x) - c(x^*)) / (c(x^0) - c(x^*)). \]
+\[ c_\text{rel}(x) = (c(x) - c(x^*)) / (c(x^0) - c(x^*)). \]
 and the peak signal to noise ratio 
-\[ \text{PSNR} = 20 \log_{10} (\|x^*\|_\infty/\sqrt{\text{MSE}(x,x^*)}) \]
+\[ \text{PSNR}(x) = 20\,\log_{10} \left( \|x^*\|_\infty/\sqrt{\text{MSE}(x,x^*)} \right) \]
 compared to an approximate minimizer $x^*$.
 which was calculated using the deterministic PDHG with 5000 iterations without subsets.
 In all reconstructions, the TOF PET operator $P$ was renormalized such that the norm of $P$
