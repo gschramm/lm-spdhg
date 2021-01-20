@@ -69,15 +69,15 @@
 
 
 \begin{customabstract}
-In this work, we propose and analyze a modification of the stochastic primal dual hybrid gradient
+In this work, we propose and analyze a modification of the stochastic primal-dual hybrid gradient
 (SPDHG) algorithm which substantially reduces its memory requirements 
 for reconstruction of sparse time-of-flight (TOF) PET data with non-smooth priors.
-Moreover, we study the influence of the ratio of the primal an dual step sizes, 
+Moreover, we study the influence of the ratio of the primal and dual step sizes, 
 on the convergence of SPDHG.
 The performance of the optimization algorithm is investigated based on simulated 2D TOF
 data using a brain-like software phantom.
-We find that the memory requirement of SPDHG for sparse TOF PET data, can be
-substantially reduced by a better intialization without noticable losses in the convergence speed.
+We find that the memory requirement of SPDHG for sparse TOF PET data can be
+substantially reduced by a better initialization without noticeable losses in the convergence speed.
 Moreover, a careful choice of the ratio of the primal and dual step sizes 
 depending on the magnitude of the image to be reconstructed is crucial to obtain fast convergence.
 \end{customabstract}
@@ -107,7 +107,7 @@ use only a subset of the data in every update step like maximum expectation maxi
 with ordered subsets (OSEM).
 
 Recently, Chambolle et al. \cite{Chambolle2018} and  Ehrhardt et al. \cite{Ehrhardt2019} introduced 
-the stochastic primal dual hybrid gradient (SPDHG) algorithm which is a provably convergent algorithm
+the stochastic primal-dual hybrid gradient (SPDHG) algorithm which is a provably convergent algorithm
 that allows to solve the PET reconstruction problem including many non-smooth priors with
 only a few iterations. 
 Algorithm \ref{alg:spdhg} shows SPDHG using a typical PET forward model.
@@ -115,7 +115,7 @@ As seen in line 6 and 7, in every update only a forward and backprojection of a 
 of the data is required.
 Using two clinical FDG and Fluorbetapir data sets from the Siemens mMR, 
 it was shown in \cite{Ehrhardt2019}, that approximately 10 iterations, meaning 10 complete 
-forward and back projections of the data, are sufficient to reach reasonable convergence
+forward and back projections of the data are sufficient to reach reasonable convergence
 for clinical purposes when using preconditioning and proper sampling of the subsets.
 
 In this work, we focus on time-of-flight (TOF) PET reconstruction 
@@ -178,7 +178,7 @@ As discussed in Remark 2 of \cite{Ehrhardt2019}, a potential drawback of SPDHG i
 to keep at least one more complete (TOF) sinogram ($y$) in memory. 
 Moreover, if the proposed preconditioning is used, a second complete (TOF) sinogram
 (the sequence of step sizes $(S_i)_{i=1}^n$) needs to be stored.
-In general this is less of a problem for static single-bed non-TOF PET data, where sinogram sizes
+In general, this is less of a problem for static single-bed non-TOF PET data, where sinogram sizes
 are relatively small.
 However, for simultaneous multi-bed, dynamic or TOF PET data, the size of complete sinograms
 can be become problematic, especially when using GPUs.
@@ -202,8 +202,8 @@ acquired 60\,min p.i., still around 70\% of the data bins are empty.
 Considering the very sparse nature of TOF emission sinograms,
 in this work, we propose and analyze a modification of SPDHG for sparse PET data
 which substantially reduces its memory requirements.
-Moreover, we also analyze the influence of the scalar hyper parameter $\gamma$, that determines
-the ratio between the primal an dual step sizes, on the convergence of SPDHG.
+Moreover, we also analyze the influence of the scalar hyperparameter $\gamma$, that determines
+the ratio between the primal and dual step sizes, on the convergence of SPDHG.
 
 
 %-----------------------
@@ -296,7 +296,7 @@ The gradient operator was implemented as the finite forward difference.
 
 Figure~\ref{fig:metrics} shows the relative cost and PSNR to the approximate minimizer of 
 SPDHG and SPDHG-S for different $\gamma$ values, using $10^5$ counts and 112 subsets.
-First of all we see that the choice of $\gamma$ has strong influence on the convergence for
+First of all, we see that the choice of $\gamma$ has a strong influence on the convergence for
 SPDHG and SPDHG-S which can be also seen in Fig.~\ref{fig:gamma} where the reconstructions
 after 10 iterations are shown. 
 Moreover, it can be observed in both figures that, 
@@ -334,8 +334,8 @@ priors.
 \section{Conclusion}
 
 The memory requirement for the SPDHG algorithm for sparse TOF PET data, can be
-substantially reduced by a better intialization of the dual variable $y$ without
-noticable losses in the convergence speed.
+substantially reduced by a better initialization of the dual variable $y$ without
+noticeable losses in the convergence speed.
 Careful choice of the step size ratio parameter $\gamma$ depending on the magnitude
 of the image to be reconstructed is crucial to obtain fast convergence.
 
