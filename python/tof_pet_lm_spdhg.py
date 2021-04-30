@@ -6,7 +6,9 @@ import pyparallelproj as ppp
 from pyparallelproj.phantoms import ellipse2d_phantom, brain2d_phantom
 from pyparallelproj.models import pet_fwd_model, pet_back_model, pet_fwd_model_lm, pet_back_model_lm
 from pyparallelproj.utils import grad, div
+from pyparallelproj.algorithms import spdhg
 
+from scipy.ndimage import gaussian_filter
 import numpy as np
 import argparse
 
@@ -14,10 +16,10 @@ import argparse
 # parse the command line
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--ngpus',    help = 'number of GPUs to use', default = 0,   type = int)
+parser.add_argument('--ngpus',    help = 'number of GPUs to use', default = 1,   type = int)
 parser.add_argument('--counts',   help = 'counts to simulate',    default = 1e6, type = float)
-parser.add_argument('--niter',    help = 'number of iterations',  default = 4,   type = int)
-parser.add_argument('--nsubsets', help = 'number of subsets',     default = 28,  type = int)
+parser.add_argument('--niter',    help = 'number of iterations',  default = 1,   type = int)
+parser.add_argument('--nsubsets', help = 'number of subsets',     default = 4,   type = int)
 parser.add_argument('--fwhm_mm',  help = 'psf modeling FWHM mm',  default = 4.5, type = float)
 parser.add_argument('--fwhm_data_mm',  help = 'psf for data FWHM mm',  default = 4.5, type = float)
 parser.add_argument('--phantom', help = 'phantom to use', default = 'brain2d')
@@ -120,8 +122,6 @@ else:
 #-------------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------------
 
-proj.init_subsets(nsubsets)
-
 # create a listmode projector for the LM MLEM iterations
 lmproj = ppp.LMProjector(proj.scanner, proj.img_dim, voxsize = proj.voxsize, 
                          img_origin = proj.img_origin, ngpus = proj.ngpus,
@@ -137,39 +137,21 @@ lmproj = ppp.LMProjector(proj.scanner, proj.img_dim, voxsize = proj.voxsize,
 # [:,4]   are the event TOF bins
 # [:,5]   are the events counts (mu_e)
 
-events      = []
-contam_list = []
-sens_list   = []
-attn_list   = []
-fwd_ones    = []
+events, multi_index = sino_params.sinogram_to_listmode(em_sino, 
+                                                       return_multi_index = True,
+                                                       return_counts = True)
 
-# calculate the "step sizes" S_i, T_i  for the projector
-ones_img = np.ones(tuple(lmproj.img_dim), dtype = np.float32)
-
-for i in range(nsubsets):
-  ss = proj.subset_slices[i]
-  tmp, multi_index = sino_params.sinogram_to_listmode(em_sino[ss], 
-                                                      subset = i, nsubsets = nsubsets,
-                                                      return_multi_index = True,
-                                                      return_counts = True)
-
-  events.append(tmp)
-  
-  contam_list.append(contam_sino[ss][multi_index[:,0],multi_index[:,1],multi_index[:,2], multi_index[:,3]])
-  sens_list.append(sens_sino[ss][multi_index[:,0],multi_index[:,1],multi_index[:,2],0])
-  attn_list.append(attn_sino[ss][multi_index[:,0],multi_index[:,1],multi_index[:,2],0])
-
-  # fwd project a ones image for the S_i step sizes
-  fwd_ones.append(pet_fwd_model(ones_img, proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm)[multi_index[:,0],multi_index[:,1],multi_index[:,2], multi_index[:,3]])
+contam_list = contam_sino[multi_index[:,0],multi_index[:,1],multi_index[:,2], multi_index[:,3]]
+sens_list   = sens_sino[multi_index[:,0],multi_index[:,1],multi_index[:,2],0]
+attn_list   = attn_sino[multi_index[:,0],multi_index[:,1],multi_index[:,2],0]
 
 # backproject the subset events in LM and sino mode as a cross check
-#back_imgs  = np.zeros((nsubsets,) + tuple(lmproj.img_dim))
-#back_imgs2 = np.zeros((nsubsets,) + tuple(lmproj.img_dim))
-#
-#for i in range(nsubsets):
-#  subset_events = events[i][:,:5]
-#  back_imgs[i,...] = lmproj.back_project(np.ones(subset_events.shape[0], dtype = np.float32), subset_events)
-#  back_imgs2[i,...] = proj.back_project(em_sino[proj.subset_slices[i]], subset = i)
+back_imgs  = np.zeros((nsubsets,) + tuple(lmproj.img_dim))
+
+for i in range(nsubsets):
+  subset_events = events[i::nsubsets,:]
+  back_imgs[i,...] = lmproj.back_project(np.ones(subset_events.shape[0], dtype = np.float32), 
+                                         subset_events[:,:5])
 
 #-----------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------
@@ -177,8 +159,16 @@ for i in range(nsubsets):
 gamma     = 1/img.max()
 rho       = 0.999
 beta      = 0
-nsubsets  = proj.nsubsets
 
+# reference sinogram SPDHG recon
+
+proj.init_subsets(nsubsets)
+ref = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
+            fwhm = fwhm, gamma = gamma, rho = rho, verbose = True, 
+            beta = beta)
+proj.init_subsets(1)
+
+#-----------------------------------------------------------------------------------------------------
 img_shape = tuple(lmproj.img_dim)
 
 # setup the probabilities for doing a pet data or gradient update
@@ -195,31 +185,124 @@ else:
 
 p_p = (1 - p_g) / nsubsets
 
-S_i = []
-for i in range(nsubsets):
-  tmp = (gamma*rho) / fwd_ones[i]
-  tmp[tmp == np.inf] = tmp[tmp != np.inf].max()
-  S_i.append(tmp)
+xs     = []
+gammas = np.array([0.1/img.max(),0.3/img.max(),1/img.max(),3/img.max(),10/img.max()])
 
-if p_g > 0:
-  # calculate S for the gradient operator
-  S_g = (gamma*rho/grad_norm)
+for gamma in gammas:
+  S_i = []
+  ones_img = np.ones(img_shape, dtype = np.float32)
+  for i in range(nsubsets):
+    subset_events = events[i::nsubsets,:]
+    tmp = (gamma*rho) / pet_fwd_model_lm(ones_img, lmproj, subset_events, 
+                                         attn_list[i::nsubsets], sens_list[i::nsubsets], fwhm = fwhm)
+    tmp[tmp == np.inf] = tmp[tmp != np.inf].max()
+    S_i.append(tmp)
+  
+  if p_g > 0:
+    # calculate S for the gradient operator
+    S_g = (gamma*rho/grad_norm)
+  
+  
+  if p_g == 0:
+    T_i = np.zeros((1,) + img_shape, dtype = np.float32)
+  else:
+    T_i = np.zeros((2,) + img_shape, dtype = np.float32)
+    T_i[1,...] = rho*p_g/(gamma*grad_norm)
+  
+  
+  ones_sino = np.ones(proj.sino_params.shape, dtype = np.float32)
+  
+  tmp = pet_back_model(ones_sino, proj, attn_sino, sens_sino, 0, fwhm = fwhm)
+  T_i[0,...] = (rho*p_p/gamma) / tmp  
+  
+  T = T_i.min(axis = 0)
+  
+  #--------------------------------------------------------------------------------------------
+  # initialize variables
+  x = np.zeros(img_shape, dtype = np.float32)
+  y = np.zeros(events.shape[0], dtype = np.float32)
+  
+  z    = pet_back_model((em_sino == 0).astype(np.float32), proj, attn_sino, sens_sino, 0, fwhm = fwhm)
+  zbar = z.copy()
+  
+  # allocate arrays for gradient operations
+  x_grad      = np.zeros((T.ndim,) + img_shape, dtype = np.float32)
+  y_grad      = np.zeros((T.ndim,) + img_shape, dtype = np.float32)
+  y_grad_plus = np.zeros((T.ndim,) + img_shape, dtype = np.float32)
+  
+  #--------------------------------------------------------------------------------------------
+  # SPDHG iterations
+  
+  for it in range(niter):
+    subset_sequence = np.random.permutation(np.arange(int(nsubsets/(1-p_g))))
+  
+    for iss in range(subset_sequence.shape[0]):
+      
+      # select a random subset
+      i = subset_sequence[iss]
+  
+      if i < nsubsets:
+        # PET subset update
+        print(f'iteration {it + 1} step {iss} subset {i+1}')
+  
+        ss = slice(i,None,nsubsets)
+  
+        x = np.clip(x - T*zbar, 0, None)
+  
+        y_plus = y[ss] + S_i[i]*(pet_fwd_model_lm(x, lmproj, events[ss,:5], 
+                                                  attn_list[ss], sens_list[ss], 
+                                                  fwhm = fwhm) + contam_list[ss])
+  
+        # apply the prox for the dual of the poisson logL
+        y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*S_i[i]*events[ss,5]))
+  
+        dz = pet_back_model_lm(y_plus - y[ss], lmproj, events[ss,:5], 
+                               attn_list[ss], sens_list[ss], fwhm = fwhm)
+  
+        # update variables
+        z = z + dz
+        y[ss] = y_plus.copy()
+        zbar = z + dz/p_p
+      else:
+        print(f'iteration {it + 1} step {iss} gradient update')
+  
+        grad(x, x_grad)
+        y_grad_plus = (y_grad + S_g*x_grad).reshape(T.ndim,-1)
+  
+        # proximity operator for dual of TV
+        gnorm = np.linalg.norm(y_grad_plus, axis = 0)
+        y_grad_plus /= np.maximum(np.ones(gnorm.shape, np.float32), gnorm / beta)
+        y_grad_plus = y_grad_plus.reshape(x_grad.shape)
+  
+        dz = -1*div(y_grad_plus - y_grad)
+  
+        # update variables
+        z = z + dz
+        y_grad = y_grad_plus.copy()
+        zbar = z + dz/p_g
 
+  xs.append(x)
 
-if p_g == 0:
-  T_i = np.zeros((nsubsets,) + img_shape, dtype = np.float32)
-else:
-  T_i = np.zeros(((nsubsets+1),) + img_shape, dtype = np.float32)
-  T_i[-1,...] = rho*p_g/(gamma*grad_norm)
+xs = np.array(xs)
 
-for i in range(nsubsets):
-  # get the slice for the current subset
-  ss = proj.subset_slices[i]
-  # generate a subset sinogram full of ones
-  ones_sino = np.ones(proj.subset_sino_shapes[i] , dtype = np.float32)
+#-----------------------------------------------------------------------------------------------------
+vmax = 1.2*img.max()
+sigs = 4.5/(2.35*voxsize)
 
-  tmp = pet_back_model(ones_sino, proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm)
-  T_i[i,...] = (rho*p_p/gamma) / tmp  
-                                                       
-# take the element-wise min of the T_i's of all subsets
-T = T_i.min(axis = 0)
+fig, ax = plt.subplots(2,len(gammas) + 1, figsize = (4*(len(gammas) + 1),8))
+ax[0,0].imshow(ref.squeeze(), vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
+ax[1,0].imshow(gaussian_filter(ref, sigs).squeeze(), vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
+ax[0,0].set_title('sino SPDHG', fontsize = 'medium')
+ax[1,0].set_title('p.s. sino SPDHG', fontsize = 'medium')
+
+for i,gam in enumerate(gammas):
+  ax[0,i+1].imshow(xs[i,...].squeeze(), vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
+  ax[1,i+1].imshow(gaussian_filter(xs[i,...], sigs).squeeze(), vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
+  ax[0,i+1].set_title(f'LM SPDHG {gamma:.1e}', fontsize = 'medium')
+  ax[1,i+1].set_title(f'p.s. LM SPDHG {gamma:.1e}', fontsize = 'medium')
+
+for axx in ax.ravel():
+  axx.set_axis_off()
+
+fig.tight_layout()
+fig.show()
