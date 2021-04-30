@@ -1,3 +1,5 @@
+#TODO: prox new operator, step sizes
+
 # small demo for sinogram TOF OS-MLEM
 
 import os
@@ -156,20 +158,73 @@ for i in range(nsubsets):
 #-----------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------
-gamma     = 1/img.max()
+
+def calc_cost(x):
+  cost = 0
+
+  for i in range(proj.nsubsets):
+    # get the slice for the current subset
+    ss = proj.subset_slices[i]
+    exp = ppp.pet_fwd_model(x, proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm) + contam_sino[ss]
+    cost += (exp - em_sino[ss]*np.log(exp)).sum()
+
+  if beta > 0:
+    x_grad = np.zeros((img.ndim,) + img.shape, dtype = np.float32)
+    grad(x, x_grad)
+    cost += beta*np.linalg.norm(x_grad, axis = 0).sum()
+
+  return cost
+
+def _cb(x, **kwargs):
+  it = kwargs.get('iteration',0)
+  it_early = kwargs.get('it_early',-1)
+
+  if it_early == it:
+    if 'x_early' in kwargs:
+      kwargs['x_early'][:] = x
+
+  if 'cost' in kwargs:
+    kwargs['cost'][it-1] = calc_cost(x)
+
+#-----------------------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------
+
 rho       = 0.999
 beta      = 0
 
 # reference sinogram SPDHG recon
+cost_spdhg_sino = np.zeros(niter)
 
 proj.init_subsets(nsubsets)
+cbs = {'cost':cost_spdhg_sino}
 ref = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
-            fwhm = fwhm, gamma = gamma, rho = rho, verbose = True, 
-            beta = beta)
+            fwhm = fwhm, gamma = 1/img.max(), rho = rho, verbose = True, 
+            beta = beta, callback = _cb, callback_kwargs = cbs)
 proj.init_subsets(1)
 
+
+#-----------------------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------
 img_shape = tuple(lmproj.img_dim)
+
+# estimate the norm of the pet fwd operator
+
+x = np.random.rand(*img_shape)
+
+for i in range(10):
+  x_fwd = ppp.pet_fwd_model(x, proj, attn_sino, sens_sino, 0, fwhm = fwhm)
+  x     = ppp.pet_back_model(x_fwd, proj, attn_sino, sens_sino, 0, fwhm = fwhm)
+
+  norm  = np.linalg.norm(x)
+  print(np.sqrt(norm))
+
+  x /= norm
+
+pet_norm = np.sqrt(norm) / nsubsets
+
+#-----------------------------------------------------------------------------------------------------
 
 # setup the probabilities for doing a pet data or gradient update
 # p_g is the probablility for doing a gradient update
@@ -186,36 +241,42 @@ else:
 p_p = (1 - p_g) / nsubsets
 
 xs     = []
-gammas = np.array([0.1/img.max(),0.3/img.max(),1/img.max(),3/img.max(),10/img.max()])
+gammas = np.array([0.5/img.max(),1/img.max(),2/img.max()])
 
-for gamma in gammas:
-  S_i = []
-  ones_img = np.ones(img_shape, dtype = np.float32)
-  for i in range(nsubsets):
-    subset_events = events[i::nsubsets,:]
-    tmp = (gamma*rho) / pet_fwd_model_lm(ones_img, lmproj, subset_events, 
-                                         attn_list[i::nsubsets], sens_list[i::nsubsets], fwhm = fwhm)
-    tmp[tmp == np.inf] = tmp[tmp != np.inf].max()
-    S_i.append(tmp)
-  
-  if p_g > 0:
-    # calculate S for the gradient operator
-    S_g = (gamma*rho/grad_norm)
-  
-  
-  if p_g == 0:
-    T_i = np.zeros((1,) + img_shape, dtype = np.float32)
-  else:
-    T_i = np.zeros((2,) + img_shape, dtype = np.float32)
-    T_i[1,...] = rho*p_g/(gamma*grad_norm)
-  
-  
-  ones_sino = np.ones(proj.sino_params.shape, dtype = np.float32)
-  
-  tmp = pet_back_model(ones_sino, proj, attn_sino, sens_sino, 0, fwhm = fwhm)
-  T_i[0,...] = (rho*p_p/gamma) / tmp  
-  
-  T = T_i.min(axis = 0)
+cost_spdhg_lm = np.zeros((len(gammas),niter))
+
+for ig,gamma in enumerate(gammas):
+
+  #S_i = []
+  #ones_img = np.ones(img_shape, dtype = np.float32)
+  #for i in range(nsubsets):
+  #  ss = slice(i,None,nsubsets)
+  #  tmp = (gamma*rho) / pet_fwd_model_lm(ones_img, lmproj, events[ss,:5], 
+  #                                       attn_list[ss], sens_list[ss], fwhm = fwhm)
+  #  tmp[tmp == np.inf] = tmp[tmp != np.inf].max()
+  #  S_i.append(tmp)
+  #
+  #if p_g > 0:
+  #  # calculate S for the gradient operator
+  #  S_g = (gamma*rho/grad_norm)
+  #
+  #
+  #if p_g == 0:
+  #  T_i = np.zeros((1,) + img_shape, dtype = np.float32)
+  #else:
+  #  T_i = np.zeros((2,) + img_shape, dtype = np.float32)
+  #  T_i[1,...] = rho*p_g/(gamma*grad_norm)
+  #
+  #
+  #ones_sino = np.ones(proj.sino_params.shape, dtype = np.float32)
+  #
+  #tmp = pet_back_model(ones_sino, proj, attn_sino, sens_sino, 0, fwhm = fwhm)
+  #T_i[0,...] = (rho*p_p/gamma) / tmp  
+  #
+  #T = T_i.min(axis = 0)
+
+  S_i = (gamma*rho/pet_norm)*np.ones(nsubsets)
+  T   = rho*p_p/(gamma*pet_norm)
   
   #--------------------------------------------------------------------------------------------
   # initialize variables
@@ -248,15 +309,16 @@ for gamma in gammas:
         ss = slice(i,None,nsubsets)
   
         x = np.clip(x - T*zbar, 0, None)
-  
+
         y_plus = y[ss] + S_i[i]*(pet_fwd_model_lm(x, lmproj, events[ss,:5], 
                                                   attn_list[ss], sens_list[ss], 
-                                                  fwhm = fwhm) + contam_list[ss])
+                                                  fwhm = fwhm) + contam_list[ss])/events[ss,5]
   
         # apply the prox for the dual of the poisson logL
-        y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*S_i[i]*events[ss,5]))
+        #y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*S_i[i]*events[ss,5]))
+        y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*S_i[i]))
   
-        dz = pet_back_model_lm(y_plus - y[ss], lmproj, events[ss,:5], 
+        dz = pet_back_model_lm((y_plus - y[ss])/events[ss,5], lmproj, events[ss,:5], 
                                attn_list[ss], sens_list[ss], fwhm = fwhm)
   
         # update variables
@@ -281,6 +343,9 @@ for gamma in gammas:
         y_grad = y_grad_plus.copy()
         zbar = z + dz/p_g
 
+    # calculate the cost
+    cost_spdhg_lm[ig,it] = calc_cost(x)
+
   xs.append(x)
 
 xs = np.array(xs)
@@ -298,11 +363,19 @@ ax[1,0].set_title('p.s. sino SPDHG', fontsize = 'medium')
 for i,gam in enumerate(gammas):
   ax[0,i+1].imshow(xs[i,...].squeeze(), vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
   ax[1,i+1].imshow(gaussian_filter(xs[i,...], sigs).squeeze(), vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
-  ax[0,i+1].set_title(f'LM SPDHG {gamma:.1e}', fontsize = 'medium')
-  ax[1,i+1].set_title(f'p.s. LM SPDHG {gamma:.1e}', fontsize = 'medium')
+  ax[0,i+1].set_title(f'LM SPDHG {gam:.1e}', fontsize = 'medium')
+  ax[1,i+1].set_title(f'p.s. LM SPDHG {gam:.1e}', fontsize = 'medium')
 
 for axx in ax.ravel():
   axx.set_axis_off()
 
 fig.tight_layout()
 fig.show()
+
+fig2, ax2 = plt.subplots()
+ax2.plot(cost_spdhg_sino[5:], label = 'SPDHG SINO')
+for ig, gam in enumerate(gammas):
+  ax2.plot(cost_spdhg_lm[ig,5:], label = f'SPDHG LM {gam:.2e}')
+ax2.legend()
+fig2.tight_layout()
+fig2.show()
