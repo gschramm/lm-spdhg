@@ -94,16 +94,19 @@ def SPDHG(sens, b, contam, niter = 100, rho = 0.999, gamma = 1, verbose = False,
   return x
 
 #---------------------------------------------------------------------------------------------
-def PDHG_LM(sens, events, mu, contam_list, 
-            niter = 100, rho = 0.999, gamma = 1, verbose = False, precond = False):
+def SPDHG_LM(sens, events, mu, contam_list, 
+             niter = 100, rho = 0.999, gamma = 1, verbose = False, precond = False):
+
+  # probability that a subset gets chosen (using 2 subsets)
+  p_p = 0.5  
+
   # set step sizes
   if precond:
-    S    = (gamma*rho/fwd_lm(1,sens,events))
-    T     = rho/(gamma*back(np.ones(2),sens))
+    S = gamma*rho/sens
+    T = p_p*(rho/(gamma*sens)).min()
   else:
-    norm = np.linalg.norm(sens)
-    S    = (gamma*rho/norm)
-    T     = rho/(gamma*norm)
+    S = [gamma*rho/sens[0], gamma*rho/sens[1]]
+    T = p_p*min(rho/(gamma*sens[0]),rho/(gamma*sens[1]))
 
   x = 0
 
@@ -117,23 +120,23 @@ def PDHG_LM(sens, events, mu, contam_list,
   z    = back(yh, sens)
   zbar = z.copy()
 
-  cc = contam_list
-
   for i in range(niter):
+    ss = slice(np.random.randint(0,2),None,2)
+
     x = np.clip(x - T*zbar, 0, None)
-    if verbose: print(x)
-    
-    y_plus = y + S*(fwd_lm(x, sens, events) + cc)
+    if verbose: print(i, ss, x)
+
+    y_plus = y[ss] + S[ss]*(fwd_lm(x, sens, events[ss]) + contam_list[ss])
     
     # apply the prox for the dual of the poisson logL
-    y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*S*mu))
+    y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*S[ss]*mu[ss]))
     
-    dz = back_lm((y_plus - y)/mu, sens, events)
+    dz = back_lm((y_plus - y[ss])/mu[ss], sens, events[ss])
     
     # update variables
-    z = z + dz
-    y = y_plus.copy()
-    zbar = z + dz
+    z     = z + dz
+    y[ss] = y_plus.copy()
+    zbar  = z + dz/p_p
 
   return x
 
@@ -141,20 +144,20 @@ def PDHG_LM(sens, events, mu, contam_list,
 
 #---------------------------------------------------------------------------------------------
 
-sens   = np.array([1,0.1])
+sens   = np.array([1,0.5])
 contam = np.array([0.02,0.01])
 
 # simulate data
 xtrue = 1*1.2
 ytrue = fwd(xtrue, sens) + contam
 
-seeds = np.arange(10)
-#seeds = np.array([31])  # intereting case where b = [0,1]
+seeds = np.arange(32)
+# 31 intereting case where b = [0,1]
 
 xML       = np.zeros(seeds.shape[0])
 xMLEM     = np.zeros(seeds.shape[0])
 xSPDHG    = np.zeros(seeds.shape[0])
-xPDHG_LM  = np.zeros(seeds.shape[0])
+xSPDHG_LM = np.zeros(seeds.shape[0])
 
 niter = 200
 
@@ -163,28 +166,40 @@ for i, seed in enumerate(seeds):
   
   # generate noise realization (histogram)
   b = np.random.poisson(ytrue)
+  print(b)
   
   # generate LM events stream
   events = np.zeros(b.sum(), dtype = np.uint8)
   events[b[0]:] = 1 
-  mu            = b[events]
 
+  # shuffle the LM events
+  tmp = np.arange(events.shape[0])
+  np.random.shuffle(tmp)
+  events = events[tmp]
+
+  # counts for each LOR in LM stream
+  mu = b[events]
+
+  # analystic ML solution
   xML[i]   = ML(sens, b, contam)
 
   xSPDHG[i]    = SPDHG(sens, b, contam, niter = niter, gamma = 1/xtrue,
                        verbose = False, precond = True)
-  xPDHG_LM[i] = PDHG_LM(sens, events, mu, contam[events], niter = niter, gamma = 1/xtrue, 
-                        verbose = False, precond = True)
+  xSPDHG_LM[i] = SPDHG_LM(sens, events, mu, contam[events], niter = niter, gamma = 1/xtrue, 
+                          verbose = False, precond = True)
 
 xML2 = np.clip(xML,0,None)
 
 print('SPDHG    max diff vs non-neg ML', np.abs(xSPDHG - xML2).max())
-print('PDHG_LM max diff vs non-neg ML', np.abs(xPDHG_LM - xML2).max())
+print('SPDHG_LM max diff vs non-neg ML', np.abs(xSPDHG_LM - xML2).max())
 
 fig, ax = plt.subplots(figsize = (5,5))
-ax.plot(xML2,xML2,'-')
-ax.plot(xML2,xSPDHG,'.')
-ax.plot(xML2,xPDHG_LM,'.')
+ax.plot([0,xML2.max()],[0,xML2.max()],'-')
+ax.plot(xML2,xSPDHG, 'x', label = 'SPDHG')
+ax.plot(xML2,xSPDHG_LM, '.', label = 'LM SPDHG')
 ax.grid(ls = ':')
+ax.legend()
+ax.set_xlabel('analytic ML solution')
+ax.set_ylabel('SPDHG solution')
 fig.tight_layout()
 fig.show()
