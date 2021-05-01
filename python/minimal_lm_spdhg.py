@@ -10,12 +10,12 @@ def fwd(x, sens):
   return x*sens
 
 #---------------------------------------------------------------------------------------------
-def fwd_lm(x, sens, events):
-  return x*sens[events]
-
-#---------------------------------------------------------------------------------------------
 def back(y, sens): 
   return (y*sens).sum()
+
+#---------------------------------------------------------------------------------------------
+def fwd_lm(x, sens, events):
+  return x*sens[events]
 
 #---------------------------------------------------------------------------------------------
 def back_lm(y, sens, events): 
@@ -54,15 +54,18 @@ def MLEM(x, sens, b, contam, niter = 100):
   return x
 
 #---------------------------------------------------------------------------------------------
-def PDHG(sens, b, contam, niter = 100, rho = 0.999, gamma = 1, verbose = False, precond = False):
+def SPDHG(sens, b, contam, niter = 100, rho = 0.999, gamma = 1, verbose = False, precond = False):
+
+  # probability that a subset gets chosen (using 2 subsets)
+  p_p = 0.5  
+
   # set step sizes
   if precond:
-    S    = (gamma*rho/fwd(1,sens))
-    T     = rho/(gamma*back(np.ones(2),sens))
+    S = gamma*rho/sens
+    T = p_p*(rho/(gamma*sens)).min()
   else:
-    norm = np.linalg.norm(sens)
-    S    = (gamma*rho/norm)
-    T     = rho/(gamma*norm)
+    S = [gamma*rho/sens[0], gamma*rho/sens[1]]
+    T = p_p*min(rho/(gamma*sens[0]),rho/(gamma*sens[1]))
 
   x = 0
   y = np.zeros(b.shape)
@@ -71,20 +74,22 @@ def PDHG(sens, b, contam, niter = 100, rho = 0.999, gamma = 1, verbose = False, 
   zbar = z.copy()
 
   for i in range(niter):
+    ss = np.random.randint(0,2)
+
     x = np.clip(x - T*zbar, 0, None)
-    if verbose: print(x)
+    if verbose: print(i, ss, x)
     
-    y_plus = y + S*(fwd(x,sens) + contam)
+    y_plus = y[ss]+ S[ss]*(fwd(x, sens[ss]) + contam[ss])
     
     # apply the prox for the dual of the poisson logL
-    y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*S*b))
-    
-    dz = back(y_plus - y, sens)
+    y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*S[ss]*b[ss]))
+   
+    dz = back(y_plus - y[ss], sens[ss])
     
     # update variables
-    z = z + dz
-    y = y_plus.copy()
-    zbar = z + dz
+    z     = z + dz
+    y[ss] = y_plus.copy()
+    zbar  = z + dz/p_p
 
   return x
 
@@ -136,22 +141,22 @@ def PDHG_LM(sens, events, mu, contam_list,
 
 #---------------------------------------------------------------------------------------------
 
-sens   = np.array([2,0.1])
+sens   = np.array([1,0.1])
 contam = np.array([0.02,0.01])
 
 # simulate data
-xtrue = 100*1.2
+xtrue = 1*1.2
 ytrue = fwd(xtrue, sens) + contam
 
-seeds = np.arange(100)
+seeds = np.arange(10)
 #seeds = np.array([31])  # intereting case where b = [0,1]
 
-xML      = np.zeros(seeds.shape[0])
-xMLEM    = np.zeros(seeds.shape[0])
-xPDHG    = np.zeros(seeds.shape[0])
-xPDHG_LM = np.zeros(seeds.shape[0])
+xML       = np.zeros(seeds.shape[0])
+xMLEM     = np.zeros(seeds.shape[0])
+xSPDHG    = np.zeros(seeds.shape[0])
+xPDHG_LM  = np.zeros(seeds.shape[0])
 
-niter = 20
+niter = 200
 
 for i, seed in enumerate(seeds):
   np.random.seed(seed)
@@ -166,19 +171,19 @@ for i, seed in enumerate(seeds):
 
   xML[i]   = ML(sens, b, contam)
 
-  xPDHG[i]    = PDHG(sens, b, contam, niter = niter, gamma = 1/xtrue,
-                     verbose = False, precond = True)
+  xSPDHG[i]    = SPDHG(sens, b, contam, niter = niter, gamma = 1/xtrue,
+                       verbose = False, precond = True)
   xPDHG_LM[i] = PDHG_LM(sens, events, mu, contam[events], niter = niter, gamma = 1/xtrue, 
                         verbose = False, precond = True)
 
 xML2 = np.clip(xML,0,None)
 
-print('PDHG    max diff vs non-neg ML', np.abs(xPDHG - xML2).max())
+print('SPDHG    max diff vs non-neg ML', np.abs(xSPDHG - xML2).max())
 print('PDHG_LM max diff vs non-neg ML', np.abs(xPDHG_LM - xML2).max())
 
 fig, ax = plt.subplots(figsize = (5,5))
 ax.plot(xML2,xML2,'-')
-ax.plot(xML2,xPDHG,'.')
+ax.plot(xML2,xSPDHG,'.')
 ax.plot(xML2,xPDHG_LM,'.')
 ax.grid(ls = ':')
 fig.tight_layout()
