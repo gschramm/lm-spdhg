@@ -10,8 +10,16 @@ def fwd(x, sens):
   return x*sens
 
 #---------------------------------------------------------------------------------------------
+def fwd_lm(x, sens, events):
+  return x*sens[events]
+
+#---------------------------------------------------------------------------------------------
 def back(y, sens): 
   return (y*sens).sum()
+
+#---------------------------------------------------------------------------------------------
+def back_lm(y, sens, events): 
+  return (y*sens[events]).sum()
 
 #---------------------------------------------------------------------------------------------
 def cost(x, sens, b, contam):
@@ -46,7 +54,7 @@ def MLEM(x, sens, b, contam, niter = 100):
   return x
 
 #---------------------------------------------------------------------------------------------
-def PDHG(sens, b, contam, niter = 100, rho = 0.999, gamma = 1, verbose = False, precond = True):
+def PDHG(sens, b, contam, niter = 100, rho = 0.999, gamma = 1, verbose = False, precond = False):
   # set step sizes
   if precond:
     S    = (gamma*rho/fwd(1,sens))
@@ -80,40 +88,98 @@ def PDHG(sens, b, contam, niter = 100, rho = 0.999, gamma = 1, verbose = False, 
 
   return x
 
+#---------------------------------------------------------------------------------------------
+def PDHG_LM(sens, events, mu, contam_list, 
+            niter = 100, rho = 0.999, gamma = 1, verbose = False, precond = False):
+  # set step sizes
+  if precond:
+    S    = (gamma*rho/fwd_lm(1,sens,events))
+    T     = rho/(gamma*back(np.ones(2),sens))
+  else:
+    norm = np.linalg.norm(sens)
+    S    = (gamma*rho/norm)
+    T     = rho/(gamma*norm)
+
+  x = 0
+
+  # dual variable for "lists"
+  y = np.zeros(events.shape)
+
+  # dual variable for "histograms"
+  yh = np.ones(sens.shape)
+  yh[events] = 0
+
+  z    = back(yh, sens)
+  zbar = z.copy()
+
+  cc = contam_list
+
+  for i in range(niter):
+    x = np.clip(x - T*zbar, 0, None)
+    if verbose: print(x)
+    
+    y_plus = y + S*(fwd_lm(x, sens, events) + cc)
+    
+    # apply the prox for the dual of the poisson logL
+    y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*S*mu))
+    
+    dz = back_lm((y_plus - y)/mu, sens, events)
+    
+    # update variables
+    z = z + dz
+    y = y_plus.copy()
+    zbar = z + dz
+
+  return x
+
+
 
 #---------------------------------------------------------------------------------------------
 
-sens   = np.array([1,0.1])
-contam = np.array([0.01,0.01])
+sens   = np.array([2,0.1])
+contam = np.array([0.02,0.01])
 
 # simulate data
-xtrue = 1*1.2
+xtrue = 100*1.2
 ytrue = fwd(xtrue, sens) + contam
 
-seeds = np.arange(1)
+seeds = np.arange(100)
 #seeds = np.array([31])  # intereting case where b = [0,1]
 
-xML   = np.zeros(seeds.shape[0])
-xMLEM = np.zeros(seeds.shape[0])
-xPDHG = np.zeros(seeds.shape[0])
+xML      = np.zeros(seeds.shape[0])
+xMLEM    = np.zeros(seeds.shape[0])
+xPDHG    = np.zeros(seeds.shape[0])
+xPDHG_LM = np.zeros(seeds.shape[0])
+
+niter = 20
 
 for i, seed in enumerate(seeds):
   np.random.seed(seed)
   
-  # generate noise realization
+  # generate noise realization (histogram)
   b = np.random.poisson(ytrue)
   
+  # generate LM events stream
+  events = np.zeros(b.sum(), dtype = np.uint8)
+  events[b[0]:] = 1 
+  mu            = b[events]
+
   xML[i]   = ML(sens, b, contam)
-  xPDHG[i] = PDHG(sens, b, contam, niter = 100, verbose = False, precond = True)
+
+  xPDHG[i]    = PDHG(sens, b, contam, niter = niter, gamma = 1/xtrue,
+                     verbose = False, precond = True)
+  xPDHG_LM[i] = PDHG_LM(sens, events, mu, contam[events], niter = niter, gamma = 1/xtrue, 
+                        verbose = False, precond = True)
 
 xML2 = np.clip(xML,0,None)
 
-print('PDHG max diff vs unconstrained ML', np.abs(xPDHG - xML).max())
-print('PDHG max diff vs   non-neg     ML', np.abs(xPDHG - xML2).max())
+print('PDHG    max diff vs non-neg ML', np.abs(xPDHG - xML2).max())
+print('PDHG_LM max diff vs non-neg ML', np.abs(xPDHG_LM - xML2).max())
 
 fig, ax = plt.subplots(figsize = (5,5))
 ax.plot(xML2,xML2,'-')
 ax.plot(xML2,xPDHG,'.')
+ax.plot(xML2,xPDHG_LM,'.')
 ax.grid(ls = ':')
 fig.tight_layout()
 fig.show()
