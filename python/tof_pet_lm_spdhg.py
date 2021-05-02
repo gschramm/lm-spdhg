@@ -20,8 +20,8 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--ngpus',    help = 'number of GPUs to use', default = 1,   type = int)
 parser.add_argument('--counts',   help = 'counts to simulate',    default = 1e6, type = float)
-parser.add_argument('--niter',    help = 'number of iterations',  default = 1,   type = int)
-parser.add_argument('--nsubsets', help = 'number of subsets',     default = 4,   type = int)
+parser.add_argument('--niter',    help = 'number of iterations',  default = 20,  type = int)
+parser.add_argument('--nsubsets', help = 'number of subsets',     default = 28,  type = int)
 parser.add_argument('--fwhm_mm',  help = 'psf modeling FWHM mm',  default = 4.5, type = float)
 parser.add_argument('--fwhm_data_mm',  help = 'psf for data FWHM mm',  default = 4.5, type = float)
 parser.add_argument('--phantom', help = 'phantom to use', default = 'brain2d')
@@ -162,11 +162,16 @@ for i in range(nsubsets):
 def calc_cost(x):
   cost = 0
 
+  ns = proj.nsubsets
+  proj.init_subsets(1)
+
   for i in range(proj.nsubsets):
     # get the slice for the current subset
     ss = proj.subset_slices[i]
     exp = ppp.pet_fwd_model(x, proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm) + contam_sino[ss]
     cost += (exp - em_sino[ss]*np.log(exp)).sum()
+
+  proj.init_subsets(ns)
 
   if beta > 0:
     x_grad = np.zeros((img.ndim,) + img.shape, dtype = np.float32)
@@ -241,7 +246,7 @@ else:
 p_p = (1 - p_g) / nsubsets
 
 xs     = []
-gammas = np.array([0.5/img.max(),1/img.max(),2/img.max()])
+gammas = np.array([1/img.max()])
 
 cost_spdhg_lm = np.zeros((len(gammas),niter))
 
@@ -312,11 +317,10 @@ for ig,gamma in enumerate(gammas):
 
         y_plus = y[ss] + S_i[i]*(pet_fwd_model_lm(x, lmproj, events[ss,:5], 
                                                   attn_list[ss], sens_list[ss], 
-                                                  fwhm = fwhm) + contam_list[ss])/events[ss,5]
+                                                  fwhm = fwhm) + contam_list[ss])
   
         # apply the prox for the dual of the poisson logL
-        #y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*S_i[i]*events[ss,5]))
-        y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*S_i[i]))
+        y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*S_i[i]*events[ss,5]))
   
         dz = pet_back_model_lm((y_plus - y[ss])/events[ss,5], lmproj, events[ss,:5], 
                                attn_list[ss], sens_list[ss], fwhm = fwhm)
