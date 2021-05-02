@@ -148,17 +148,18 @@ sens   = np.array([1,0.5])
 contam = np.array([0.02,0.01])
 
 # simulate data
-xtrue = 1*1.2
+xtrue = 10.0
 ytrue = fwd(xtrue, sens) + contam
 
-seeds   = np.arange(32)
-precond = False
+seeds   = np.arange(1000)
+precond = True
 
-xML       = []
-xSPDHG    = []
-xSPDHG_LM = []
+niter = 200
 
-niter = 500
+xML       = np.zeros(seeds.shape[0]) 
+xSPDHG    = np.zeros(seeds.shape[0]) 
+xSPDHG_LM = np.zeros(seeds.shape[0]) 
+
 
 for i, seed in enumerate(seeds):
   np.random.seed(seed)
@@ -168,12 +169,13 @@ for i, seed in enumerate(seeds):
   print(b)
 
   # we need >= 2 counts in order to have 2 subsets in LM
-  if b.sum() > 1:
-    # analystic ML solution
-    xML.append(ML(sens, b, contam))
-    xSPDHG.append(SPDHG(sens, b, contam, niter = niter, gamma = 1/xtrue,
-                        verbose = False, precond = precond))
+  # analystic ML solution
+  xML[i] = ML(sens, b, contam)
+  # histogram SPDHG
+  xSPDHG[i] = SPDHG(sens, b, contam, niter = niter, gamma = 1/xtrue,
+                    verbose = False, precond = precond)
  
+  if b.sum() > 0:
     # generate LM events stream
     events = np.zeros(b.sum(), dtype = np.uint8)
     events[b[0]:] = 1 
@@ -186,12 +188,11 @@ for i, seed in enumerate(seeds):
     # counts for each LOR in LM stream
     mu = b[events]
 
-    xSPDHG_LM.append(SPDHG_LM(sens, events, mu, contam[events], niter = niter, gamma = 1/xtrue, 
-                              verbose = False, precond = precond))
-
-xML       = np.array(xML)
-xSPDHG    = np.array(xSPDHG)
-xSPDHG_LM = np.array(xSPDHG_LM)
+    xSPDHG_LM[i] = SPDHG_LM(sens, events, mu, contam[events], niter = niter, gamma = 1/xtrue, 
+                            verbose = False, precond = precond)
+  else:
+    xSPDHG_LM[i] = 0
+  
 
 xML2 = np.clip(xML,0,None)
 
