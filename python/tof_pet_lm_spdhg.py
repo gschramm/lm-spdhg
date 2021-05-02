@@ -268,7 +268,7 @@ for ig,gamma in enumerate(gammas):
   x = np.zeros(img_shape, dtype = np.float32)
   y = np.zeros(events.shape[0], dtype = np.float32)
   
-  z    = pet_back_model((em_sino == 0).astype(np.float32), proj, attn_sino, sens_sino, 0, fwhm = fwhm)
+  z  = pet_back_model((em_sino == 0).astype(np.float32), proj, attn_sino, sens_sino, 0, fwhm = fwhm)
   zbar = z.copy()
   
   # allocate arrays for gradient operations
