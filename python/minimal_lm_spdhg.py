@@ -63,7 +63,7 @@ def SPDHG(sens, b, contam, niter = 100, rho = 0.999, gamma = 1, verbose = False)
   T = p_p*(rho/(gamma*sens)).min()
 
   x = 0
-  y = np.zeros(b.shape)
+  y = (b == 0).astype(float)
 
   z    = back(y, sens)
   zbar = z.copy()
@@ -134,15 +134,16 @@ def SPDHG_LM(sens, events, mu, contam_list,
 #---------------------------------------------------------------------------------------------
 
 sens   = np.array([1,0.5])
-contam = np.array([0.02,0.01])
+contam = np.array([0.2,0.1])
 
 # simulate data
-xtrue = 1.0
+xtrue = 0.5
 ytrue = fwd(xtrue, sens) + contam
 
-seeds   = np.arange(5)
+seeds   = np.arange(500)
 
-niter = 200
+niter = 100
+gamma = 1/xtrue
 
 xML       = np.zeros(seeds.shape[0]) 
 xSPDHG    = np.zeros(seeds.shape[0]) 
@@ -154,13 +155,12 @@ for i, seed in enumerate(seeds):
   
   # generate noise realization (histogram)
   b = np.random.poisson(ytrue)
-  print(b)
 
   # we need >= 2 counts in order to have 2 subsets in LM
   # analystic ML solution
   xML[i] = ML(sens, b, contam)
   # histogram SPDHG
-  xSPDHG[i] = SPDHG(sens, b, contam, niter = niter, gamma = 1/xtrue, verbose = False)
+  xSPDHG[i] = SPDHG(sens, b, contam, niter = niter, gamma = gamma, verbose = False)
  
   if b.sum() > 0:
     # generate LM events stream
@@ -175,7 +175,7 @@ for i, seed in enumerate(seeds):
     # counts for each LOR in LM stream
     mu = b[events]
 
-    xSPDHG_LM[i] = SPDHG_LM(sens, events, mu, contam[events], niter = niter, gamma = 1/xtrue, 
+    xSPDHG_LM[i] = SPDHG_LM(sens, events, mu, contam[events], niter = niter, gamma = gamma, 
                             verbose = False)
   else:
     xSPDHG_LM[i] = 0
@@ -187,12 +187,12 @@ print('SPDHG    max diff vs non-neg ML', np.abs(xSPDHG - xML2).max())
 print('SPDHG_LM max diff vs non-neg ML', np.abs(xSPDHG_LM - xML2).max())
 
 fig, ax = plt.subplots(figsize = (5,5))
-ax.plot([xML2.min(),xML2.max()],[xML2.min(),xML2.max()],'-')
-ax.plot(xML2,xSPDHG, 'x', label = 'SPDHG')
+ax.plot([xML2.min(),xML2.max()],[xML2.min(),xML2.max()],'k-',lw=0.5,label='identity')
+ax.plot(xML2,xSPDHG, 'x', label = 'SPDHG', ms = 8)
 ax.plot(xML2,xSPDHG_LM, '.', label = 'LM SPDHG')
 ax.grid(ls = ':')
 ax.legend()
-ax.set_xlabel('analytic ML solution')
+ax.set_xlabel('analytic (non-neg.) ML solution')
 ax.set_ylabel('SPDHG solution')
 fig.tight_layout()
 fig.show()
