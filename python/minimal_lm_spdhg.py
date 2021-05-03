@@ -54,18 +54,13 @@ def MLEM(x, sens, b, contam, niter = 100):
   return x
 
 #---------------------------------------------------------------------------------------------
-def SPDHG(sens, b, contam, niter = 100, rho = 0.999, gamma = 1, verbose = False, precond = False):
+def SPDHG(sens, b, contam, niter = 100, rho = 0.999, gamma = 1, verbose = False):
 
   # probability that a subset gets chosen (using 2 subsets)
   p_p = 0.5  
 
-  # set step sizes
-  if precond:
-    S = gamma*rho/sens
-    T = p_p*(rho/(gamma*sens)).min()
-  else:
-    S = [gamma*rho/sens[0], gamma*rho/sens[1]]
-    T = p_p*min(rho/(gamma*sens[0]),rho/(gamma*sens[1]))
+  S = gamma*rho/sens
+  T = p_p*(rho/(gamma*sens)).min()
 
   x = 0
   y = np.zeros(b.shape)
@@ -95,19 +90,13 @@ def SPDHG(sens, b, contam, niter = 100, rho = 0.999, gamma = 1, verbose = False,
 
 #---------------------------------------------------------------------------------------------
 def SPDHG_LM(sens, events, mu, contam_list, 
-             niter = 100, rho = 0.999, gamma = 1, verbose = False, precond = False):
+             niter = 100, rho = 0.999, gamma = 1, verbose = False):
 
   # probability that a subset gets chosen (using 2 subsets)
   p_p = 0.5  
 
-  # set step sizes
-  if precond:
-    S = [gamma*rho/fwd_lm(1,sens,events[slice(x,None,2)]) for x in [0,1]]
-    T = p_p*(rho/(gamma*sens)).min()
-    #T = p_p*np.array([rho/(gamma*back_lm(1,sens,events[slice(x,None,2)])) for x in [0,1]]).min(0)
-  else:
-    S = [gamma*rho/sens[0], gamma*rho/sens[1]]
-    T = p_p*min(rho/(gamma*sens[0]),rho/(gamma*sens[1]))
+  S = [gamma*rho/fwd_lm(1,sens,events[slice(x,None,2)]) for x in [0,1]]
+  T = rho/(gamma*back(np.ones(2),sens))
 
   x = 0
 
@@ -148,11 +137,10 @@ sens   = np.array([1,0.5])
 contam = np.array([0.02,0.01])
 
 # simulate data
-xtrue = 10.0
+xtrue = 1.0
 ytrue = fwd(xtrue, sens) + contam
 
-seeds   = np.arange(1000)
-precond = True
+seeds   = np.arange(5)
 
 niter = 200
 
@@ -172,8 +160,7 @@ for i, seed in enumerate(seeds):
   # analystic ML solution
   xML[i] = ML(sens, b, contam)
   # histogram SPDHG
-  xSPDHG[i] = SPDHG(sens, b, contam, niter = niter, gamma = 1/xtrue,
-                    verbose = False, precond = precond)
+  xSPDHG[i] = SPDHG(sens, b, contam, niter = niter, gamma = 1/xtrue, verbose = False)
  
   if b.sum() > 0:
     # generate LM events stream
@@ -189,7 +176,7 @@ for i, seed in enumerate(seeds):
     mu = b[events]
 
     xSPDHG_LM[i] = SPDHG_LM(sens, events, mu, contam[events], niter = niter, gamma = 1/xtrue, 
-                            verbose = False, precond = precond)
+                            verbose = False)
   else:
     xSPDHG_LM[i] = 0
   
