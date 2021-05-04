@@ -26,13 +26,20 @@ def plot_lm_spdhg_results(base_str, subdir = 'data'):
   # show the results
   vmax = 1.2*img.max()
   
-  fig, ax = plt.subplots(2,len(gammas)+1, figsize = (3*(len(gammas)+1),6))
+  fig, ax = plt.subplots(4,len(gammas)+1, figsize = (3*(len(gammas)+1),12))
   for i,gam in enumerate(gammas):
     ax[0,i].imshow(x_sino[i,...].squeeze(), vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
     ax[1,i].imshow(x_lm[i,...].squeeze(),   vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
+
+    ax[2,i].imshow(x_sino[i,...].squeeze() - ref_recon.squeeze(), 
+                   vmin = -0.2*vmax, vmax = 0.2*vmax, cmap = plt.cm.bwr)
+    ax[3,i].imshow(x_lm[i,...].squeeze() - ref_recon.squeeze(),   
+                   vmin = -0.2*vmax, vmax = 0.2*vmax, cmap = plt.cm.bwr)
   
-    ax[0,i].set_title(f'SPDHG {gam:.1e}', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
-    ax[1,i].set_title(f'LM SPDHG {gam:.1e}', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
+    ax[0,i].set_title(f'SINO {gam:.1e}', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
+    ax[1,i].set_title(f'LM {gam:.1e}', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
+    ax[2,i].set_title(f'bias SINO {gam:.1e}', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
+    ax[3,i].set_title(f'bias LM {gam:.1e}', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
   
   ax[0,-1].imshow(ref_recon.squeeze(), vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
   ax[1,-1].imshow(img.squeeze(),   vmin = 0, vmax = vmax, cmap = plt.cm.Greys)

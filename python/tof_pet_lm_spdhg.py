@@ -1,4 +1,3 @@
-# small demo for sinogram TOF OS-MLEM
 #TODO: - prox for dual of L1 and L2 form
 
 import os
@@ -96,6 +95,20 @@ proj        = ppp.SinogramProjector(scanner, sino_params, img.shape, nsubsets = 
                                     voxsize = voxsize, img_origin = img_origin, ngpus = ngpus,
                                     tof = True, sigma_tof = 60./2.35, n_sigmas = 3.)
 
+# power iterations to estimte norm of PET fwd operator
+rimg = np.random.rand(*img.shape).astype(np.float32)
+for i in range(40):
+  rimg_fwd = ppp.pet_fwd_model(rimg, proj, attn_sino, sens_sino, 0, fwhm = fwhm)
+  rimg     = ppp.pet_back_model(rimg_fwd, proj, attn_sino, sens_sino, 0, fwhm = fwhm)
+
+  pnsq     = np.linalg.norm(rimg)
+  rimg    /= pnsq
+  print(np.sqrt(pnsq))
+
+# scale the sensitivity and the image such that the norm of the PET fwd operator is approx 
+# eual to the norm of the 2D gradient operator
+sens_sino /= (np.sqrt(pnsq)/np.sqrt(8))
+
 # allocate array for the subset sinogram
 sino_shape = sino_params.shape
 img_fwd    = np.zeros(sino_shape, dtype = np.float32)
@@ -164,7 +177,7 @@ def _cb(x, **kwargs):
 #-------------------------------------------------------------------------------------
 # rerfence reconstruction using PDHG
 
-niter_ref = 3000
+niter_ref = 5000
 
 ref_fname = os.path.join('data', f'PDHG_{phantom}_TVbeta_{beta:.1E}_niter_{niter_ref}_counts_{counts:.1E}_seed_{seed}.npz')
 if os.path.exists(ref_fname):
@@ -172,13 +185,14 @@ if os.path.exists(ref_fname):
   ref_recon = tmp['ref_recon']
   cost_ref  = tmp['cost_ref']
 else:
-  cost_ref  = np.zeros(niter_ref)
-  
   ns = proj.nsubsets
   proj.init_subsets(1)
+
+  cost_ref  = np.zeros(niter_ref)
   ref_recon = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter_ref,
                     gamma = 1/img.max(), fwhm = fwhm, verbose = True, 
                     beta = beta, callback = _cb, callback_kwargs = {'cost': cost_ref})
+
   proj.init_subsets(ns)
 
   np.savez(ref_fname, ref_recon = ref_recon, cost_ref = cost_ref)
@@ -213,7 +227,7 @@ events, multi_index = sino_params.sinogram_to_listmode(em_sino,
 base_str = f'{phantom}_counts_{counts:.1E}_beta_{beta:.1E}_niter_{niter_ref}_{niter}_nsub_{nsubsets}'
 
 rho    = 0.999
-gammas = np.array([0.1,0.3,1,3,10,30]) / img.max()
+gammas = np.array([0.1,0.3,1,3,10]) / img.max()
 
 cost_spdhg_sino = np.zeros((len(gammas),niter))
 cost_spdhg_lm   = np.zeros((len(gammas),niter))
@@ -224,10 +238,15 @@ psnr_spdhg_lm   = np.zeros((len(gammas),niter))
 x_sino = np.zeros((len(gammas),) + img.shape)
 x_lm   = np.zeros((len(gammas),) + img.shape)
 
+x_early_sino = np.zeros((len(gammas),) + img.shape)
+x_early_lm   = np.zeros((len(gammas),) + img.shape)
+
 for ig,gamma in enumerate(gammas):
   # sinogram SPDHG
   proj.init_subsets(nsubsets)
-  cbs = {'cost':cost_spdhg_sino[ig,:],'psnr':psnr_spdhg_sino[ig,:],'xref':ref_recon}
+  cbs = {'cost':cost_spdhg_sino[ig,:],'psnr':psnr_spdhg_sino[ig,:],'xref':ref_recon,
+         'it_early':10,'x_early':x_early_sino[ig,:]}
+
   x_sino[ig,...] = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
                          fwhm = fwhm, gamma = gamma, rho = rho, verbose = True, 
                          beta = beta, callback = _cb, callback_kwargs = cbs)
@@ -235,7 +254,9 @@ for ig,gamma in enumerate(gammas):
 
 
   # LM SPDHG
-  cblm = {'cost':cost_spdhg_lm[ig,:],'psnr':psnr_spdhg_lm[ig,:],'xref':ref_recon}
+  cblm = {'cost':cost_spdhg_lm[ig,:],'psnr':psnr_spdhg_lm[ig,:],'xref':ref_recon,
+          'it_early':10,'x_early':x_early_lm[ig,:]}
+
   x_lm[ig,...] = spdhg_lm(events, multi_index,
                           em_sino, attn_sino, sens_sino, contam_sino, 
                           proj, lmproj, niter, nsubsets,
@@ -250,4 +271,5 @@ ofile = os.path.join('data',f'{base_str}.npz')
 np.savez(ofile, ref_recon = ref_recon, cost_ref = cost_ref,
                 cost_spdhg_sino = cost_spdhg_sino, psnr_spdhg_sino = psnr_spdhg_sino, 
                 cost_spdhg_lm   = cost_spdhg_lm, psnr_spdhg_lm = psnr_spdhg_lm, 
-                x_sino = x_sino, x_lm = x_lm, gammas = gammas, img = img, c_0 = c_0)
+                x_sino = x_sino, x_lm = x_lm, x_early_sino = x_early_sino, x_early_lm = x_early_lm,
+                gammas = gammas, img = img, c_0 = c_0)
