@@ -242,69 +242,12 @@ for ig,gamma in enumerate(gammas):
                           fwhm = fwhm, gamma = gamma, rho = rho, verbose = True, 
                           beta = beta, callback = _cb, callback_kwargs = cblm)
 #-----------------------------------------------------------------------------------------------------
+# calculate cost of initial recon (image full or zeros)
+c_0   = calc_cost(np.zeros(ref_recon.shape, dtype = np.float32))
+
 # save the results
 ofile = os.path.join('data',f'{base_str}.npz')
 np.savez(ofile, ref_recon = ref_recon, cost_ref = cost_ref,
                 cost_spdhg_sino = cost_spdhg_sino, psnr_spdhg_sino = psnr_spdhg_sino, 
                 cost_spdhg_lm   = cost_spdhg_lm, psnr_spdhg_lm = psnr_spdhg_lm, 
-                x_sino = x_sino, x_lm = x_lm, gammas = gammas)
-
-
-# show the results
-
-vmax = 1.2*img.max()
-
-fig, ax = plt.subplots(2,len(gammas)+1, figsize = (3*(len(gammas)+1),6))
-for i,gam in enumerate(gammas):
-  ax[0,i].imshow(x_sino[i,...].squeeze(), vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
-  ax[1,i].imshow(x_lm[i,...].squeeze(),   vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
-
-  ax[0,i].set_title(f'SPDHG {gam:.1e}', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
-  ax[1,i].set_title(f'LM SPDHG {gam:.1e}', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
-
-ax[0,-1].imshow(ref_recon.squeeze(), vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
-ax[1,-1].imshow(img.squeeze(),   vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
-ax[0,-1].set_title(f'reference PDHG', fontsize = 'medium')
-ax[1,-1].set_title(f'ground truth', fontsize = 'medium')
-
-for axx in ax.ravel():
-  axx.set_axis_off()
-
-fig.tight_layout()
-fig.savefig(os.path.join('data',f'{base_str}.png'))
-fig.show()
-
-
-
-c_ref = cost_ref.min()
-c_0   = calc_cost(np.zeros(img.shape, dtype = np.float32))
-n     = c_0 - c_ref
-ni    = np.arange(niter) + 1
-
-fig2, ax2 = plt.subplots(1,2, figsize = (10,5))
-for ig, gam in enumerate(gammas):
-  col = plt.get_cmap("tab10")(ig)
-  ax2[0].semilogy(ni, (cost_spdhg_sino[ig,:] - c_ref)/n, '-.', ms = 5,
-               label = f'SINO {gam:.2e}',color = col)
-  ax2[0].semilogy(ni, (cost_spdhg_lm[ig,:] - c_ref)/n, '-v', ms = 5, 
-               label = f'LM {gam:.2e}', color = col)
-  ax2[1].plot(ni, psnr_spdhg_sino[ig,:], '-.', ms = 5, color = col)
-  ax2[1].plot(ni, psnr_spdhg_lm[ig,:], '-v', ms = 5, color = col)
-
-ax2[0].grid(ls = ':')
-ax2[0].set_xlabel('iteration')
-ax2[0].set_ylabel('relative cost')
-ax2[1].grid(ls = ':')
-ax2[1].set_xlabel('iteration')
-ax2[1].set_ylabel('PSNR to reference')
-
-handles, labels = ax2[0].get_legend_handles_labels()
-fig2.legend(handles, labels, loc='upper center', ncol = len(gammas), fontsize = 'small')
-
-fig2.tight_layout()
-fig2.savefig(os.path.join('data',f'{base_str}_metrics.pdf'))
-fig2.savefig(os.path.join('data',f'{base_str}_metrics.png'))
-fig2.show()
-
-
-
+                x_sino = x_sino, x_lm = x_lm, gammas = gammas, img = img, c_0 = c_0)
