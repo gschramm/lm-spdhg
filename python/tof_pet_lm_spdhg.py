@@ -249,7 +249,7 @@ for ig,gamma in enumerate(gammas):
   # sinogram SPDHG
   proj.init_subsets(nsubsets)
   cbs = {'cost':cost_spdhg_sino[ig,:],'psnr':psnr_spdhg_sino[ig,:],'xref':ref_recon,
-         'it_early':10,'x_early':x_early_sino[ig,:]}
+         'it_early':20,'x_early':x_early_sino[ig,:]}
 
   x_sino[ig,...] = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
                          fwhm = fwhm, gamma = gamma, rho = rho, verbose = True, 
@@ -258,7 +258,7 @@ for ig,gamma in enumerate(gammas):
   # LM SPDHG
   proj.init_subsets(1)
   cblm = {'cost':cost_spdhg_lm[ig,:],'psnr':psnr_spdhg_lm[ig,:],'xref':ref_recon,
-          'it_early':10,'x_early':x_early_lm[ig,:]}
+          'it_early':20,'x_early':x_early_lm[ig,:]}
 
   x_lm[ig,...] = spdhg_lm(events, multi_index,
                           em_sino, attn_sino, sens_sino, contam_sino, 
@@ -268,7 +268,7 @@ for ig,gamma in enumerate(gammas):
 
   # LM SPDHG without preconditioning
   cblm2 = {'cost':cost_spdhg_lm2[ig,:],'psnr':psnr_spdhg_lm2[ig,:],'xref':ref_recon,
-          'it_early':10,'x_early':x_early_lm2[ig,:]}
+          'it_early':20,'x_early':x_early_lm2[ig,:]}
 
   x_lm2[ig,...] = spdhg_lm(events, multi_index,
                            em_sino, attn_sino, sens_sino, contam_sino, 
