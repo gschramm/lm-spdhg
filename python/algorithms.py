@@ -8,7 +8,7 @@ def spdhg_lm(events, multi_index,
              fwhm = 0, gamma = 1., rho = 0.999, verbose = False, 
              callback = None, subset_callback = None,
              callback_kwargs = None, subset_callback_kwargs = None,
-             beta = 0):
+             beta = 0, pet_operator_norm = None):
  
   # generate the 1d contamination, sensitivity and attenuation lists from the sinograms
   attn_list   = attn_sino[multi_index[:,0],multi_index[:,1],multi_index[:,2],0]
@@ -21,13 +21,12 @@ def spdhg_lm(events, multi_index,
   # p_g is the probablility for doing a gradient update
   # p_p is the probablility for doing a PET data subset update
   
-  ndim  = len([x for x in img_shape if x > 1])
-  
   if beta == 0:
     p_g = 0
   else: 
     p_g = 0.5
     # norm of the gradient operator = sqrt(ndim*4)
+    ndim  = len([x for x in img_shape if x > 1])
     grad_norm = np.sqrt(ndim*4)
   
   p_p = (1 - p_g) / nsubsets
@@ -36,31 +35,46 @@ def spdhg_lm(events, multi_index,
   # calculate S for the gradient operator
   if p_g > 0:
     S_g = (gamma*rho/grad_norm)
-  
+    # right now it is unclear why the extra 0.5 is needed
+    # but without for certain gammas we see wild osciallations
+    T_g = 0.5*p_g*rho/(gamma*grad_norm)
+
+  # calculate the "step sizes" S_i for the PET fwd operator
   S_i = []
-  ones_img = np.ones(img_shape, dtype = np.float32)
-  for i in range(nsubsets):
-    ss = slice(i,None,nsubsets)
-    tmp = (gamma*rho) / pet_fwd_model_lm(ones_img, lmproj, events[ss,:5], 
-                                         attn_list[ss], sens_list[ss], fwhm = fwhm)
-    tmp[tmp == np.inf] = tmp[tmp != np.inf].max()
-    S_i.append(tmp)
-  
-  
-  if p_g == 0:
-    T_i = np.zeros((1,) + img_shape, dtype = np.float32)
+  if pet_operator_norm is None:
+    ones_img = np.ones(img_shape, dtype = np.float32)
+
+    for i in range(nsubsets):
+      ss = slice(i,None,nsubsets)
+      # clip inf values
+      tmp = (gamma*rho) / pet_fwd_model_lm(ones_img, lmproj, events[ss,:5], 
+                                           attn_list[ss], sens_list[ss], fwhm = fwhm)
+      tmp[tmp == np.inf] = tmp[tmp != np.inf].max()
+      S_i.append(tmp)
   else:
-    T_i = np.zeros((2,) + img_shape, dtype = np.float32)
-    T_i[1,...] = rho*p_g/(gamma*grad_norm)
-  
-  
-  ones_sino = np.ones(proj.sino_params.shape, dtype = np.float32)
-  
-  tmp = pet_back_model(ones_sino, proj, attn_sino, sens_sino, 0, fwhm = fwhm)
-  T_i[0,...] = nsubsets*p_p*(rho/gamma)/tmp  
-  
+    for i in range(nsubsets):
+      S_i.append(nsubsets*(gamma*rho)/pet_operator_norm)
+
+
+  T_i = []
+  if pet_operator_norm is None:
+    ones_sino = np.ones(proj.sino_params.shape, dtype = np.float32)
+    tmp = pet_back_model(ones_sino, proj, attn_sino, sens_sino, 0, fwhm = fwhm)
+    T_i.append((1-p_g)*rho/(gamma*tmp))
+  else:
+    T_i.append((1-p_g)*rho/(gamma*pet_operator_norm))
+
+  if p_g > 0:
+    if isinstance(T_i[0],np.ndarray):
+      T_i.append(np.full(T_i[0].shape, T_g, dtype = T_i[0].dtype))
+    else:
+      T_i.append(T_g)
+
+  T_i = np.array(T_i)
+    
+  # take the element-wise min of the T_i's of all subsets
   T = T_i.min(axis = 0)
-        
+          
   #--------------------------------------------------------------------------------------------
   # initialize variables
   x = np.zeros(img_shape, dtype = np.float32)

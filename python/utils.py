@@ -2,19 +2,24 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-def plot_lm_spdhg_results(base_str, subdir = 'data'):
+def plot_lm_spdhg_results(base_str, subdir = 'data', precond = True):
   ofile    = os.path.join(subdir,f'{base_str}.npz')
   
   data = np.load(ofile)
   
   ref_recon       = data['ref_recon']
   cost_ref        = data['cost_ref']         
+  x_sino          = data['x_sino']          
   cost_spdhg_sino = data['cost_spdhg_sino'] 
   psnr_spdhg_sino = data['psnr_spdhg_sino'] 
-  cost_spdhg_lm   = data['cost_spdhg_lm']   
-  psnr_spdhg_lm   = data['psnr_spdhg_lm']   
-  x_sino          = data['x_sino']          
-  x_lm            = data['x_lm']              
+  if precond:
+    x_lm            = data['x_lm']              
+    cost_spdhg_lm   = data['cost_spdhg_lm']   
+    psnr_spdhg_lm   = data['psnr_spdhg_lm']   
+  else:
+    x_lm            = data['x_lm2']              
+    cost_spdhg_lm   = data['cost_spdhg_lm2']   
+    psnr_spdhg_lm   = data['psnr_spdhg_lm2']   
   gammas          = data['gammas']             
   img             = data['img']             
   c_0             = data['c_0']             
@@ -80,9 +85,9 @@ def plot_lm_spdhg_results(base_str, subdir = 'data'):
   fig2.show()
   
   # save the figures
-  fig.savefig(os.path.join(subdir,f'{base_str}.png'))
-  fig2.savefig(os.path.join(subdir,f'{base_str}_metrics.pdf'))
-  fig2.savefig(os.path.join(subdir,f'{base_str}_metrics.png'))
+  fig.savefig(os.path.join(subdir,f'{base_str}_precond_{precond}.png'))
+  fig2.savefig(os.path.join(subdir,f'{base_str}_precond_{precond}_metrics.pdf'))
+  fig2.savefig(os.path.join(subdir,f'{base_str}_precond_{precond}_metrics.png'))
 
 #----------------------------------------------------------------------------------------------------
 #----------------------------------------------------------------------------------------------------
@@ -90,9 +95,10 @@ def plot_lm_spdhg_results(base_str, subdir = 'data'):
 
 if __name__ == '__main__':
   from glob import glob
-  fnames = glob(os.path.join('data','brain2d*.npz'))
+  fnames = glob(os.path.join('data','brain2d*56*.npz'))
 
   for i, fname in enumerate(fnames):
     base_str = os.path.splitext(os.path.basename(fname))[0]
     if not os.path.exists(os.path.join('data',f'{base_str}.png')):
-      plot_lm_spdhg_results(base_str, subdir = 'data')
+      plot_lm_spdhg_results(base_str, subdir = 'data', precond = True)
+      plot_lm_spdhg_results(base_str, subdir = 'data', precond = False)
