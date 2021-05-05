@@ -63,6 +63,7 @@ foo bar
 %-----------------------------------------------------------------------------
 \begin{algorithm}[t]
 \begin{algorithmic}[1]
+\footnotesize
 \State \textbf{Initialize} $x,(S_i)_i,T,(p_i)_i,g$
 \State \textbf{Calculate} event counts $\mu_e$ for each e in $N$
 \State \textbf{Split} event list $N$ into $m$ sublists $N_i$
@@ -90,6 +91,19 @@ foo bar
 \label{alg:spdhg}
 \end{algorithm}
 %-----------------------------------------------------------------------------
+
+\begin{figure}[t]
+\centerline{\includegraphics[width=1.0\columnwidth]{./figs/brain2d_counts_1.0E+06_beta_2.0E-03_niter_5000_100_nsub_56_precond_False.png}}
+\caption{foo bar}
+\label{fig:recons}
+\end{figure}
+
+\begin{figure}[t]
+\centerline{\includegraphics[width=0.7\columnwidth]{./figs/brain2d_counts_1.0E+06_beta_2.0E-03_niter_5000_100_nsub_56_precond_False_metrics.pdf}}
+\caption{foo bar}
+\label{fig:cost}
+\end{figure}
+
 
 
 %\section{Introduction}
