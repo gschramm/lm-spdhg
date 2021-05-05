@@ -1,12 +1,15 @@
-# small demo for sinogram TOF OS-MLEM
+#TODO: - prox for dual of L1 and L2 form
 
 import os
 import matplotlib.pyplot as plt
 import pyparallelproj as ppp
 from pyparallelproj.phantoms import ellipse2d_phantom, brain2d_phantom
-from pyparallelproj.models import pet_fwd_model, pet_back_model, pet_fwd_model_lm, pet_back_model_lm
 from pyparallelproj.utils import grad, div
+from pyparallelproj.algorithms import spdhg
 
+from algorithms import spdhg_lm
+
+from scipy.ndimage import gaussian_filter
 import numpy as np
 import argparse
 
@@ -14,14 +17,15 @@ import argparse
 # parse the command line
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--ngpus',    help = 'number of GPUs to use', default = 0,   type = int)
+parser.add_argument('--ngpus',    help = 'number of GPUs to use', default = 1,   type = int)
 parser.add_argument('--counts',   help = 'counts to simulate',    default = 1e6, type = float)
-parser.add_argument('--niter',    help = 'number of iterations',  default = 4,   type = int)
+parser.add_argument('--niter',    help = 'number of iterations',  default = 20,  type = int)
 parser.add_argument('--nsubsets', help = 'number of subsets',     default = 28,  type = int)
 parser.add_argument('--fwhm_mm',  help = 'psf modeling FWHM mm',  default = 4.5, type = float)
 parser.add_argument('--fwhm_data_mm',  help = 'psf for data FWHM mm',  default = 4.5, type = float)
 parser.add_argument('--phantom', help = 'phantom to use', default = 'brain2d')
 parser.add_argument('--seed',    help = 'seed for random generator', default = 1, type = int)
+parser.add_argument('--beta',  help = 'TV weight',  default = 0, type = float)
 args = parser.parse_args()
 
 #---------------------------------------------------------------------------------
@@ -34,6 +38,7 @@ fwhm_mm       = args.fwhm_mm
 fwhm_data_mm  = args.fwhm_data_mm
 phantom       = args.phantom
 seed          = args.seed
+beta          = args.beta
 
 #---------------------------------------------------------------------------------
 
@@ -90,6 +95,20 @@ proj        = ppp.SinogramProjector(scanner, sino_params, img.shape, nsubsets = 
                                     voxsize = voxsize, img_origin = img_origin, ngpus = ngpus,
                                     tof = True, sigma_tof = 60./2.35, n_sigmas = 3.)
 
+# power iterations to estimte norm of PET fwd operator
+rimg = np.random.rand(*img.shape).astype(np.float32)
+for i in range(40):
+  rimg_fwd = ppp.pet_fwd_model(rimg, proj, attn_sino, sens_sino, 0, fwhm = fwhm)
+  rimg     = ppp.pet_back_model(rimg_fwd, proj, attn_sino, sens_sino, 0, fwhm = fwhm)
+
+  pnsq     = np.linalg.norm(rimg)
+  rimg    /= pnsq
+  print(np.sqrt(pnsq))
+
+# scale the sensitivity and the image such that the norm of the PET fwd operator is approx 
+# eual to the norm of the 2D gradient operator
+sens_sino /= (np.sqrt(pnsq)/np.sqrt(8))
+
 # allocate array for the subset sinogram
 sino_shape = sino_params.shape
 img_fwd    = np.zeros(sino_shape, dtype = np.float32)
@@ -117,10 +136,69 @@ else:
 
   em_sino = img_fwd + contam_sino
 
-#-------------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------
+def calc_cost(x):
+  cost = 0
 
-proj.init_subsets(nsubsets)
+  ns = proj.nsubsets
+  proj.init_subsets(1)
+
+  for i in range(proj.nsubsets):
+    # get the slice for the current subset
+    ss = proj.subset_slices[i]
+    exp = ppp.pet_fwd_model(x, proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm) + contam_sino[ss]
+    cost += (exp - em_sino[ss]*np.log(exp)).sum()
+
+  proj.init_subsets(ns)
+
+  if beta > 0:
+    x_grad = np.zeros((img.ndim,) + img.shape, dtype = np.float32)
+    grad(x, x_grad)
+    cost += beta*np.linalg.norm(x_grad, axis = 0).sum()
+
+  return cost
+
+def _cb(x, **kwargs):
+  it = kwargs.get('iteration',0)
+  it_early = kwargs.get('it_early',-1)
+
+  if it_early == it:
+    if 'x_early' in kwargs:
+      kwargs['x_early'][:] = x
+
+  if 'cost' in kwargs:
+    kwargs['cost'][it-1] = calc_cost(x)
+
+  if 'psnr' in kwargs:
+    MSE = ((x - kwargs['xref'])**2).mean()
+    kwargs['psnr'][it-1] = 20*np.log10(kwargs['xref'].max()/np.sqrt(MSE))
+
+
+#-------------------------------------------------------------------------------------
+# rerfence reconstruction using PDHG
+
+niter_ref = 5000
+
+ref_fname = os.path.join('data', f'PDHG_{phantom}_TVbeta_{beta:.1E}_niter_{niter_ref}_counts_{counts:.1E}_seed_{seed}.npz')
+if os.path.exists(ref_fname):
+  tmp = np.load(ref_fname)
+  ref_recon = tmp['ref_recon']
+  cost_ref  = tmp['cost_ref']
+else:
+  ns = proj.nsubsets
+  proj.init_subsets(1)
+
+  cost_ref  = np.zeros(niter_ref)
+  ref_recon = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter_ref,
+                    gamma = 1/img.max(), fwhm = fwhm, verbose = True, 
+                    beta = beta, callback = _cb, callback_kwargs = {'cost': cost_ref})
+
+  proj.init_subsets(ns)
+
+  np.savez(ref_fname, ref_recon = ref_recon, cost_ref = cost_ref)
+
+
+#-------------------------------------------------------------------------------------
 
 # create a listmode projector for the LM MLEM iterations
 lmproj = ppp.LMProjector(proj.scanner, proj.img_dim, voxsize = proj.voxsize, 
@@ -137,89 +215,61 @@ lmproj = ppp.LMProjector(proj.scanner, proj.img_dim, voxsize = proj.voxsize,
 # [:,4]   are the event TOF bins
 # [:,5]   are the events counts (mu_e)
 
-events      = []
-contam_list = []
-sens_list   = []
-attn_list   = []
-fwd_ones    = []
+events, multi_index = sino_params.sinogram_to_listmode(em_sino, 
+                                                       return_multi_index = True,
+                                                       return_counts = True)
 
-# calculate the "step sizes" S_i, T_i  for the projector
-ones_img = np.ones(tuple(lmproj.img_dim), dtype = np.float32)
-
-for i in range(nsubsets):
-  ss = proj.subset_slices[i]
-  tmp, multi_index = sino_params.sinogram_to_listmode(em_sino[ss], 
-                                                      subset = i, nsubsets = nsubsets,
-                                                      return_multi_index = True,
-                                                      return_counts = True)
-
-  events.append(tmp)
-  
-  contam_list.append(contam_sino[ss][multi_index[:,0],multi_index[:,1],multi_index[:,2], multi_index[:,3]])
-  sens_list.append(sens_sino[ss][multi_index[:,0],multi_index[:,1],multi_index[:,2],0])
-  attn_list.append(attn_sino[ss][multi_index[:,0],multi_index[:,1],multi_index[:,2],0])
-
-  # fwd project a ones image for the S_i step sizes
-  fwd_ones.append(pet_fwd_model(ones_img, proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm)[multi_index[:,0],multi_index[:,1],multi_index[:,2], multi_index[:,3]])
-
-# backproject the subset events in LM and sino mode as a cross check
-#back_imgs  = np.zeros((nsubsets,) + tuple(lmproj.img_dim))
-#back_imgs2 = np.zeros((nsubsets,) + tuple(lmproj.img_dim))
-#
-#for i in range(nsubsets):
-#  subset_events = events[i][:,:5]
-#  back_imgs[i,...] = lmproj.back_project(np.ones(subset_events.shape[0], dtype = np.float32), subset_events)
-#  back_imgs2[i,...] = proj.back_project(em_sino[proj.subset_slices[i]], subset = i)
 
 #-----------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------
-gamma     = 1/img.max()
-rho       = 0.999
-beta      = 0
-nsubsets  = proj.nsubsets
 
-img_shape = tuple(lmproj.img_dim)
+base_str = f'{phantom}_counts_{counts:.1E}_beta_{beta:.1E}_niter_{niter_ref}_{niter}_nsub_{nsubsets}'
 
-# setup the probabilities for doing a pet data or gradient update
-# p_g is the probablility for doing a gradient update
-# p_p is the probablility for doing a PET data subset update
+rho    = 0.999
+gammas = np.array([0.1,0.3,1,3,10]) / img.max()
 
-if beta == 0:
-  p_g = 0
-else: 
-  p_g = 0.5
-  # norm of the gradient operator = sqrt(ndim*4)
-  ndim  = len([x for x in img_shape if x > 1])
-  grad_norm = np.sqrt(ndim*4)
+cost_spdhg_sino = np.zeros((len(gammas),niter))
+cost_spdhg_lm   = np.zeros((len(gammas),niter))
 
-p_p = (1 - p_g) / nsubsets
+psnr_spdhg_sino = np.zeros((len(gammas),niter))
+psnr_spdhg_lm   = np.zeros((len(gammas),niter))
 
-S_i = []
-for i in range(nsubsets):
-  tmp = (gamma*rho) / fwd_ones[i]
-  tmp[tmp == np.inf] = tmp[tmp != np.inf].max()
-  S_i.append(tmp)
+x_sino = np.zeros((len(gammas),) + img.shape)
+x_lm   = np.zeros((len(gammas),) + img.shape)
 
-if p_g > 0:
-  # calculate S for the gradient operator
-  S_g = (gamma*rho/grad_norm)
+x_early_sino = np.zeros((len(gammas),) + img.shape)
+x_early_lm   = np.zeros((len(gammas),) + img.shape)
+
+for ig,gamma in enumerate(gammas):
+  # sinogram SPDHG
+  proj.init_subsets(nsubsets)
+  cbs = {'cost':cost_spdhg_sino[ig,:],'psnr':psnr_spdhg_sino[ig,:],'xref':ref_recon,
+         'it_early':10,'x_early':x_early_sino[ig,:]}
+
+  x_sino[ig,...] = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
+                         fwhm = fwhm, gamma = gamma, rho = rho, verbose = True, 
+                         beta = beta, callback = _cb, callback_kwargs = cbs)
+  proj.init_subsets(1)
 
 
-if p_g == 0:
-  T_i = np.zeros((nsubsets,) + img_shape, dtype = np.float32)
-else:
-  T_i = np.zeros(((nsubsets+1),) + img_shape, dtype = np.float32)
-  T_i[-1,...] = rho*p_g/(gamma*grad_norm)
+  # LM SPDHG
+  cblm = {'cost':cost_spdhg_lm[ig,:],'psnr':psnr_spdhg_lm[ig,:],'xref':ref_recon,
+          'it_early':10,'x_early':x_early_lm[ig,:]}
 
-for i in range(nsubsets):
-  # get the slice for the current subset
-  ss = proj.subset_slices[i]
-  # generate a subset sinogram full of ones
-  ones_sino = np.ones(proj.subset_sino_shapes[i] , dtype = np.float32)
+  x_lm[ig,...] = spdhg_lm(events, multi_index,
+                          em_sino, attn_sino, sens_sino, contam_sino, 
+                          proj, lmproj, niter, nsubsets,
+                          fwhm = fwhm, gamma = gamma, rho = rho, verbose = True, 
+                          beta = beta, callback = _cb, callback_kwargs = cblm)
+#-----------------------------------------------------------------------------------------------------
+# calculate cost of initial recon (image full or zeros)
+c_0   = calc_cost(np.zeros(ref_recon.shape, dtype = np.float32))
 
-  tmp = pet_back_model(ones_sino, proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm)
-  T_i[i,...] = (rho*p_p/gamma) / tmp  
-                                                       
-# take the element-wise min of the T_i's of all subsets
-T = T_i.min(axis = 0)
+# save the results
+ofile = os.path.join('data',f'{base_str}.npz')
+np.savez(ofile, ref_recon = ref_recon, cost_ref = cost_ref,
+                cost_spdhg_sino = cost_spdhg_sino, psnr_spdhg_sino = psnr_spdhg_sino, 
+                cost_spdhg_lm   = cost_spdhg_lm, psnr_spdhg_lm = psnr_spdhg_lm, 
+                x_sino = x_sino, x_lm = x_lm, x_early_sino = x_early_sino, x_early_lm = x_early_lm,
+                gammas = gammas, img = img, c_0 = c_0)

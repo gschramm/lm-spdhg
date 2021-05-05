@@ -54,21 +54,16 @@ def MLEM(x, sens, b, contam, niter = 100):
   return x
 
 #---------------------------------------------------------------------------------------------
-def SPDHG(sens, b, contam, niter = 100, rho = 0.999, gamma = 1, verbose = False, precond = False):
+def SPDHG(sens, b, contam, niter = 100, rho = 0.999, gamma = 1, verbose = False):
 
   # probability that a subset gets chosen (using 2 subsets)
   p_p = 0.5  
 
-  # set step sizes
-  if precond:
-    S = gamma*rho/sens
-    T = p_p*(rho/(gamma*sens)).min()
-  else:
-    S = [gamma*rho/sens[0], gamma*rho/sens[1]]
-    T = p_p*min(rho/(gamma*sens[0]),rho/(gamma*sens[1]))
+  S = gamma*rho/sens
+  T = p_p*(rho/(gamma*sens)).min()
 
   x = 0
-  y = np.zeros(b.shape)
+  y = (b == 0).astype(float)
 
   z    = back(y, sens)
   zbar = z.copy()
@@ -95,19 +90,13 @@ def SPDHG(sens, b, contam, niter = 100, rho = 0.999, gamma = 1, verbose = False,
 
 #---------------------------------------------------------------------------------------------
 def SPDHG_LM(sens, events, mu, contam_list, 
-             niter = 100, rho = 0.999, gamma = 1, verbose = False, precond = False):
+             niter = 100, rho = 0.999, gamma = 1, verbose = False):
 
   # probability that a subset gets chosen (using 2 subsets)
   p_p = 0.5  
 
-  # set step sizes
-  if precond:
-    S = [gamma*rho/fwd_lm(1,sens,events[slice(x,None,2)]) for x in [0,1]]
-    T = p_p*(rho/(gamma*sens)).min()
-    #T = p_p*np.array([rho/(gamma*back_lm(1,sens,events[slice(x,None,2)])) for x in [0,1]]).min(0)
-  else:
-    S = [gamma*rho/sens[0], gamma*rho/sens[1]]
-    T = p_p*min(rho/(gamma*sens[0]),rho/(gamma*sens[1]))
+  S = [gamma*rho/fwd_lm(1,sens,events[slice(x,None,2)]) for x in [0,1]]
+  T = rho/(gamma*back(np.ones(2),sens))
 
   x = 0
 
@@ -145,35 +134,35 @@ def SPDHG_LM(sens, events, mu, contam_list,
 #---------------------------------------------------------------------------------------------
 
 sens   = np.array([1,0.5])
-contam = np.array([0.02,0.01])
+contam = np.array([0.2,0.1])
 
 # simulate data
-xtrue = 1*1.2
+xtrue = 0.5
 ytrue = fwd(xtrue, sens) + contam
 
-seeds   = np.arange(32)
-precond = False
+seeds   = np.arange(500)
 
-xML       = []
-xSPDHG    = []
-xSPDHG_LM = []
+niter = 100
+gamma = 1/xtrue
 
-niter = 500
+xML       = np.zeros(seeds.shape[0]) 
+xSPDHG    = np.zeros(seeds.shape[0]) 
+xSPDHG_LM = np.zeros(seeds.shape[0]) 
+
 
 for i, seed in enumerate(seeds):
   np.random.seed(seed)
   
   # generate noise realization (histogram)
   b = np.random.poisson(ytrue)
-  print(b)
 
   # we need >= 2 counts in order to have 2 subsets in LM
-  if b.sum() > 1:
-    # analystic ML solution
-    xML.append(ML(sens, b, contam))
-    xSPDHG.append(SPDHG(sens, b, contam, niter = niter, gamma = 1/xtrue,
-                        verbose = False, precond = precond))
+  # analystic ML solution
+  xML[i] = ML(sens, b, contam)
+  # histogram SPDHG
+  xSPDHG[i] = SPDHG(sens, b, contam, niter = niter, gamma = gamma, verbose = False)
  
+  if b.sum() > 0:
     # generate LM events stream
     events = np.zeros(b.sum(), dtype = np.uint8)
     events[b[0]:] = 1 
@@ -186,12 +175,11 @@ for i, seed in enumerate(seeds):
     # counts for each LOR in LM stream
     mu = b[events]
 
-    xSPDHG_LM.append(SPDHG_LM(sens, events, mu, contam[events], niter = niter, gamma = 1/xtrue, 
-                              verbose = False, precond = precond))
-
-xML       = np.array(xML)
-xSPDHG    = np.array(xSPDHG)
-xSPDHG_LM = np.array(xSPDHG_LM)
+    xSPDHG_LM[i] = SPDHG_LM(sens, events, mu, contam[events], niter = niter, gamma = gamma, 
+                            verbose = False)
+  else:
+    xSPDHG_LM[i] = 0
+  
 
 xML2 = np.clip(xML,0,None)
 
@@ -199,12 +187,12 @@ print('SPDHG    max diff vs non-neg ML', np.abs(xSPDHG - xML2).max())
 print('SPDHG_LM max diff vs non-neg ML', np.abs(xSPDHG_LM - xML2).max())
 
 fig, ax = plt.subplots(figsize = (5,5))
-ax.plot([xML2.min(),xML2.max()],[xML2.min(),xML2.max()],'-')
-ax.plot(xML2,xSPDHG, 'x', label = 'SPDHG')
+ax.plot([xML2.min(),xML2.max()],[xML2.min(),xML2.max()],'k-',lw=0.5,label='identity')
+ax.plot(xML2,xSPDHG, 'x', label = 'SPDHG', ms = 8)
 ax.plot(xML2,xSPDHG_LM, '.', label = 'LM SPDHG')
 ax.grid(ls = ':')
 ax.legend()
-ax.set_xlabel('analytic ML solution')
+ax.set_xlabel('analytic (non-neg.) ML solution')
 ax.set_ylabel('SPDHG solution')
 fig.tight_layout()
 fig.show()
