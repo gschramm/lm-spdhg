@@ -90,13 +90,17 @@ def SPDHG(sens, b, contam, niter = 100, rho = 0.999, gamma = 1, verbose = False)
 
 #---------------------------------------------------------------------------------------------
 def SPDHG_LM(sens, events, mu, contam_list, 
-             niter = 100, rho = 0.999, gamma = 1, verbose = False):
+             niter = 100, rho = 0.999, gamma = 1, verbose = False, precond = True):
 
   # probability that a subset gets chosen (using 2 subsets)
   p_p = 0.5  
 
-  S = [gamma*rho/fwd_lm(1,sens,events[slice(x,None,2)]) for x in [0,1]]
-  T = rho/(gamma*back(np.ones(2),sens))
+  if precond:
+    S = [gamma*rho/fwd_lm(1,sens,events[slice(x,None,2)]) for x in [0,1]]
+    T = rho/(gamma*back(np.ones(2),sens))
+  else:
+    S = 2*[gamma*rho / np.linalg.norm(sens)] 
+    T = rho / (gamma*np.linalg.norm(sens)) 
 
   x = 0
 
@@ -137,12 +141,12 @@ sens   = np.array([1,0.5])
 contam = np.array([0.2,0.1])
 
 # simulate data
-xtrue = 0.5
+xtrue = 0.1
 ytrue = fwd(xtrue, sens) + contam
 
-seeds   = np.arange(500)
+seeds   = np.arange(50)
 
-niter = 100
+niter = 500
 gamma = 1/xtrue
 
 xML       = np.zeros(seeds.shape[0]) 
@@ -176,7 +180,7 @@ for i, seed in enumerate(seeds):
     mu = b[events]
 
     xSPDHG_LM[i] = SPDHG_LM(sens, events, mu, contam[events], niter = niter, gamma = gamma, 
-                            verbose = False)
+                            verbose = False, precond = True)
   else:
     xSPDHG_LM[i] = 0
   
