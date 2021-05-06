@@ -107,7 +107,7 @@ noting, however, that generalizations to other non-smooth priors as mentioned ab
 within the same framework. 
 The TV regularized TOF PET reconstruction method requires to solve the optimization problem
 %
-\begin{equation}
+\begin{equation} \label{eq:main_minimization_problem}
 \argmin _{x\geq 0} \sum_j (Px)_j -  d_j \log \left( (Px)_ j + s_j \right) + \beta \, \|\nabla x\|_{1},
 \end{equation}
 %
@@ -117,12 +117,12 @@ the effects of attenuation and normalization, $d$ are the acquired prompt TOF co
 The operator $\nabla$ is the gradient operator, $\|\nabla u \|_1$ is sum over all entries of the 
 pointwise Euclidean norm of $\nabla u$, and $\beta$ is a scalar controlling the level of regularization.
 
-To work with the emission data in list-mode format, we introduce the list-mode forward operator $P_N$
-that maps $x$ to ... 
-\todo[inline]{Martin: introduce LM fwd operator}. 
+To work with the emission data in list-mode format, given a list $N$ of detected events $e \in N$, we introduce the list-mode forward operator $P_N$ mapping image data $x$ to a data-vector of dimension $|N|$ via
+\[ (P_Nx)_e  = P_{j_e}x/\mu_{j_e} ,\]
+where $j_e$ is the sinogram-bin where event $e$ was detected and $\mu_{j_e}$ is the total number of events in list $N$ detected in the bin $j_e$. 
 
-Using the list-mode forward operator $P_N$, we propose the list-mode SPDHG (LM-SPDHG) as shown
-in Algorithm~\ref{alg:lmspdhg}.
+Using the list-mode forward operator $P_N$, and taking special care of sinogram bins where no events where detected, we equivalently reformulate problem \eqref{eq:main_minimization_problem} in terms of the list-mode operator $P_N$ and list mode data, and we propose the list-mode SPDHG (LM-SPDHG) as shown
+in Algorithm~\ref{alg:lmspdhg} for it's numerical solution.
 Note that (i) in every update involving the PET data, only a list-mode forward and back projection of
 a subset of the list-mode data is needed and (ii) only one additional array with the same length
 as the event list need to be kept in memory during the iterations.
