@@ -2,8 +2,8 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-base_str = 'brain2d_counts_1.0E+06_beta_2.0E-03_niter_5000_100_nsub_56'
-subdir   = os.path.join('..','..','python','data','20210505')
+base_str = 'brain2d_counts_1.0E+06_beta_4.0E-03_niter_10000_100_nsub_56'
+subdir   = os.path.join('..','..','python','data','20210506')
 precond  = False
 
 ofile    = os.path.join(subdir,f'{base_str}.npz')
@@ -50,10 +50,10 @@ for i,gam in enumerate(gammas):
   ax[3,i].imshow(x_lm[i,...].squeeze()[sl] - ref_recon.squeeze()[sl],   
                  vmin = -0.1*vmax, vmax = 0.1*vmax, cmap = plt.cm.bwr)
 
-  ax[0,i].set_title(f'SINO {gam:.1e}', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
-  ax[1,i].set_title(f'LM   {gam:.1e}', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
-  ax[2,i].set_title(f'diff to ref SINO {gam:.1e}', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
-  ax[3,i].set_title(f'diff to ref LM   {gam:.1e}', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
+  ax[0,i].set_title(f'SPDHG {gam:.1e}', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
+  ax[1,i].set_title(f'LM-SPDHG {gam:.1e}', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
+  ax[2,i].set_title(f'diff. SPDHG {gam:.1e}', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
+  ax[3,i].set_title(f'diff. LM-SPDHG {gam:.1e}', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
 
 ax[0,-1].imshow(ref_recon.squeeze()[sl], vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
 ax[1,-1].imshow(img.squeeze()[sl],       vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
@@ -70,7 +70,7 @@ c_ref = cost_ref.min()
 n     = c_0 - c_ref
 ni    = np.arange(niter) + 1
 
-fig2, ax2 = plt.subplots(1,1, figsize = (5,5))
+fig2, ax2 = plt.subplots(1,1, figsize = (5,2.5))
 for ig, gam in enumerate(gammas):
   col = plt.get_cmap("tab10")(ig)
   ax2.semilogy(ni, (cost_spdhg_sino[ig,:] - c_ref)/n, '-.', ms = 5,

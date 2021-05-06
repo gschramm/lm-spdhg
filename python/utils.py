@@ -95,7 +95,7 @@ def plot_lm_spdhg_results(base_str, subdir = 'data', precond = True):
 
 if __name__ == '__main__':
   from glob import glob
-  fnames = glob(os.path.join('data','brain2d*56*.npz'))
+  fnames = glob(os.path.join('data','brain2d*.npz'))
 
   for i, fname in enumerate(fnames):
     base_str = os.path.splitext(os.path.basename(fname))[0]
