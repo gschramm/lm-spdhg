@@ -32,9 +32,10 @@ T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 \markboth{IEEE NSS/MIC conference 2021}
 {Schramm \MakeLowercase{\textit{et al.}}: List-mode SPDHG}
 
+
 \begin{document}
-\title{Fast list-mode reconstruction of sparse TOF PET data with non-smooth priors} 
-\author{Georg Schramm and Martin Holler
+\title{\vspace{-0.5cm}Fast list-mode reconstruction of sparse TOF PET data with non-smooth priors} 
+\author{Georg Schramm and Martin Holler\vspace{-1cm}
 \thanks{G.S. is with the Department of Imaging and Pathology, Division of Nuclear Medicine,
 KU Leuven, Belgium, (e-mail: georg.schramm@kuleuven.be).}
 \thanks{M.H. is with the Institute of Mathematics and Scientific Computing, 
@@ -78,7 +79,7 @@ can be become problematic, especially when using GPUs.
 E.g., for modern PET TOF scanners with 25\,cm axial FOV and a TOF resolution of ca. 400\,ps, 
 a complete unmashed TOF sinogram in single precision for one bed position 
 has approximately $4.4\cdot10^9$ data bins, requiring ca. 17\,GB of memory.
-Note that the memory required to store a complete TOF sinogram will further 
+Note that the memory required to store a complete TOF sinogram and its sparsity will further 
 increase with better TOF resolution.
 Due to the large number of data bins and the limitations in injected dose and acquisition time,
 modern TOF sinograms are usually very sparse, meaning that in most data bins no data is
@@ -92,12 +93,12 @@ acquired 60\,min p.i., still around 70\% of the data bins are empty.
 Due to the very sparse nature of the acquired data, list-mode (event-by-event) type
 reconstruction algorithms - such as e.g. list-mode OSEM - are computationally more efficient
 than algorithms working with binned data (sinograms).
-E.g. a high count (1e8 events) and medium count (1e7 events) acquisition, 
-a complete forward and back projection for in list-mode is faster by a factor of 2 and 12,
+E.g., a high count (1e8 events) and medium count (1e7 events) acquisition, 
+a complete forward and back projection in list-mode is faster by roughly a factor of 2 and 20 for,
 respectively, compared to a sinogram projection for state of the art TOF PET scanner 
 with a TOF resolution of ca. 400\,ps.
-Hence, the aim of this work is present a modification of the convergent SPDHG algorithm
-that allows efficient processing of PET data in list-mode instead of sinograms.
+Motivated by this finding, the aim of this work is present a modification of the convergent 
+SPDHG algorithm that allows efficient processing of PET data in list-mode instead of sinograms.
 
 \section{Methods}
 
@@ -139,10 +140,11 @@ A software brain phantom with a typical gray to white matter contrast of 4:1 was
 based on the brainweb phantom and used to generate simulated data including the effects
 of attenuation and flat contamination (scattered) coincidences
 with a simulated scatter fraction of 16\%.
-Noisy simulated prompt emission TOF sinograms were generated for $10^6$ counts.
+Noisy simulated prompt emission TOF sinograms and corresponding list-mode data sets 
+were generated for $10^6$ counts.
 
 The simulated data were reconstructed with SPDHG and LM-SPDHG using 100 iterations, 56 subsets,
-and a fixed level regularization $beta = 0.002$ and different step size ratios.
+and a fixed level regularization $\beta = 0.002$ and different step size ratios.
 As in \cite{Ehrhardt2019}, convergence was monitored by tracking the relative cost function
 \[ c_\text{rel}(x) = (c(x) - c(x^*)) / (c(x^0) - c(x^*)). \]
 compared to an approximate minimizer $x^*$,
@@ -180,20 +182,56 @@ which was calculated using the deterministic (sinogram) PDHG with 10000 iteratio
 \caption{LM-SPDHG for PET reconstruction}
 \label{alg:lmspdhg}
 \end{algorithm}
+
 %-----------------------------------------------------------------------------
+
+\section{Results}
+
+As shown in Figure~\ref{fig:recons}, the reconstructions obtained with (sinogram) SPDHG and LM-SPDHG
+are very similar and very close to the reference reconstruction.
+Figure~\ref{fig:cost} demonstrates that the convergence of (sinogram) SPDHG and
+LM-SPDHG is very similar. In the early iterations, the convergence of LM-SPDHG is a bit slower, but
+at late iterations slightly lower values of the cost function are obtained with LM-SPDHG.
+Both figures show again that the choice of ratio between the step sizes $S_i$ and $T$ has
+a strong influence on the convergence speed.
 
 \begin{figure}[t]
 \centerline{\includegraphics[width=1.0\columnwidth]{./figs/brain2d_counts_1.0E+06_beta_2.0E-03_niter_10000_100_nsub_56_precond_False.png}}
-\caption{foo bar}
+\caption{Reconstructions using 100 iterations and 56 subsets with (sinogram) SPDHG (top row) and 
+LM-SPDHG (2nd row) for three different step size ratios. 
+There reference PDHG reconstruction without subsets and 10000 iterations and
+the ground truth image are shown in the last column. 
+The two bottom rows show the difference of the SPHDG and LM-SPDHG reconstructions with respect
+to the reference PDHG reconstruction, respectively.}
 \label{fig:recons}
 \end{figure}
 
 \begin{figure}[t]
 \centerline{\includegraphics[width=0.8\columnwidth]{./figs/brain2d_counts_1.0E+06_beta_2.0E-03_niter_10000_100_nsub_56_precond_False_metrics.pdf}}
-\caption{foo bar}
+\caption{Convergence of relative cost for SPDHG (dashed line) and LM-SPDHG (triangles) 
+for for three different step size ratios (colors).}
 \label{fig:cost}
 \end{figure}
 
+%-----------------------------------------------------------------------------
+
+\section{Discussion}
+
+The proposed LM-SPDHG algorithm allows to do iterative PET reconstruction of list-mode
+data with subsets and non-smooth priors.
+For sparse TOF PET data that results in substantially reduced memory requirement during
+the iterations and improved computational efficiency depending on the number of acquired
+events.
+However, preprocessing steps 2 and 5 pose a computational overhead. 
+Before the iterations, the event counts $\mu_e$ for every bin present in the event list
+have to be calculated and stored.
+Moreover, the variables have $z$ and $\bar{z}$ have to be initialized with a sinogram
+backprojection of $y$ which is in a way ``similar'' to the calcuation of the sensitivity
+image in list-mode OS-MLEM.
+For real 3D TOF PET data at usual count levels (especially in shorter frames), we still
+expect that the computation time of LM-SPDHG is shorter compared to SPDHG.
+In the future, we also plan to compare the results against the EM-TV algorithms that also
+allows list-mode processing.
 
 %-----------------------------------------------------------------------------
 %-----------------------------------------------------------------------------
