@@ -41,9 +41,9 @@ vmax = 1.2*img.max()
 
 sl = (slice(8,-8,None),slice(18,-18,None))
 
-fs = (0.7*3.2*(len(gammas)+1),4*3.2)
+fs = (0.8*3.2*(len(gammas)+1),4*3.2)
 fig = plt.figure(figsize = fs)
-grid  = ImageGrid(fig, (0,0,1,1),  # similar to subplot(111)
+grid  = ImageGrid(fig, (0.05,0,0.95,1),  # similar to subplot(111)
                  nrows_ncols=(len(gammas)+1, 4),  # creates 2x2 grid of axes
                  axes_pad=0.15,  # pad between axes in inch.
                  cbar_mode = 'edge',
@@ -78,33 +78,6 @@ for axx in grid:
   axx.set_axis_off()
 
 fig.show()
-
-#fig, ax = plt.subplots(4,len(gammas)+1, figsize = (0.8*2.5*(len(gammas)+1),4*2.5))
-#for i,gam in enumerate(gammas):
-#  i0 = ax[0,i].imshow(x_sino[i,...].squeeze()[sl], vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
-#  i1 = ax[1,i].imshow(x_lm[i,...].squeeze()[sl],   vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
-#
-#  i2 = ax[2,i].imshow(x_sino[i,...].squeeze()[sl] - ref_recon.squeeze()[sl], 
-#                 vmin = -0.1*vmax, vmax = 0.1*vmax, cmap = plt.cm.bwr)
-#  i3 = ax[3,i].imshow(x_lm[i,...].squeeze()[sl] - ref_recon.squeeze()[sl],   
-#                 vmin = -0.1*vmax, vmax = 0.1*vmax, cmap = plt.cm.bwr)
-#
-#  ax[0,i].set_title(f'SPDHG {gam:.1e}', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
-#  ax[1,i].set_title(f'LM-SPDHG {gam:.1e}', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
-#  ax[2,i].set_title(f'diff. SPDHG {gam:.1e}', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
-#  ax[3,i].set_title(f'diff. LM-SPDHG {gam:.1e}', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
-#
-#i01 = ax[0,-1].imshow(ref_recon.squeeze()[sl], vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
-#i11 = ax[1,-1].imshow(img.squeeze()[sl],       vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
-#
-#ax[0,-1].set_title(f'reference PDHG', fontsize = 'medium')
-#ax[1,-1].set_title(f'ground truth', fontsize = 'medium')
-#
-#for axx in ax.ravel():
-#  axx.set_axis_off()
-#
-#fig.tight_layout()
-#fig.show()
 
 c_ref = cost_ref.min()
 n     = c_0 - c_ref
