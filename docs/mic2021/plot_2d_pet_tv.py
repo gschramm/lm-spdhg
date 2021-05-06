@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import ImageGrid
 
 base_str = 'brain2d_counts_1.0E+06_beta_2.0E-03_niter_10000_100_nsub_56'
 subdir   = os.path.join('..','..','python','data','20210506')
@@ -40,39 +41,70 @@ vmax = 1.2*img.max()
 
 sl = (slice(8,-8,None),slice(18,-18,None))
 
-fig, ax = plt.subplots(4,len(gammas)+1, figsize = (0.6*3*(len(gammas)+1),12), constrained_layout=True)
+fs = (0.7*3.2*(len(gammas)+1),4*3.2)
+fig = plt.figure(figsize = fs)
+grid  = ImageGrid(fig, (0,0,1,1),  # similar to subplot(111)
+                 nrows_ncols=(len(gammas)+1, 4),  # creates 2x2 grid of axes
+                 axes_pad=0.15,  # pad between axes in inch.
+                 cbar_mode = 'edge',
+                 cbar_location = 'left'
+                 )
+
 for i,gam in enumerate(gammas):
-  i0 = ax[0,i].imshow(x_sino[i,...].squeeze()[sl], vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
-  i1 = ax[1,i].imshow(x_lm[i,...].squeeze()[sl],   vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
+  i0 = grid[0*4+i].imshow(x_sino[i,...].squeeze()[sl], vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
+  i1 = grid[1*4+i].imshow(x_lm[i,...].squeeze()[sl],   vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
 
-  i2 = ax[2,i].imshow(x_sino[i,...].squeeze()[sl] - ref_recon.squeeze()[sl], 
+  i2 = grid[2*4+i].imshow(x_sino[i,...].squeeze()[sl] - ref_recon.squeeze()[sl], 
+                     vmin = -0.1*vmax, vmax = 0.1*vmax, cmap = plt.cm.bwr)
+  i3 = grid[3*4+i].imshow(x_lm[i,...].squeeze()[sl] - ref_recon.squeeze()[sl],   
                  vmin = -0.1*vmax, vmax = 0.1*vmax, cmap = plt.cm.bwr)
-  i3 = ax[3,i].imshow(x_lm[i,...].squeeze()[sl] - ref_recon.squeeze()[sl],   
-                 vmin = -0.1*vmax, vmax = 0.1*vmax, cmap = plt.cm.bwr)
+  grid[0*4+i].set_title(f'SPDHG {gam:.1e}', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
+  grid[1*4+i].set_title(f'LM-SPDHG {gam:.1e}', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
+  grid[2*4+i].set_title(f'diff. SPDHG {gam:.1e}', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
+  grid[3*4+i].set_title(f'diff. LM-SPDHG {gam:.1e}', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
 
-  #fig.colorbar(i0, ax = ax[0,i], shrink = 0.5, location = 'bottom')
-  fig.colorbar(i1, ax = ax[1,i], shrink = 0.5, location = 'bottom')
-  #fig.colorbar(i2, ax = ax[2,i], shrink = 0.5, location = 'bottom')
-  fig.colorbar(i3, ax = ax[3,i], shrink = 0.5, location = 'bottom')
+grid.cbar_axes[0].colorbar(i0)
+grid.cbar_axes[1].colorbar(i1)
+grid.cbar_axes[2].colorbar(i2)
+grid.cbar_axes[3].colorbar(i3)
 
-  ax[0,i].set_title(f'SPDHG {gam:.1e}', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
-  ax[1,i].set_title(f'LM-SPDHG {gam:.1e}', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
-  ax[2,i].set_title(f'diff. SPDHG {gam:.1e}', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
-  ax[3,i].set_title(f'diff. LM-SPDHG {gam:.1e}', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
+i01 = grid[0*4+3].imshow(ref_recon.squeeze()[sl], vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
+i11 = grid[1*4+3].imshow(img.squeeze()[sl],       vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
 
-i01 = ax[0,-1].imshow(ref_recon.squeeze()[sl], vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
-i11 = ax[1,-1].imshow(img.squeeze()[sl],       vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
-#fig.colorbar(i01, ax = ax[0,-1], shrink = 0.5, location = 'bottom')
-fig.colorbar(i11, ax = ax[1,-1], shrink = 0.5, location = 'bottom')
+grid[0*4+3].set_title(f'reference PDHG', fontsize = 'medium')
+grid[1*4+3].set_title(f'ground truth', fontsize = 'medium')
 
-ax[0,-1].set_title(f'reference PDHG', fontsize = 'medium')
-ax[1,-1].set_title(f'ground truth', fontsize = 'medium')
-
-for axx in ax.ravel():
+for axx in grid:
   axx.set_axis_off()
 
-#fig.tight_layout()
 fig.show()
+
+#fig, ax = plt.subplots(4,len(gammas)+1, figsize = (0.8*2.5*(len(gammas)+1),4*2.5))
+#for i,gam in enumerate(gammas):
+#  i0 = ax[0,i].imshow(x_sino[i,...].squeeze()[sl], vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
+#  i1 = ax[1,i].imshow(x_lm[i,...].squeeze()[sl],   vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
+#
+#  i2 = ax[2,i].imshow(x_sino[i,...].squeeze()[sl] - ref_recon.squeeze()[sl], 
+#                 vmin = -0.1*vmax, vmax = 0.1*vmax, cmap = plt.cm.bwr)
+#  i3 = ax[3,i].imshow(x_lm[i,...].squeeze()[sl] - ref_recon.squeeze()[sl],   
+#                 vmin = -0.1*vmax, vmax = 0.1*vmax, cmap = plt.cm.bwr)
+#
+#  ax[0,i].set_title(f'SPDHG {gam:.1e}', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
+#  ax[1,i].set_title(f'LM-SPDHG {gam:.1e}', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
+#  ax[2,i].set_title(f'diff. SPDHG {gam:.1e}', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
+#  ax[3,i].set_title(f'diff. LM-SPDHG {gam:.1e}', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
+#
+#i01 = ax[0,-1].imshow(ref_recon.squeeze()[sl], vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
+#i11 = ax[1,-1].imshow(img.squeeze()[sl],       vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
+#
+#ax[0,-1].set_title(f'reference PDHG', fontsize = 'medium')
+#ax[1,-1].set_title(f'ground truth', fontsize = 'medium')
+#
+#for axx in ax.ravel():
+#  axx.set_axis_off()
+#
+#fig.tight_layout()
+#fig.show()
 
 c_ref = cost_ref.min()
 n     = c_0 - c_ref
