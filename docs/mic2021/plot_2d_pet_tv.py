@@ -2,7 +2,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-base_str = 'brain2d_counts_1.0E+06_beta_4.0E-03_niter_10000_100_nsub_56'
+base_str = 'brain2d_counts_1.0E+06_beta_2.0E-03_niter_10000_100_nsub_56'
 subdir   = os.path.join('..','..','python','data','20210506')
 precond  = False
 
