@@ -128,5 +128,5 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# user defined studd
+# user defined stuff
 docs/*
