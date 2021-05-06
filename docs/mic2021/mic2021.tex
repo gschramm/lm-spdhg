@@ -119,10 +119,10 @@ The operator $\nabla$ is the gradient operator, $\|\nabla u \|_1$ is sum over al
 pointwise Euclidean norm of $\nabla u$, and $\beta$ is a scalar controlling the level of regularization.
 
 To work with the emission data in list-mode format, given a list $N$ of detected events $e \in N$, we introduce the list-mode forward operator $P_N$ mapping image data $x$ to a data-vector of dimension $|N|$ via
-\[ (P^{LM}x)_e  = P_{j_e}x , \text{ for each }e \in N,\]
+\[ (P^{LM}_N x)_e  = (Px)_{j_e} , \text{ for each }e \in N,\]
 where $j_e$ is the sinogram bin in which event $e$ was detected.
 
-Using this list-mode forward operator $P_N$, and taking special care of sinogram bins where no events where detected, we can equivalently reformulate problem \eqref{eq:main_minimization_problem} in terms of the list-mode operator $P^{LM}_N$ and list-mode data. Building on this, we propose the list-mode SPDHG (LM-SPDHG) as shown in Algorithm~\ref{alg:lmspdhg} for the numerical solution of \eqref{eq:main_minimization_problem}.
+Using this list-mode forward operator $P^{LM}_N$, and taking special care of sinogram bins where no events where detected, we can equivalently reformulate problem \eqref{eq:main_minimization_problem} in terms of the list-mode operator $P^{LM}_N$ and list-mode data. Building on this, we propose the list-mode SPDHG (LM-SPDHG) as shown in Algorithm~\ref{alg:lmspdhg} for the numerical solution of \eqref{eq:main_minimization_problem}.
 
 Note that the main advantage of our algorithm, compared to a sinogram-based version, is that in every update involving the PET data, only a list-mode forward and back projection of
 a subset of the list-mode data is needed. Beyond that, only one additional array with the same length
