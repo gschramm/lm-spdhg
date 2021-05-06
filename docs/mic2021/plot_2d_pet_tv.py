@@ -40,30 +40,38 @@ vmax = 1.2*img.max()
 
 sl = (slice(8,-8,None),slice(18,-18,None))
 
-fig, ax = plt.subplots(4,len(gammas)+1, figsize = (0.8*3*(len(gammas)+1),12))
+fig, ax = plt.subplots(4,len(gammas)+1, figsize = (0.6*3*(len(gammas)+1),12), constrained_layout=True)
 for i,gam in enumerate(gammas):
-  ax[0,i].imshow(x_sino[i,...].squeeze()[sl], vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
-  ax[1,i].imshow(x_lm[i,...].squeeze()[sl],   vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
+  i0 = ax[0,i].imshow(x_sino[i,...].squeeze()[sl], vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
+  i1 = ax[1,i].imshow(x_lm[i,...].squeeze()[sl],   vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
 
-  ax[2,i].imshow(x_sino[i,...].squeeze()[sl] - ref_recon.squeeze()[sl], 
+  i2 = ax[2,i].imshow(x_sino[i,...].squeeze()[sl] - ref_recon.squeeze()[sl], 
                  vmin = -0.1*vmax, vmax = 0.1*vmax, cmap = plt.cm.bwr)
-  ax[3,i].imshow(x_lm[i,...].squeeze()[sl] - ref_recon.squeeze()[sl],   
+  i3 = ax[3,i].imshow(x_lm[i,...].squeeze()[sl] - ref_recon.squeeze()[sl],   
                  vmin = -0.1*vmax, vmax = 0.1*vmax, cmap = plt.cm.bwr)
+
+  #fig.colorbar(i0, ax = ax[0,i], shrink = 0.5, location = 'bottom')
+  fig.colorbar(i1, ax = ax[1,i], shrink = 0.5, location = 'bottom')
+  #fig.colorbar(i2, ax = ax[2,i], shrink = 0.5, location = 'bottom')
+  fig.colorbar(i3, ax = ax[3,i], shrink = 0.5, location = 'bottom')
 
   ax[0,i].set_title(f'SPDHG {gam:.1e}', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
   ax[1,i].set_title(f'LM-SPDHG {gam:.1e}', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
   ax[2,i].set_title(f'diff. SPDHG {gam:.1e}', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
   ax[3,i].set_title(f'diff. LM-SPDHG {gam:.1e}', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
 
-ax[0,-1].imshow(ref_recon.squeeze()[sl], vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
-ax[1,-1].imshow(img.squeeze()[sl],       vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
+i01 = ax[0,-1].imshow(ref_recon.squeeze()[sl], vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
+i11 = ax[1,-1].imshow(img.squeeze()[sl],       vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
+#fig.colorbar(i01, ax = ax[0,-1], shrink = 0.5, location = 'bottom')
+fig.colorbar(i11, ax = ax[1,-1], shrink = 0.5, location = 'bottom')
+
 ax[0,-1].set_title(f'reference PDHG', fontsize = 'medium')
 ax[1,-1].set_title(f'ground truth', fontsize = 'medium')
 
 for axx in ax.ravel():
   axx.set_axis_off()
 
-fig.tight_layout()
+#fig.tight_layout()
 fig.show()
 
 c_ref = cost_ref.min()
@@ -73,9 +81,9 @@ ni    = np.arange(niter) + 1
 fig2, ax2 = plt.subplots(1,1, figsize = (5,2.5))
 for ig, gam in enumerate(gammas):
   col = plt.get_cmap("tab10")(ig)
-  ax2.semilogy(ni, (cost_spdhg_sino[ig,:] - c_ref)/n, '-.', ms = 5,
+  ax2.semilogy(ni[::2], ((cost_spdhg_sino[ig,:] - c_ref)/n)[::2], '-', ms = 5,
                label = f'SINO {gam:.1e}',color = col)
-  ax2.semilogy(ni, (cost_spdhg_lm[ig,:] - c_ref)/n, '-v', ms = 5, 
+  ax2.semilogy(ni[::2], ((cost_spdhg_lm[ig,:] - c_ref)/n)[::2], '-o', ms = 2.5, 
                label = f'LM   {gam:.1e}', color = col)
 
 ax2.grid(ls = ':')
