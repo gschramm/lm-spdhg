@@ -124,10 +124,14 @@ where $d_e = 1$ for $e \in N$ and $d_0 = 0$.
 With this notation, the update step 6-8 of Algorithm \ref{alg:algorithm_general} for a subset $N_i \subset N$ only operate on the list-mode entries of this subset. That is, they map the image data forward to these list-mode entries (via $P_i= P_{N_i}$), carry out the prox on these entries, an project the data back to image space via $P_{N_i}^T$. The zero-entries only have to be incorporated once at the initialization step, where we have to initialize all list mode entries in $N \cup \{ 0\}$ with $\mu$ (or any value above $\mu$) and have to map back those entries via the adjoint transform $P^T$.
 The latter can be done as follows: Denote by $P_N$ the restriction of $P$ to $N$, i.e., $P_N:L^1(\Omega) \rightarrow N$, and by $P_0$ the mapping $u \mapsto \sum_{i: \nexists e \in N: i_e = i} (Ku)_{i_e}$. Then the adjoint of $P$ is given for $(a,b) \in \R^{|N|} \times \R$  as
 \[ P^T(a,b) = P_N^T a + P_0^T b \]
-with $P_N^T$ the regular adjoint of the list-mode operator and 
+with $P_N^T$ the regular adjoint of the list-mode operator, i.e., 
+\[ P_N^T a = \sum_{e \in N} K_{i_e} \left(\frac{a_e}{\mu_e}\right) = \sum_{i  \in M:\exists e:i_e = i} K^T_i \left( \sum_{e \in \{i\}} \frac{a_e}{\mu_e} \right), \] 
+ and 
 \[ P_0^Tb:= \sum_{i: \nexists e \in N: i_e = i} K_i^T b
 \]
-where $K_iu = (Ku)_i$ and $K_i^T$ is its adjoint (=transpose).
+where $K_iu = (Ku)_i$ and $K_i^T$ is its adjoint (=transpose). Note that, in particular, if we initialize all $y_e=1$ for $e \in N$ and $y_0 = 1$, we obtain that
+\[ P_N^Ty = \sum_{i \in M:\exists e:i_e = i} K^T_i 1  , \quad P_0^Ty_0 = \sum_{i \in M: :\nexists e:i_e = i}K_i^T 1,\]
+such that $P^T(y,y_0) = K^T1$, with $K^T$ the adjoint of the singram-base operator and $1$ the sinogram with all entries being constant one.
 
 
 

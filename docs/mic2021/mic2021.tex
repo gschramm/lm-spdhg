@@ -46,15 +46,15 @@ University of Graz, Austria}
 
 \begin{abstract}
 In this work, we propose and analyze a list-mode version of the stochastic primal-dual hybrid gradient
-(SPDHG) algorithm which (i) substantially reduces its memory requirements and (ii) reduces
-computation time when reconstruction sparse TOF PET data using subsets and non-smooth priors. 
+(SPDHG) algorithm for image reconstruction from TOF PET data using subsets and non-smooth priors. 
+By strongly exploiting sparsity in the TOF PET data, our proposed algorithm substantially reduces both memory requirements and computation time. 
 To study the behavior of the proposed algorithm in detail, its performance 
 is investigated based on simulated 2D TOF data using a brain-like software phantom.
 
-We find that listmode-version of SPDHG converges almost as fast the original version
+We find that our listmode-version of SPDHG converges essentially as fast the original version,
 which will lead to a substantial improvement in the time needed for a reconstruction
 of real 3D TOF PET data.
-However, a careful choice of the ratio of the primal and dual step sizes, 
+However, as with the original algorithm, a careful choice of the ratio of the primal and dual step sizes, 
 depending on the magnitude of the image to be reconstructed, is crucial to obtain fast convergence.
 \end{abstract}
 
@@ -66,7 +66,7 @@ Positron emission tomography, Reconstruction algorithms
 
 Recently, Chambolle et al. \cite{Chambolle2018} and  Ehrhardt et al. \cite{Ehrhardt2019} introduced 
 the stochastic primal-dual hybrid gradient (SPDHG) algorithm which is a provably convergent algorithm
-that allows to solve the PET reconstruction problem including many non-smooth priors with
+that allows to solve the sinogram-based PET reconstruction problem including many non-smooth priors with
 only a few iterations.
 As discussed in Remark 2 of \cite{Ehrhardt2019}, a potential drawback of SPDHG is that it requires
 to keep at least one more complete (TOF) sinogram ($y$) in memory. 
@@ -76,7 +76,7 @@ In general, this is less of a problem for static single-bed non-TOF PET data, wh
 are relatively small.
 However, for simultaneous multi-bed, dynamic or TOF PET data, the size of complete sinograms
 can be become problematic, especially when using GPUs.
-E.g., for modern PET TOF scanners with 25\,cm axial FOV and a TOF resolution of ca. 400\,ps, 
+For example, for modern PET TOF scanners with 25\,cm axial FOV and a TOF resolution of ca. 400\,ps, 
 a complete unmashed TOF sinogram in single precision for one bed position 
 has approximately $4.4\cdot10^9$ data bins, requiring ca. 17\,GB of memory.
 Note that the memory required to store a complete TOF sinogram and its sparsity will further 
@@ -93,12 +93,16 @@ acquired 60\,min p.i., still around 70\% of the data bins are empty.
 Due to the very sparse nature of the acquired data, list-mode (event-by-event) type
 reconstruction algorithms - such as e.g. list-mode OSEM - are computationally more efficient
 than algorithms working with binned data (sinograms).
-E.g., a high count (1e8 events) and medium count (1e7 events) acquisition, 
-a complete forward and back projection in list-mode is faster by roughly a factor of 2 and 20 for,
+For example, with a high count (1e8 events) and a medium count (1e7 events) acquisition, 
+a complete forward and back projection in list-mode is faster by roughly a factor of 2 and 20,
 respectively, compared to a sinogram projection for state of the art TOF PET scanner 
 with a TOF resolution of ca. 400\,ps.
-Motivated by this finding, the aim of this work is present a modification of the convergent 
-SPDHG algorithm that allows efficient processing of PET data in list-mode instead of sinograms.
+Motivated by this finding, 
+in this work we present an adaption of the SPDHG algorithm that maintains global convergence guarantees while allowing to work only with list-mode data during iterations.
+With this, in particular, the iterations of our algorithm can completely ignore sinogram bins where no events where detected.
+
+%the aim of this work is to present a modification of the convergent 
+%SPDHG algorithm that allows efficient processing of PET data in list-mode instead of sinograms.
 
 \section{Methods}
 
@@ -118,16 +122,18 @@ The operator $\nabla$ is the gradient operator, $\|\nabla u \|_1$ is sum over al
 pointwise Euclidean norm of $\nabla u$, and $\beta$ is a scalar controlling the level of regularization.
 
 To work with the emission data in list-mode format, given a list $N$ of detected events $e \in N$, we introduce the list-mode forward operator $P_N$ mapping image data $x$ to a data-vector of dimension $|N|$ via
-\[ (P_Nx)_e  = P_{j_e}x/\mu_{j_e} ,\]
-where $j_e$ is the sinogram-bin where event $e$ was detected and $\mu_{j_e}$ is the total number of events in list $N$ detected in the bin $j_e$. 
+\[ (P_Nx)_e  = P_{j_e}x , \text{ for each }e \in N,\]
+where $j_e$ is the sinogram-bin in which event $e$ was detected.
+% and $\mu_{e}$ is the total number of events in list $N$ detected in the bin $j_e$.%, i.e., if a certain event detected in bin $i$ is present $n$ times in the event list $N$, then $\mu_e = n$.
 
-Using the list-mode forward operator $P_N$, and taking special care of sinogram bins where no events where detected, we equivalently reformulate problem \eqref{eq:main_minimization_problem} in terms of the list-mode operator $P_N$ and list mode data, and we propose the list-mode SPDHG (LM-SPDHG) as shown
-in Algorithm~\ref{alg:lmspdhg} for it's numerical solution.
-Note that (i) in every update involving the PET data, only a list-mode forward and back projection of
-a subset of the list-mode data is needed and (ii) only one additional array with the same length
-as the event list need to be kept in memory during the iterations.
-In the pre-processing step 2, the event counts $\mu_e$ need to be calculated once for every event in $N$.
-If a certain event detected in bin $i$ is present $n$ times in the event list $N$, then $\mu_e = n$.
+Using this list-mode forward operator $P_N$, and taking special care of sinogram bins where no events where detected, we can equivalently reformulate problem \eqref{eq:main_minimization_problem} in terms of the list-mode operator $P_N$ and list mode data. Building on this, we propose the list-mode SPDHG (LM-SPDHG) as shown
+in Algorithm~\ref{alg:lmspdhg} algorithm for the numerical solution of \eqref{eq:main_minimization_problem}
+
+Note that the main advantage of our algorithm, compared to a sinogram-based version, is that in every update involving the PET data, only a list-mode forward and back projection of
+a subset of the list-mode data is needed. Beyond that, only one additional array with the same length
+as the event list need to be kept in memory during the iterations. 
+
+In the pre-processing step 2, the event counts $\mu_e$ need to be calculated once for every event in $N$. Here, $\mu_{e}$ is the total number of events in list $N$ detected in the sinogram-bin $j_e$ where the event $e$ was recorded.
 Note that in step 5, the images $\bar{z}$ and $z$ need to be initialized with the adjoint sinogram
 operator applied on the sinogram $y$ which is a sinogram that is one in all bins where no data was
 recorded and zero else. The sinogram $y$ does not need to be kept in memory after this step.
@@ -190,7 +196,7 @@ which was calculated using the deterministic (sinogram) PDHG with 10000 iteratio
 As shown in Figure~\ref{fig:recons}, the reconstructions obtained with (sinogram) SPDHG and LM-SPDHG
 are very similar and very close to the reference reconstruction.
 Figure~\ref{fig:cost} demonstrates that the convergence of (sinogram) SPDHG and
-LM-SPDHG is very similar. In the early iterations, the convergence of LM-SPDHG is a bit slower, but
+LM-SPDHG is also very similar. In the early iterations, the convergence of LM-SPDHG is a bit slower, but
 at late iterations slightly lower values of the cost function are obtained with LM-SPDHG.
 Both figures show again that the choice of ratio between the step sizes $S_i$ and $T$ has
 a strong influence on the convergence speed.
@@ -217,7 +223,7 @@ for for three different step size ratios (colors).}
 
 \section{Discussion}
 
-The proposed LM-SPDHG algorithm allows to do iterative PET reconstruction of list-mode
+The proposed LM-SPDHG algorithm allows for  iterative PET reconstruction of list-mode
 data with subsets and non-smooth priors.
 For sparse TOF PET data that results in substantially reduced memory requirement during
 the iterations and improved computational efficiency depending on the number of acquired
@@ -225,11 +231,11 @@ events.
 However, preprocessing steps 2 and 5 pose a computational overhead. 
 Before the iterations, the event counts $\mu_e$ for every bin present in the event list
 have to be calculated and stored.
-Moreover, the variables have $z$ and $\bar{z}$ have to be initialized with a sinogram
+Moreover, the variables $z$ and $\bar{z}$ have to be initialized with a sinogram
 backprojection of $y$ which is in a way ``similar'' to the calcuation of the sensitivity
 image in list-mode OS-MLEM.
-For real 3D TOF PET data at usual count levels (especially in shorter frames), we still
-expect that the computation time of LM-SPDHG is shorter compared to SPDHG.
+Nevertheless, for real 3D TOF PET data at usual count levels (especially in shorter frames), one can
+expect the computation time and memory requirement of the proposed LM-SPDHG algorithm to be significantly reduced compared to standard sinogram-based SPDHG.
 In the future, we also plan to compare the results against the EM-TV algorithms that also
 allows list-mode processing.
 
