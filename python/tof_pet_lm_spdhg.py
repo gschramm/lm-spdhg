@@ -27,6 +27,7 @@ parser.add_argument('--fwhm_data_mm',  help = 'psf for data FWHM mm',  default =
 parser.add_argument('--phantom', help = 'phantom to use', default = 'brain2d')
 parser.add_argument('--seed',    help = 'seed for random generator', default = 1, type = int)
 parser.add_argument('--beta',  help = 'TV weight',  default = 0, type = float)
+parser.add_argument('--rho',  default = 1, type = float)
 args = parser.parse_args()
 
 #---------------------------------------------------------------------------------
@@ -40,6 +41,7 @@ fwhm_data_mm  = args.fwhm_data_mm
 phantom       = args.phantom
 seed          = args.seed
 beta          = args.beta
+rho           = args.rho
 
 #---------------------------------------------------------------------------------
 
@@ -224,26 +226,22 @@ events, multi_index = sino_params.sinogram_to_listmode(em_sino,
 #-----------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------
 
-base_str = f'{phantom}_counts_{counts:.1E}_beta_{beta:.1E}_niter_{niter_ref}_{niter}_nsub_{nsubsets}'
+base_str = f'{phantom}_counts_{counts:.1E}_beta_{beta:.1E}_niter_{niter_ref}_{niter}_nsub_{nsubsets}_rho_{rho}'
 
-rho    = 0.999
-gammas = np.array([0.1,0.3,1,3,10]) / img.max()
+#gammas = np.array([0.1,0.3,1,3,10]) / img.max()
+gammas = np.array([1]) / img.max()
 
 cost_spdhg_sino = np.zeros((len(gammas),niter))
 cost_spdhg_lm   = np.zeros((len(gammas),niter))
-cost_spdhg_lm2  = np.zeros((len(gammas),niter))
 
 psnr_spdhg_sino = np.zeros((len(gammas),niter))
 psnr_spdhg_lm   = np.zeros((len(gammas),niter))
-psnr_spdhg_lm2  = np.zeros((len(gammas),niter))
 
 x_sino = np.zeros((len(gammas),) + img.shape)
 x_lm   = np.zeros((len(gammas),) + img.shape)
-x_lm2  = np.zeros((len(gammas),) + img.shape)
 
 x_early_sino = np.zeros((len(gammas),) + img.shape)
 x_early_lm   = np.zeros((len(gammas),) + img.shape)
-x_early_lm2  = np.zeros((len(gammas),) + img.shape)
 
 for ig,gamma in enumerate(gammas):
   # sinogram SPDHG
@@ -266,16 +264,6 @@ for ig,gamma in enumerate(gammas):
                           fwhm = fwhm, gamma = gamma, rho = rho, verbose = True, 
                           beta = beta, callback = _cb, callback_kwargs = cblm)
 
-  # LM SPDHG without preconditioning
-  cblm2 = {'cost':cost_spdhg_lm2[ig,:],'psnr':psnr_spdhg_lm2[ig,:],'xref':ref_recon,
-          'it_early':20,'x_early':x_early_lm2[ig,:]}
-
-  x_lm2[ig,...] = spdhg_lm(events, multi_index,
-                           em_sino, attn_sino, sens_sino, contam_sino, 
-                           proj, lmproj, niter, nsubsets, pet_operator_norm = np.sqrt(8),
-                           fwhm = fwhm, gamma = gamma, rho = rho, verbose = True, 
-                           beta = beta, callback = _cb, callback_kwargs = cblm2)
-
 #-----------------------------------------------------------------------------------------------------
 # calculate cost of initial recon (image full or zeros)
 c_0   = calc_cost(np.zeros(ref_recon.shape, dtype = np.float32))
@@ -285,12 +273,10 @@ ofile = os.path.join('data',f'{base_str}.npz')
 np.savez(ofile, ref_recon = ref_recon, cost_ref = cost_ref,
                 cost_spdhg_sino = cost_spdhg_sino, psnr_spdhg_sino = psnr_spdhg_sino, 
                 cost_spdhg_lm   = cost_spdhg_lm, psnr_spdhg_lm = psnr_spdhg_lm, 
-                cost_spdhg_lm2  = cost_spdhg_lm2, psnr_spdhg_lm2 = psnr_spdhg_lm2, 
-                x_sino = x_sino, x_lm = x_lm, x_lm2 = x_lm2, 
-                x_early_sino = x_early_sino, x_early_lm = x_early_lm, x_early_lm2 = x_early_lm2,
+                x_sino = x_sino, x_lm = x_lm,
+                x_early_sino = x_early_sino, x_early_lm = x_early_lm,
                 gammas = gammas, img = img, c_0 = c_0)
 
 #-----------------------------------------------------------------------------------------------------
 # plot the results
 plot_lm_spdhg_results(base_str, precond = True)
-plot_lm_spdhg_results(base_str, precond = False)
