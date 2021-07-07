@@ -22,6 +22,11 @@
 \usepackage{algorithmicx}
 \usepackage{algpseudocode}
 
+%\usepackage{sfmath}
+%\renewcommand\familydefault{\sfdefault}
+%\definecolor{light-gray}{RGB}{242,242,242}
+%\pagecolor{light-gray}
+
 %\newtheorem{rem}{Remark}
 
 % define float env for algorithm
@@ -160,7 +165,7 @@ For $\rho<1$ and $\gamma>0$, we define preconditioned step sizes for the partial
 for $i=1,\ldots,n$
 \[ S_i = \gamma \, \text{diag}(\frac{\rho}{P_i 1} )\qquad  T_i = \gamma^{-1} \text{diag}(\frac{\rho p_i}{P^T_i 1}) \]
 and for the gradient operator
-\[ S_{n+1} = \frac{\rho}{\|\nabla\|} \qquad T_{n+1} = \frac{p_i\rho}{\|\nabla\|} \ . \]
+\[ S_{n+1} = \gamma \, \frac{\rho}{\|\nabla\|} \qquad T_{n+1} = \gamma^{-1} \frac{p_i\rho}{\|\nabla\|} \ . \]
 As mentioned in \cite{Ehrhardt2019}, if we set $T = \min_{i=1,\ldots,n+1} T_i$ pointwise,
 SPDHG converges.
 
