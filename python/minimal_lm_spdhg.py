@@ -14,12 +14,12 @@ def back(y, sens):
   return (y*sens).sum()
 
 #---------------------------------------------------------------------------------------------
-def fwd_lm(x, sens, events):
-  return x*sens[events]
+def fwd_lm(x, sens, events, mu):
+  return x*sens[events]/mu
 
 #---------------------------------------------------------------------------------------------
-def back_lm(y, sens, events): 
-  return (y*sens[events]).sum()
+def back_lm(y, sens, events, mu): 
+  return (y*sens[events]/mu).sum()
 
 #---------------------------------------------------------------------------------------------
 def cost(x, sens, b, contam):
@@ -90,17 +90,24 @@ def SPDHG(sens, b, contam, niter = 100, rho = 0.999, gamma = 1, verbose = False)
 
 #---------------------------------------------------------------------------------------------
 def SPDHG_LM(sens, events, mu, contam_list, 
-             niter = 100, rho = 0.999, gamma = 1, verbose = False, precond = True):
+             niter = 100, rho = 0.999, gamma = 1, verbose = False):
 
   # probability that a subset gets chosen (using 2 subsets)
   p_p = 0.5  
 
-  if precond:
-    S = [gamma*rho/fwd_lm(1,sens,events[slice(x,None,2)]) for x in [0,1]]
-    T = rho/(gamma*back(np.ones(2),sens))
+  S_i = [gamma*rho/fwd_lm(1, sens,events[slice(0,None,2)], mu[slice(0,None,2)]),
+         gamma*rho/fwd_lm(1, sens,events[slice(1,None,2)], mu[slice(1,None,2)])]
+
+  if events.shape[0] >= 2:
+    T_i = [p_p*rho/(gamma*back_lm(np.ones(events[slice(0,None,2)].shape[0]), 
+                                  sens,events[slice(0,None,2)], mu[slice(0,None,2)])),
+           p_p*rho/(gamma*back_lm(np.ones(events[slice(1,None,2)].shape[0]), 
+                                  sens,events[slice(1,None,2)], mu[slice(1,None,2)]))]
+
+    T = min(T_i)
   else:
-    S = 2*[gamma*rho / np.linalg.norm(sens)] 
-    T = rho / (gamma*np.linalg.norm(sens)) 
+    T = p_p*rho/(gamma*back_lm(np.ones(events[slice(0,None,2)].shape[0]), 
+                               sens,events[slice(0,None,2)], mu[slice(0,None,2)]))
 
   x = 0
 
@@ -121,12 +128,12 @@ def SPDHG_LM(sens, events, mu, contam_list,
     x = np.clip(x - T*zbar, 0, None)
     if verbose: print(i, ss, x)
 
-    y_plus = y[ss] + S[iss]*(fwd_lm(x, sens, events[ss]) + contam_list[ss])
+    y_plus = y[ss] + S_i[iss]*(fwd_lm(x, sens, events[ss], mu[ss]) + contam_list[ss]/mu[ss])
     
     # apply the prox for the dual of the poisson logL
-    y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*S[iss]*mu[ss]))
+    y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*S_i[iss]))
     
-    dz = back_lm((y_plus - y[ss])/mu[ss], sens, events[ss])
+    dz = back_lm(y_plus - y[ss], sens, events[ss], mu[ss])
     
     # update variables
     z     = z + dz
@@ -141,10 +148,10 @@ sens   = np.array([1,0.5])
 contam = np.array([0.2,0.1])
 
 # simulate data
-xtrue = 0.1
+xtrue = 2
 ytrue = fwd(xtrue, sens) + contam
 
-seeds   = np.arange(50)
+seeds   = np.arange(20)
 
 niter = 500
 gamma = 1/xtrue
@@ -180,7 +187,7 @@ for i, seed in enumerate(seeds):
     mu = b[events]
 
     xSPDHG_LM[i] = SPDHG_LM(sens, events, mu, contam[events], niter = niter, gamma = gamma, 
-                            verbose = False, precond = True)
+                            verbose = False)
   else:
     xSPDHG_LM[i] = 0
   
