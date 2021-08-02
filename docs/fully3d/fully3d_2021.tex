@@ -141,10 +141,14 @@ and $s$ are additive contaminations including random and scattered coincidences.
 \State $\overline{z} = z = P^T y$
 \Repeat
 	\State $x = \proj_{\geq 0} (x - T \overline{z})$
-	\State Select $i \in \{ 1,\ldots,m+1\} $ randomly according to $(p_i)_i$
-	\State \quad $y_i^+ \gets \prox_{D_i^*}^{S_i} ( y_i + S_i  ( P_i x + s_i))$
-	\State \quad $\delta z \gets P_i^T (y_i^+ - y_i)$
-	\State \quad $y_i \gets y_i^+$
+	\State Select $i \in \{ 1,\ldots,n+1\} $ randomly according to $(p_i)_i$
+  \If{$i \leq m$}
+	\State $y_i^+ \gets \prox_{D_i^*}^{S_i} ( y_i + S_i  ( P_i x + s_i))$
+  \Else
+	\State $y_i^+ \gets \prox_{D_i^*}^{S_i} ( y_i + S_i  P_i x)$
+  \EndIf
+	\State $\delta z \gets P_i^T (y_i^+ - y_i)$
+	\State $y_i \gets y_i^+$
 	\State $z \gets z + \delta z$
 	\State $\overline{z} \gets  z + (\delta z/p_i)$
 \Until{stopping criterion fulfilled}
