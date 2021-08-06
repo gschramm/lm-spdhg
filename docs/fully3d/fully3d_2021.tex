@@ -142,7 +142,7 @@ and $s$ are additive contaminations including random and scattered coincidences.
 \Repeat
 	\State $x = \proj_{\geq 0} (x - T \overline{z})$
 	\State Select $i \in \{ 1,\ldots,n+1\} $ randomly according to $(p_i)_i$
-  \If{$i \leq m$}
+  \If{$i \leq n$}
 	\State $y_i^+ \gets \prox_{D_i^*}^{S_i} ( y_i + S_i  ( P_i x + s_i))$
   \Else
 	\State $y_i^+ \gets \prox_{D_i^*}^{S_i} ( y_i + S_i  P_i x)$
@@ -180,7 +180,7 @@ The proximal operator for the convex dual of $D_j(y):= y_j  - d_j \log (y_j)$ is
 \end{equation} 
 and the proximal operator for the convex dual of the TV term is given by
 \begin{equation}
-(\prox_{D_{n+1}^*}(y) )_j = y_j /\max(\beta,|y_j|) \ .
+(\prox_{D_{n+1}^*}(y) )_j = \beta \, y_j /\max(\beta,|y_j|) \ .
 \end{equation}
 
 As discussed in Remark 2 of \cite{Ehrhardt2019}, a potential drawback of SPDHG is that it requires
