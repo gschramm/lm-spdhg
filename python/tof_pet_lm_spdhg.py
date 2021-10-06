@@ -182,7 +182,9 @@ def _cb(x, **kwargs):
 
 niter_ref = 10000
 
-ref_fname = os.path.join('data', f'PDHG_{phantom}_TVbeta_{beta:.1E}_niter_{niter_ref}_counts_{counts:.1E}_seed_{seed}.npz')
+ref_fname = os.path.join('data', 
+                         f'{phantom}_counts_{counts:.1E}_seed_{seed}_beta_{beta:.1E}_niter_{niter_ref}_rho_{rho}_fwhm_{fwhm_mm:.1f}_{fwhm_data_mm:.1f}')
+
 if os.path.exists(ref_fname):
   tmp = np.load(ref_fname)
   ref_recon = tmp['ref_recon']
@@ -226,7 +228,7 @@ events, multi_index = sino_params.sinogram_to_listmode(em_sino,
 #-----------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------
 
-base_str = f'{phantom}_counts_{counts:.1E}_beta_{beta:.1E}_niter_{niter_ref}_{niter}_nsub_{nsubsets}_rho_{rho}'
+base_str = f'{phantom}_counts_{counts:.1E}_seed_{seed}_beta_{beta:.1E}_niter_{niter_ref}_{niter}_nsub_{nsubsets}_rho_{rho}_fwhm_{fwhm_mm:.1f}_{fwhm_data_mm:.1f}'
 
 #gammas = np.array([0.1,0.3,1,3,10]) / img.max()
 gammas = np.array([1]) / img.max()
