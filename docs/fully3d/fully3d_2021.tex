@@ -22,6 +22,11 @@
 \usepackage{algorithmicx}
 \usepackage{algpseudocode}
 
+%\usepackage{sfmath}
+%\renewcommand\familydefault{\sfdefault}
+%\definecolor{light-gray}{RGB}{242,242,242}
+%\pagecolor{light-gray}
+
 %\newtheorem{rem}{Remark}
 
 % define float env for algorithm
@@ -136,10 +141,14 @@ and $s$ are additive contaminations including random and scattered coincidences.
 \State $\overline{z} = z = P^T y$
 \Repeat
 	\State $x = \proj_{\geq 0} (x - T \overline{z})$
-	\State Select $i \in \{ 1,\ldots,m+1\} $ randomly according to $(p_i)_i$
-	\State \quad $y_i^+ \gets \prox_{D_i^*}^{S_i} ( y_i + S_i  ( P_i x + s_i))$
-	\State \quad $\delta z \gets P_i^T (y_i^+ - y_i)$
-	\State \quad $y_i \gets y_i^+$
+	\State Select $i \in \{ 1,\ldots,n+1\} $ randomly according to $(p_i)_i$
+  \If{$i \leq n$}
+	\State $y_i^+ \gets \prox_{D_i^*}^{S_i} ( y_i + S_i  ( P_i x + s_i))$
+  \Else
+	\State $y_i^+ \gets \prox_{D_i^*}^{S_i} ( y_i + S_i  P_i x)$
+  \EndIf
+	\State $\delta z \gets P_i^T (y_i^+ - y_i)$
+	\State $y_i \gets y_i^+$
 	\State $z \gets z + \delta z$
 	\State $\overline{z} \gets  z + (\delta z/p_i)$
 \Until{stopping criterion fulfilled}
@@ -160,7 +169,7 @@ For $\rho<1$ and $\gamma>0$, we define preconditioned step sizes for the partial
 for $i=1,\ldots,n$
 \[ S_i = \gamma \, \text{diag}(\frac{\rho}{P_i 1} )\qquad  T_i = \gamma^{-1} \text{diag}(\frac{\rho p_i}{P^T_i 1}) \]
 and for the gradient operator
-\[ S_{n+1} = \frac{\rho}{\|\nabla\|} \qquad T_{n+1} = \frac{p_i\rho}{\|\nabla\|} \ . \]
+\[ S_{n+1} = \gamma \, \frac{\rho}{\|\nabla\|} \qquad T_{n+1} = \gamma^{-1} \frac{p_i\rho}{\|\nabla\|} \ . \]
 As mentioned in \cite{Ehrhardt2019}, if we set $T = \min_{i=1,\ldots,n+1} T_i$ pointwise,
 SPDHG converges.
 
@@ -171,7 +180,7 @@ The proximal operator for the convex dual of $D_j(y):= y_j  - d_j \log (y_j)$ is
 \end{equation} 
 and the proximal operator for the convex dual of the TV term is given by
 \begin{equation}
-(\prox_{D_{n+1}^*}(y) )_j = y_j /\max(\beta,|y_j|) \ .
+(\prox_{D_{n+1}^*}(y) )_j = \beta \, y_j /\max(\beta,|y_j|) \ .
 \end{equation}
 
 As discussed in Remark 2 of \cite{Ehrhardt2019}, a potential drawback of SPDHG is that it requires
