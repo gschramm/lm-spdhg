@@ -1,6 +1,6 @@
 import numpy as np
 from pyparallelproj.models import pet_fwd_model, pet_back_model, pet_fwd_model_lm, pet_back_model_lm
-from pyparallelproj.utils import grad, div
+from pyparallelproj.utils import GradientOperator
 
 def spdhg_lm(events, multi_index,
              em_sino, attn_sino, sens_sino, contam_sino, 
@@ -8,7 +8,7 @@ def spdhg_lm(events, multi_index,
              fwhm = 0, gamma = 1., rho = 0.999, verbose = False, 
              callback = None, subset_callback = None,
              callback_kwargs = None, subset_callback_kwargs = None,
-             beta = 0, p_g = None):
+             beta = 0, grad_operator = None):
  
   # generate the 1d contamination, sensitivity and attenuation lists from the sinograms
   attn_list   = attn_sino[multi_index[:,0],multi_index[:,1],multi_index[:,2],0]
@@ -17,6 +17,9 @@ def spdhg_lm(events, multi_index,
 
   img_shape = tuple(lmproj.img_dim)
 
+  if grad_operator is None:
+    grad_operator = GradientOperator()
+
   # setup the probabilities for doing a pet data or gradient update
   # p_g is the probablility for doing a gradient update
   # p_p is the probablility for doing a PET data subset update
@@ -24,8 +27,7 @@ def spdhg_lm(events, multi_index,
   if beta == 0:
     p_g = 0
   else: 
-    if p_g is None:
-      p_g = 0.5
+    p_g = 0.5
     # norm of the gradient operator = sqrt(ndim*4)
     ndim  = len([x for x in img_shape if x > 1])
     grad_norm = np.sqrt(ndim*4)
@@ -41,9 +43,9 @@ def spdhg_lm(events, multi_index,
   zbar = z.copy()
   
   # allocate arrays for gradient operations
-  x_grad      = np.zeros((len(img_shape),) + img_shape, dtype = np.float32)
+  #x_grad      = np.zeros((len(img_shape),) + img_shape, dtype = np.float32)
   y_grad      = np.zeros((len(img_shape),) + img_shape, dtype = np.float32)
-  y_grad_plus = np.zeros((len(img_shape),) + img_shape, dtype = np.float32)
+  #y_grad_plus = np.zeros((len(img_shape),) + img_shape, dtype = np.float32)
 
   # calculate S for the gradient operator
   if p_g > 0:
@@ -117,15 +119,15 @@ def spdhg_lm(events, multi_index,
       else:
         print(f'iteration {it + 1} step {iss} gradient update')
   
-        grad(x, x_grad)
+        x_grad = grad_operator.fwd(x)
         y_grad_plus = (y_grad + S_g*x_grad).reshape(len(img_shape),-1)
   
         # proximity operator for dual of TV
         gnorm = np.linalg.norm(y_grad_plus, axis = 0)
         y_grad_plus /= np.maximum(np.ones(gnorm.shape, np.float32), gnorm / beta)
         y_grad_plus = y_grad_plus.reshape(x_grad.shape)
-  
-        dz = -1*div(y_grad_plus - y_grad)
+ 
+        dz = grad_operator.adjoint(y_grad_plus - y_grad)
   
         # update variables
         z = z + dz

@@ -4,7 +4,7 @@ import os
 import matplotlib.pyplot as plt
 import pyparallelproj as ppp
 from pyparallelproj.phantoms import ellipse2d_phantom, brain2d_phantom
-from pyparallelproj.utils import grad, div
+from pyparallelproj.utils import grad, div, GradientOperator
 from pyparallelproj.algorithms import spdhg
 
 from algorithms import spdhg_lm
@@ -18,7 +18,6 @@ import argparse
 # parse the command line
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--ngpus',    help = 'number of GPUs to use', default = 1,   type = int)
 parser.add_argument('--counts',   help = 'counts to simulate',    default = 1e6, type = float)
 parser.add_argument('--niter',    help = 'number of iterations',  default = 20,  type = int)
 parser.add_argument('--nsubsets', help = 'number of subsets',     default = 28,  type = int)
@@ -32,7 +31,6 @@ args = parser.parse_args()
 
 #---------------------------------------------------------------------------------
 
-ngpus         = args.ngpus
 counts        = args.counts
 niter         = args.niter
 nsubsets      = args.nsubsets
@@ -83,7 +81,7 @@ att_img = (img > 0) * 0.01 * voxsize[0]
 # generate nonTOF sinogram parameters and the nonTOF projector for attenuation projection
 sino_params_nt = ppp.PETSinogramParameters(scanner)
 proj_nt        = ppp.SinogramProjector(scanner, sino_params_nt, img.shape, nsubsets = 1, 
-                                    voxsize = voxsize, img_origin = img_origin, ngpus = ngpus)
+                                    voxsize = voxsize, img_origin = img_origin)
 sino_shape_nt  = sino_params_nt.shape
 
 attn_sino = np.zeros(sino_shape_nt, dtype = np.float32)
@@ -95,7 +93,7 @@ sens_sino = np.ones(sino_shape_nt, dtype = np.float32)
 # generate TOF sinogram parameters and the TOF projector
 sino_params = ppp.PETSinogramParameters(scanner, ntofbins = 17, tofbin_width = 15.)
 proj        = ppp.SinogramProjector(scanner, sino_params, img.shape, nsubsets = 1, 
-                                    voxsize = voxsize, img_origin = img_origin, ngpus = ngpus,
+                                    voxsize = voxsize, img_origin = img_origin,
                                     tof = True, sigma_tof = 60./2.35, n_sigmas = 3.)
 
 # power iterations to estimte norm of PET fwd operator
@@ -183,17 +181,17 @@ def _cb(x, **kwargs):
 niter_ref = 10000
 
 ref_fname = os.path.join('data', 
-                         f'{phantom}_counts_{counts:.1E}_seed_{seed}_beta_{beta:.1E}_niter_{niter_ref}_rho_{rho}_fwhm_{fwhm_mm:.1f}_{fwhm_data_mm:.1f}')
+                         f'{phantom}_counts_{counts:.1E}_seed_{seed}_beta_{beta:.1E}_niter_{niter_ref}_rho_{rho}_fwhm_{fwhm_mm:.1f}_{fwhm_data_mm:.1f}.npz')
 
 if os.path.exists(ref_fname):
-  tmp = np.load(ref_fname)
+  tmp = np.load(ref_fname, allow_pickle = True)
   ref_recon = tmp['ref_recon']
   cost_ref  = tmp['cost_ref']
 else:
   ns = proj.nsubsets
   proj.init_subsets(1)
 
-  # do long PDHG recons with different gamma factors
+  # do long PDHG recon
   cost_ref  = np.zeros(niter_ref)
   ref_recon = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter_ref,
                     gamma = 1/img.max(), fwhm = fwhm, verbose = True, 
@@ -207,7 +205,7 @@ else:
 
 # create a listmode projector for the LM MLEM iterations
 lmproj = ppp.LMProjector(proj.scanner, proj.img_dim, voxsize = proj.voxsize, 
-                         img_origin = proj.img_origin, ngpus = proj.ngpus,
+                         img_origin = proj.img_origin,
                          tof = proj.tof, sigma_tof = proj.sigma_tof, tofbin_width = proj.tofbin_width,
                          n_sigmas = proj.nsigmas)
 
