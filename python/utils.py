@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+import pkgutil
 
 def plot_lm_spdhg_results(base_str, subdir = 'data', precond = True):
   ofile    = os.path.join(subdir,f'{base_str}.npz')
@@ -88,6 +89,42 @@ def plot_lm_spdhg_results(base_str, subdir = 'data', precond = True):
   fig.savefig(os.path.join(subdir,f'{base_str}_precond_{precond}.png'))
   fig2.savefig(os.path.join(subdir,f'{base_str}_precond_{precond}_metrics.pdf'))
   fig2.savefig(os.path.join(subdir,f'{base_str}_precond_{precond}_metrics.png'))
+
+#----------------------------------------------------------------------------------------------------
+
+def count_event_multiplicity(events, use_gpu_if_possible = True):
+  """ Count the multiplicity of events in an LM file
+
+  Parameters
+  ----------
+
+  events : 2D numpy array
+    of LM events of shape (n_events, 5) where the second axis encodes the event 
+    (e.g. detectors numbers and TOF bins)
+
+  use_gpu_if_possible : bool
+    whether to use a GPU and cupy if possible (default True)
+  """
+
+  cupy_available = False
+  if pkgutil.find_loader("cupy"):
+    cupy_available = True
+
+  if (cupy_available and use_gpu_if_possible):
+    import cupy
+    from utils_cupy import cupy_unique_axis0
+
+    events_d = cupy.array(events)
+    tmp_d    = cupy_unique_axis0(events_d, return_counts = True, return_inverse = True)
+    mu_d     = tmp_d[2][tmp_d[1]]
+    mu       = cupy.asnumpy(mu_d)
+
+  else:
+    tmp = np.unique(events, axis = 0, return_counts = True, return_inverse = True)
+    mu  = tmp[2][tmp[1]]
+
+  return mu
+
 
 #----------------------------------------------------------------------------------------------------
 #----------------------------------------------------------------------------------------------------
