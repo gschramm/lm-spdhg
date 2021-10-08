@@ -1,6 +1,7 @@
 import numpy as np
 from pyparallelproj.models import pet_fwd_model, pet_back_model, pet_fwd_model_lm, pet_back_model_lm
-from pyparallelproj.utils import GradientOperator, count_event_multiplicity
+from pyparallelproj.utils import GradientOperator
+from utils import count_event_multiplicity
 
 def spdhg_lm(events, multi_index, attn_sino, sens_sino, contam_sino, 
              proj, lmproj, niter, nsubsets,
