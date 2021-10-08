@@ -27,7 +27,6 @@ parser.add_argument('--phantom', help = 'phantom to use', default = 'brain2d')
 parser.add_argument('--seed',    help = 'seed for random generator', default = 1, type = int)
 parser.add_argument('--beta',  help = 'TV weight',  default = 10, type = float)
 parser.add_argument('--prior',  help = 'prior',  default = 'DTV', choices = ['TV','DTV'])
-parser.add_argument('--rho',  default = 1, type = float)
 args = parser.parse_args()
 
 #---------------------------------------------------------------------------------
@@ -41,7 +40,6 @@ phantom       = args.phantom
 seed          = args.seed
 beta          = args.beta
 prior         = args.prior
-rho           = args.rho
 
 #---------------------------------------------------------------------------------
 
@@ -188,11 +186,10 @@ def _cb(x, **kwargs):
 
 niter_ref = 10000
 
-base_str = f'{phantom}_counts_{counts:.1E}_seed_{seed}_beta_{beta:.1E}_prior_{prior}_niter_{niter_ref}_{niter}_nsub_{nsubsets}_rho_{rho}_fwhm_{fwhm_mm:.1f}_{fwhm_data_mm:.1f}'
+base_str = f'{phantom}_counts_{counts:.1E}_seed_{seed}_beta_{beta:.1E}_prior_{prior}_niter_ref_{niter_ref}_fwhm_{fwhm_mm:.1f}_{fwhm_data_mm:.1f}'
 
 
-ref_fname = os.path.join('data', 
-                         f'{base_str}_ref.npz')
+ref_fname = os.path.join('data', f'{base_str}_ref.npz')
 
 if os.path.exists(ref_fname):
   tmp = np.load(ref_fname, allow_pickle = True)
@@ -237,8 +234,7 @@ events, multi_index = sino_params.sinogram_to_listmode(em_sino,
 #-----------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------
 
-#gammas = np.array([0.1,0.3,1,3,10]) / img.max()
-gammas = np.array([1]) / img.max()
+gammas = np.array([1.]) / img.max()
 
 cost_spdhg_sino = np.zeros((len(gammas),niter))
 cost_spdhg_lm   = np.zeros((len(gammas),niter))
@@ -259,7 +255,7 @@ for ig,gamma in enumerate(gammas):
          'it_early':20,'x_early':x_early_sino[ig,:]}
 
   x_sino[ig,...] = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
-                         fwhm = fwhm, gamma = gamma, rho = rho, verbose = True, 
+                         fwhm = fwhm, gamma = gamma, verbose = True, 
                          beta = beta, callback = _cb, callback_kwargs = cbs,
                          grad_operator = grad_operator)
 
@@ -270,7 +266,7 @@ for ig,gamma in enumerate(gammas):
 
   x_lm[ig,...] = spdhg_lm(events, multi_index, attn_sino, sens_sino, contam_sino, 
                           proj, lmproj, niter, nsubsets,
-                          fwhm = fwhm, gamma = gamma, rho = rho, verbose = True, 
+                          fwhm = fwhm, gamma = gamma, verbose = True, 
                           beta = beta, callback = _cb, callback_kwargs = cblm,
                           grad_operator = grad_operator)
 
@@ -279,7 +275,7 @@ for ig,gamma in enumerate(gammas):
 c_0   = calc_cost(np.zeros(ref_recon.shape, dtype = np.float32))
 
 # save the results
-ofile = os.path.join('data',f'{base_str}.npz')
+ofile = os.path.join('data',f'{base_str}_niter_{niter}_nsub_{nsubsets}.npz')
 np.savez(ofile, ref_recon = ref_recon, cost_ref = cost_ref,
                 cost_spdhg_sino = cost_spdhg_sino, psnr_spdhg_sino = psnr_spdhg_sino, 
                 cost_spdhg_lm   = cost_spdhg_lm, psnr_spdhg_lm = psnr_spdhg_lm, 
@@ -289,4 +285,4 @@ np.savez(ofile, ref_recon = ref_recon, cost_ref = cost_ref,
 
 #-----------------------------------------------------------------------------------------------------
 # plot the results
-plot_lm_spdhg_results(base_str, precond = True)
+plot_lm_spdhg_results(ofile)
