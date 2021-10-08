@@ -2,8 +2,7 @@ import numpy as np
 from pyparallelproj.models import pet_fwd_model, pet_back_model, pet_fwd_model_lm, pet_back_model_lm
 from pyparallelproj.utils import GradientOperator
 
-def spdhg_lm(events, multi_index,
-             em_sino, attn_sino, sens_sino, contam_sino, 
+def spdhg_lm(events, multi_index, attn_sino, sens_sino, contam_sino, 
              proj, lmproj, niter, nsubsets,
              fwhm = 0, gamma = 1., rho = 0.999, verbose = False, 
              callback = None, subset_callback = None,
@@ -46,8 +45,14 @@ def spdhg_lm(events, multi_index,
   # initialize variables
   x = np.zeros(img_shape, dtype = np.float32)
   y = np.zeros(events.shape[0], dtype = np.float32)
+
+  # creat a tempory TOF sinogram that is 1 in all bins without counts and 0 in all other bins
+  tmp = np.ones(contam_sino.shape, dtype = np.float32)
+  tmp[multi_index[:,0],multi_index[:,1],multi_index[:,2], multi_index[:,3]] = 0
   
-  z  = pet_back_model((em_sino == 0).astype(np.float32), proj, attn_sino, sens_sino, 0, fwhm = fwhm)
+  z  = pet_back_model(tmp, proj, attn_sino, sens_sino, 0, fwhm = fwhm)
+  del tmp
+
   zbar = z.copy()
   
   # allocate arrays for gradient operations

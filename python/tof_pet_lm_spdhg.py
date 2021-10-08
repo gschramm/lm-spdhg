@@ -268,8 +268,7 @@ for ig,gamma in enumerate(gammas):
   cblm = {'cost':cost_spdhg_lm[ig,:],'psnr':psnr_spdhg_lm[ig,:],'xref':ref_recon,
           'it_early':20,'x_early':x_early_lm[ig,:]}
 
-  x_lm[ig,...] = spdhg_lm(events, multi_index,
-                          em_sino, attn_sino, sens_sino, contam_sino, 
+  x_lm[ig,...] = spdhg_lm(events, multi_index, attn_sino, sens_sino, contam_sino, 
                           proj, lmproj, niter, nsubsets,
                           fwhm = fwhm, gamma = gamma, rho = rho, verbose = True, 
                           beta = beta, callback = _cb, callback_kwargs = cblm,
