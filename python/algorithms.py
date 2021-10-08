@@ -9,6 +9,14 @@ def spdhg_lm(events, multi_index,
              callback = None, subset_callback = None,
              callback_kwargs = None, subset_callback_kwargs = None,
              beta = 0, grad_operator = None):
+
+  # count the "multiplicity" of every event in the list
+  # if an event occurs n times in the list of events, the multiplicity is n
+  tmp = np.unique(events, axis = 0, return_counts = True, return_inverse = True)
+  mu  = tmp[2][tmp[1]]
+
+  del tmp
+
  
   # generate the 1d contamination, sensitivity and attenuation lists from the sinograms
   attn_list   = attn_sino[multi_index[:,0],multi_index[:,1],multi_index[:,2],0]
@@ -60,7 +68,7 @@ def spdhg_lm(events, multi_index,
   for i in range(nsubsets):
     ss = slice(i,None,nsubsets)
     # clip inf values
-    tmp = (gamma*rho) / pet_fwd_model_lm(ones_img, lmproj, events[ss,:5], 
+    tmp = (gamma*rho) / pet_fwd_model_lm(ones_img, lmproj, events[ss,:], 
                                          attn_list[ss], sens_list[ss], fwhm = fwhm)
     tmp[tmp == np.inf] = tmp[tmp != np.inf].max()
     S_i.append(tmp)
@@ -71,7 +79,7 @@ def spdhg_lm(events, multi_index,
   for i in range(nsubsets):
     ss = slice(i,None,nsubsets)
 
-    tmp = pet_back_model_lm(1./events[ss,5], lmproj, events[ss,:5], 
+    tmp = pet_back_model_lm(1./mu[ss], lmproj, events[ss,:], 
                             attn_list[ss], sens_list[ss], fwhm = fwhm) + z/nsubsets
 
     T_i[i,...] = p_p*rho/(gamma*tmp)
@@ -102,14 +110,14 @@ def spdhg_lm(events, multi_index,
   
         x = np.clip(x - T*zbar, 0, None)
   
-        y_plus = y[ss] + S_i[i]*(pet_fwd_model_lm(x, lmproj, events[ss,:5], 
+        y_plus = y[ss] + S_i[i]*(pet_fwd_model_lm(x, lmproj, events[ss,:], 
                                                   attn_list[ss], sens_list[ss], 
                                                   fwhm = fwhm) + contam_list[ss])
   
         # apply the prox for the dual of the poisson logL
-        y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*S_i[i]*events[ss,5]))
+        y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*S_i[i]*mu[ss]))
   
-        dz = pet_back_model_lm((y_plus - y[ss])/events[ss,5], lmproj, events[ss,:5], 
+        dz = pet_back_model_lm((y_plus - y[ss])/mu[ss], lmproj, events[ss,:], 
                                attn_list[ss], sens_list[ss], fwhm = fwhm)
   
         # update variables

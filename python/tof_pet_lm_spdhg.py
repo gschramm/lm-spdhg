@@ -4,7 +4,7 @@ import os
 import matplotlib.pyplot as plt
 import pyparallelproj as ppp
 from pyparallelproj.phantoms import ellipse2d_phantom, brain2d_phantom
-from pyparallelproj.utils import grad, div, GradientOperator
+from pyparallelproj.utils import GradientOperator
 from pyparallelproj.algorithms import spdhg
 
 from algorithms import spdhg_lm
@@ -18,14 +18,15 @@ import argparse
 # parse the command line
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--counts',   help = 'counts to simulate',    default = 1e6, type = float)
-parser.add_argument('--niter',    help = 'number of iterations',  default = 20,  type = int)
+parser.add_argument('--counts',   help = 'counts to simulate',    default = 3e6, type = float)
+parser.add_argument('--niter',    help = 'number of iterations',  default = 50,  type = int)
 parser.add_argument('--nsubsets', help = 'number of subsets',     default = 28,  type = int)
 parser.add_argument('--fwhm_mm',  help = 'psf modeling FWHM mm',  default = 4.5, type = float)
 parser.add_argument('--fwhm_data_mm',  help = 'psf for data FWHM mm',  default = 4.5, type = float)
 parser.add_argument('--phantom', help = 'phantom to use', default = 'brain2d')
 parser.add_argument('--seed',    help = 'seed for random generator', default = 1, type = int)
-parser.add_argument('--beta',  help = 'TV weight',  default = 0, type = float)
+parser.add_argument('--beta',  help = 'TV weight',  default = 10, type = float)
+parser.add_argument('--prior',  help = 'prior',  default = 'DTV', choices = ['TV','DTV'])
 parser.add_argument('--rho',  default = 1, type = float)
 args = parser.parse_args()
 
@@ -39,6 +40,7 @@ fwhm_data_mm  = args.fwhm_data_mm
 phantom       = args.phantom
 seed          = args.seed
 beta          = args.beta
+prior         = args.prior
 rho           = args.rho
 
 #---------------------------------------------------------------------------------
@@ -137,6 +139,13 @@ else:
 
   em_sino = img_fwd + contam_sino
 
+
+G0 = GradientOperator()
+if prior == 'DTV':
+  grad_operator  = GradientOperator(joint_grad_field = G0.fwd(-(img**0.5)))
+else:
+  grad_operator  = GradientOperator()
+
 #-----------------------------------------------------------------------------------------------------
 def calc_cost(x):
   cost = 0
@@ -153,8 +162,7 @@ def calc_cost(x):
   proj.init_subsets(ns)
 
   if beta > 0:
-    x_grad = np.zeros((img.ndim,) + img.shape, dtype = np.float32)
-    grad(x, x_grad)
+    x_grad = grad_operator.fwd(x)
     cost += beta*np.linalg.norm(x_grad, axis = 0).sum()
 
   return cost
@@ -180,8 +188,11 @@ def _cb(x, **kwargs):
 
 niter_ref = 10000
 
+base_str = f'{phantom}_counts_{counts:.1E}_seed_{seed}_beta_{beta:.1E}_prior_{prior}_niter_{niter_ref}_{niter}_nsub_{nsubsets}_rho_{rho}_fwhm_{fwhm_mm:.1f}_{fwhm_data_mm:.1f}'
+
+
 ref_fname = os.path.join('data', 
-                         f'{phantom}_counts_{counts:.1E}_seed_{seed}_beta_{beta:.1E}_niter_{niter_ref}_rho_{rho}_fwhm_{fwhm_mm:.1f}_{fwhm_data_mm:.1f}.npz')
+                         f'{base_str}_ref.npz')
 
 if os.path.exists(ref_fname):
   tmp = np.load(ref_fname, allow_pickle = True)
@@ -195,7 +206,8 @@ else:
   cost_ref  = np.zeros(niter_ref)
   ref_recon = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter_ref,
                     gamma = 1/img.max(), fwhm = fwhm, verbose = True, 
-                    beta = beta, callback = _cb, callback_kwargs = {'cost': cost_ref})
+                    beta = beta, callback = _cb, callback_kwargs = {'cost': cost_ref},
+                    grad_operator = grad_operator)
 
 
   proj.init_subsets(ns)
@@ -216,17 +228,14 @@ lmproj = ppp.LMProjector(proj.scanner, proj.img_dim, voxsize = proj.voxsize,
 # [:,0:2] are the transaxial/axial crystal index of the 1st detector
 # [:,2:4] are the transaxial/axial crystal index of the 2nd detector
 # [:,4]   are the event TOF bins
-# [:,5]   are the events counts (mu_e)
 
 events, multi_index = sino_params.sinogram_to_listmode(em_sino, 
                                                        return_multi_index = True,
-                                                       return_counts = True)
+                                                       return_counts = False)
 
 #-----------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------
-
-base_str = f'{phantom}_counts_{counts:.1E}_seed_{seed}_beta_{beta:.1E}_niter_{niter_ref}_{niter}_nsub_{nsubsets}_rho_{rho}_fwhm_{fwhm_mm:.1f}_{fwhm_data_mm:.1f}'
 
 #gammas = np.array([0.1,0.3,1,3,10]) / img.max()
 gammas = np.array([1]) / img.max()
@@ -251,7 +260,8 @@ for ig,gamma in enumerate(gammas):
 
   x_sino[ig,...] = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
                          fwhm = fwhm, gamma = gamma, rho = rho, verbose = True, 
-                         beta = beta, callback = _cb, callback_kwargs = cbs)
+                         beta = beta, callback = _cb, callback_kwargs = cbs,
+                         grad_operator = grad_operator)
 
   # LM SPDHG
   proj.init_subsets(1)
@@ -262,7 +272,8 @@ for ig,gamma in enumerate(gammas):
                           em_sino, attn_sino, sens_sino, contam_sino, 
                           proj, lmproj, niter, nsubsets,
                           fwhm = fwhm, gamma = gamma, rho = rho, verbose = True, 
-                          beta = beta, callback = _cb, callback_kwargs = cblm)
+                          beta = beta, callback = _cb, callback_kwargs = cblm,
+                          grad_operator = grad_operator)
 
 #-----------------------------------------------------------------------------------------------------
 # calculate cost of initial recon (image full or zeros)
