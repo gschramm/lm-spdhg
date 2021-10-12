@@ -51,8 +51,6 @@ scanner = ppp.RegularPolygonPETScanner(ncrystals_per_module = np.array([16,1]),
 
 # setup a test image
 voxsize = np.array([2.,2.,2.])
-n0      = 120
-n1      = 120
 n2      = max(1,int((scanner.xc2.max() - scanner.xc2.min()) / voxsize[2]))
 
 # convert fwhm from mm to pixels
@@ -60,13 +58,7 @@ fwhm      = fwhm_mm / voxsize
 fwhm_data = fwhm_data_mm / voxsize
 
 # setup a test image
-if phantom == 'ellipse2d':
-  n   = 200
-  img = np.zeros((n,n,n2), dtype = np.float32)
-  tmp = ellipse_phantom(n = n, c = 3)
-  for i2 in range(n2):
-    img[:,:,i2] = tmp
-elif phantom == 'brain2d':
+if phantom == 'brain2d':
   n   = 128
   img = np.zeros((n,n,n2), dtype = np.float32)
   tmp = brain2d_phantom(n = n)
@@ -75,20 +67,19 @@ elif phantom == 'brain2d':
 
 img_origin = (-(np.array(img.shape) / 2) +  0.5) * voxsize
 
-# setup an attenuation image
-att_img = (img > 0) * 0.01 * voxsize[0]
+# setup an attenuation image, projector takes voxel size into account!
+# so mu should be in 1/mm
+att_img = (img > 0) * 0.01
 
 # generate nonTOF sinogram parameters and the nonTOF projector for attenuation projection
 sino_params_nt = ppp.PETSinogramParameters(scanner)
 proj_nt        = ppp.SinogramProjector(scanner, sino_params_nt, img.shape, nsubsets = 1, 
                                     voxsize = voxsize, img_origin = img_origin)
-sino_shape_nt  = sino_params_nt.shape
 
-attn_sino = np.zeros(sino_shape_nt, dtype = np.float32)
 attn_sino = np.exp(-proj_nt.fwd_project(att_img))
 
 # generate the sensitivity sinogram
-sens_sino = np.ones(sino_shape_nt, dtype = np.float32)
+sens_sino = np.ones(sino_params_nt.shape, dtype = np.float32)
 
 # generate TOF sinogram parameters and the TOF projector
 sino_params = ppp.PETSinogramParameters(scanner, ntofbins = 17, tofbin_width = 15.)
