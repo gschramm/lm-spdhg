@@ -53,9 +53,7 @@ def spdhg_lm(events, multi_index, attn_sino, sens_sino, contam_sino,
   zbar = z.copy()
   
   # allocate arrays for gradient operations
-  #x_grad      = np.zeros((len(img_shape),) + img_shape, dtype = np.float32)
-  y_grad      = np.zeros((len(img_shape),) + img_shape, dtype = np.float32)
-  #y_grad_plus = np.zeros((len(img_shape),) + img_shape, dtype = np.float32)
+  y_grad = np.zeros((len(img_shape),) + img_shape, dtype = np.float32)
 
   # calculate S for the gradient operator
   if p_g > 0:
@@ -70,10 +68,9 @@ def spdhg_lm(events, multi_index, attn_sino, sens_sino, contam_sino,
   for i in range(nsubsets):
     ss = slice(i,None,nsubsets)
     # clip inf values
-    tmp = (gamma*rho) / pet_fwd_model_lm(ones_img, lmproj, events[ss,:], 
-                                         attn_list[ss], sens_list[ss], fwhm = fwhm)
-    tmp[tmp == np.inf] = tmp[tmp != np.inf].max()
-    S_i.append(tmp)
+    tmp = pet_fwd_model_lm(ones_img, lmproj, events[ss,:], attn_list[ss], sens_list[ss], fwhm = fwhm)
+    tmp = np.clip(tmp, tmp[tmp > 0].min(), None)
+    S_i.append((gamma*rho) / tmp)
 
 
   T_i = np.zeros((nsubsets,) + img_shape, dtype = np.float32)
@@ -92,7 +89,6 @@ def spdhg_lm(events, multi_index, attn_sino, sens_sino, contam_sino,
   if p_g > 0:
     T = np.clip(T, None, T_g)
 
-    
   #--------------------------------------------------------------------------------------------
   # SPDHG iterations
   
@@ -112,8 +108,7 @@ def spdhg_lm(events, multi_index, attn_sino, sens_sino, contam_sino,
   
         x = np.clip(x - T*zbar, 0, None)
   
-        y_plus = y[ss] + S_i[i]*(pet_fwd_model_lm(x, lmproj, events[ss,:], 
-                                                  attn_list[ss], sens_list[ss], 
+        y_plus = y[ss] + S_i[i]*(pet_fwd_model_lm(x, lmproj, events[ss,:], attn_list[ss], sens_list[ss], 
                                                   fwhm = fwhm) + contam_list[ss])
   
         # apply the prox for the dual of the poisson logL
