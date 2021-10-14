@@ -17,9 +17,9 @@ def strip_axes(axx):
 def plot_mean_std(prior = 'TV'):
 
   if prior == 'TV':
-    fnames = list(pathlib.Path('data/20211009_MIC_DTV_TV').glob('brain2d_counts_1.0E+06_seed_*_beta_3.0E-03_prior_TV_niter_ref_10000_fwhm_4.5_4.5_niter_100_nsub_56.npz'))
+    fnames = list(pathlib.Path('data/20211012_MIC_DTV_TV').glob('brain2d_counts_1.0E+06_seed_*_beta_3.0E-02_prior_TV_niter_ref_10000_fwhm_4.5_4.5_niter_100_nsub_56.npz'))
   elif prior == 'DTV':
-    fnames = list(pathlib.Path('data/20211009_MIC_DTV_TV').glob('brain2d_counts_1.0E+06_seed_*_beta_3.0E-02_prior_DTV_niter_ref_10000_fwhm_4.5_4.5_niter_100_nsub_56.npz'))
+    fnames = list(pathlib.Path('data/20211012_MIC_DTV_TV').glob('brain2d_counts_1.0E+06_seed_*_beta_1.0E-01_prior_DTV_niter_ref_10000_fwhm_4.5_4.5_niter_100_nsub_56.npz'))
   
   n_real = len(fnames)
   x_lm   = np.zeros((n_real,128,128))
@@ -81,7 +81,7 @@ def plot_mean_std(prior = 'TV'):
 #--------------------------------------------------------------------------------------- 
 def plot_lm_spdhg_results_mic(ofile):
   data = np.load(ofile)
-  
+ 
   ref_recon       = data['ref_recon']
   cost_ref        = data['cost_ref']         
   x_sino          = data['x_sino']          
@@ -161,14 +161,14 @@ def plot_lm_spdhg_results_mic(ofile):
   
 #--------------------------------------------------------------------------------------- 
 
-def plot_conv_vs_subsets(nsubsets = [28,56,112,224],
+def plot_conv_vs_subsets(nsubsets = [7,28,56,224],
                          prior    = 'DTV',
-                         beta     = '3.0E-02'):
+                         beta     = '1.0E-01'):
 
-  fnames = [pathlib.Path('data/20211009_MIC_DTV_TV') / f'brain2d_counts_1.0E+06_seed_1_beta_{beta}_prior_{prior}_niter_ref_10000_fwhm_4.5_4.5_niter_100_nsub_{x}.npz' for x in nsubsets]
+  fnames = [pathlib.Path('data/20211012_MIC_DTV_TV') / f'brain2d_counts_1.0E+06_seed_1_beta_{beta}_prior_{prior}_niter_ref_10000_fwhm_4.5_4.5_niter_100_nsub_{x}.npz' for x in nsubsets]
 
   fig, ax = plt.subplots(1,2, figsize = (10,4))
-  axins1 = inset_axes(ax[1], width="45%", height="45%", loc=4, borderpad=1)
+  axins1 = inset_axes(ax[1], width="45%", height="45%", loc=4, borderpad=1.7)
 
   for i, fname in enumerate(fnames):
     print(fname)
@@ -215,10 +215,11 @@ def plot_conv_vs_subsets(nsubsets = [28,56,112,224],
   fig.tight_layout()
   fig.show()
 
+  return fig
+
 #--------------------------------------------------------------------------------------- 
 
-def plot_early_stopping():
-  fname = 'data/brain2d_counts_1.0E+06_seed_1_beta_3.0E-03_prior_TV_niter_ref_10000_fwhm_4.5_4.5_niter_100_nsub_224.npz'
+def plot_early_stopping(fname):
 
   data = np.load(fname)
 
@@ -273,21 +274,30 @@ def plot_early_stopping():
   ax[1,5].set_title('LM-SPDHG 100 it / 224 ss', fontsize = 'small')
 
   fig.tight_layout()
-  fig.savefig('stopping_early.png')
   fig.show()
+
+  return fig
 
 #--------------------------------------------------------------------------------------- 
 
 if __name__ == '__main__':
   print()
 
-  #fnames = pathlib.Path('data/20211009_MIC_DTV_TV').glob('brain2d_*.npz')
+  #fnames = pathlib.Path('data/20211012_MIC_DTV_TV').glob('brain2d_*.npz')
 
   #for fname in fnames: 
+  #  print(fname)
   #  fig = plot_lm_spdhg_results_mic(fname)
   #  fig.savefig(fname.with_suffix('.png'))
 
-  #f1 = plot_mean_std(prior = 'TV')
-  #f2 = plot_mean_std(prior = 'DTV')
+  fig1 = plot_conv_vs_subsets(prior = 'DTV', beta = '1.0E-01')
+  fig1.savefig('data/20211012_MIC_DTV_TV/subsets_DTV_1.0E-01.png') 
+  fig2 = plot_conv_vs_subsets(prior = 'TV',  beta = '3.0E-02')
+  fig2.savefig('data/20211012_MIC_DTV_TV/subsets_TV_3.0E-02.png') 
+
+  #fig3 = plot_early_stopping(fname = 'data/20211012_MIC_DTV_TV/brain2d_counts_1.0E+06_seed_1_beta_3.0E-02_prior_TV_niter_ref_10000_fwhm_4.5_4.5_niter_100_nsub_224.npz')
+  #fig3.savefig('data/20211012_MIC_DTV_TV/early_TV_3.0E-02.png') 
+  #fig4 = plot_early_stopping(fname = 'data/20211012_MIC_DTV_TV/brain2d_counts_1.0E+06_seed_1_beta_1.0E-01_prior_DTV_niter_ref_10000_fwhm_4.5_4.5_niter_100_nsub_224.npz')
+  #fig4.savefig('data/20211012_MIC_DTV_TV/early_DTV_1.0E-01.png') 
 
 

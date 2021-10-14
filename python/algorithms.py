@@ -146,3 +146,50 @@ def spdhg_lm(events, multi_index, attn_sino, sens_sino, contam_sino,
       callback(x, iteration = (it+1), subset = (i+1), **callback_kwargs)
 
   return x
+
+#------------------------------------------------------------------------------------------------
+
+from pyparallelproj.cp_tv_denoise import cp_tv_denoise
+
+def lm_emtv(events, attn_list, sens_list, contam_list, lmproj, sens_img, niter, nsubsets, 
+            fwhm = 0, verbose = False, xstart = None, callback = None, subset_callback = None,
+            callback_kwargs = None, subset_callback_kwargs = None, beta = 0, niter_denoise = 20):
+
+  img_shape  = tuple(lmproj.img_dim)
+
+  # initialize recon
+  if xstart is None:
+    recon = np.full(img_shape, events.shape[0] / np.prod(img_shape), dtype = np.float32)
+  else:
+    recon = xstart.copy()
+
+  # run OSEM iterations
+  for it in range(niter):
+    for i in range(nsubsets):
+      if verbose: print(f'iteration {it+1} subset {i+1}')
+    
+      exp_list = pet_fwd_model_lm(recon, lmproj, events[i::nsubsets,:], attn_list[i::nsubsets], 
+                                      sens_list[i::nsubsets], fwhm = fwhm) + contam_list[i::nsubsets]
+
+      recon *= (pet_back_model_lm(1/exp_list, lmproj, events[i::nsubsets,:], attn_list[i::nsubsets], 
+                                  sens_list[i::nsubsets], fwhm = fwhm)*nsubsets / sens_img)
+
+
+      if beta > 0:
+        # post EM TV denoise step
+        tmp = (recon*beta)
+        tmp = np.clip(tmp, tmp[tmp > 0].min(), None)
+        weights = sens_img / tmp
+        # clip also max of weights to avoid float overflow
+        weights = np.clip(weights, None, 0.1*np.finfo(np.float32).max)
+        recon   = cp_tv_denoise(recon, weights = weights, niter = niter_denoise, nonneg = True)
+
+      if subset_callback is not None:
+        subset_callback(recon, iteration = (it+1), subset = (i+1), **subset_callback_kwargs)
+
+    if callback is not None:
+      callback(recon, iteration = (it+1), subset = (i+1), **callback_kwargs)
+      
+  return recon
+
+
