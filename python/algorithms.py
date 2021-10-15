@@ -72,19 +72,13 @@ def spdhg_lm(events, multi_index, attn_sino, sens_sino, contam_sino,
     tmp = np.clip(tmp, tmp[tmp > 0].min(), None)
     S_i.append((gamma*rho) / tmp)
 
-
-  T_i = np.zeros((nsubsets,) + img_shape, dtype = np.float32)
-
-  for i in range(nsubsets):
-    ss = slice(i,None,nsubsets)
-
-    tmp = pet_back_model_lm(1./mu[ss], lmproj, events[ss,:], 
-                            attn_list[ss], sens_list[ss], fwhm = fwhm) + z/nsubsets
-
-    T_i[i,...] = p_p*rho/(gamma*tmp)
-
-  # take the element-wise min of the T_i's of all subsets
-  T = T_i.min(axis = 0)
+  # calculate the step size T
+  # the norm of every subset operator is the norm of the full operator / nsubsets
+  # in theory we need to backproject a full sino of ones
+  # however, z already contains a backprojections of a sino with ones in all empty data bins
+  # the missing part can be done by backprojecting the LM events with a value of 1/mu 
+  tmp = (pet_back_model_lm(1./mu, lmproj, events, attn_list, sens_list, fwhm = fwhm) + z)/nsubsets
+  T = p_p*rho/(gamma*tmp)
 
   if p_g > 0:
     T = np.clip(T, None, T_g)
