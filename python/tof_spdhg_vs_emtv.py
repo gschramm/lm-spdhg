@@ -25,7 +25,7 @@ parser.add_argument('--fwhm_mm',  help = 'psf modeling FWHM mm',  default = 4.5,
 parser.add_argument('--fwhm_data_mm',  help = 'psf for data FWHM mm',  default = 4.5, type = float)
 parser.add_argument('--phantom', help = 'phantom to use', default = 'brain2d')
 parser.add_argument('--seed',    help = 'seed for random generator', default = 1, type = int)
-parser.add_argument('--beta',  help = 'TV weight',  default = 3e-3, type = float)
+parser.add_argument('--beta',  help = 'TV weight',  default = 3e-2, type = float)
 parser.add_argument('--prior',  help = 'prior',  default = 'TV', choices = ['TV','DTV'])
 args = parser.parse_args()
 
@@ -246,52 +246,93 @@ sens_list   = sens_sino[multi_index[:,0],multi_index[:,1],multi_index[:,2],0]
 contam_list = contam_sino[multi_index[:,0],multi_index[:,1],multi_index[:,2], multi_index[:,3]]
 
 # LM-OSEM EM-TV
-cost_emtv = np.zeros(niter)
-psnr_emtv = np.zeros(niter)
-cbs_emtv  = {'cost':cost_emtv,'psnr':psnr_emtv,'xref':ref_recon}
+cost_emtv = np.zeros((3,niter))
+psnr_emtv = np.zeros((3,niter))
 
 proj.init_subsets(1)
 ones_sino = np.ones(proj.sino_params.shape , dtype = np.float32)
 sens_img  = ppp.pet_back_model(ones_sino, proj, attn_sino, sens_sino, 0, fwhm = fwhm)
  
-recon_emtv = lm_emtv(events, attn_list, sens_list, contam_list, lmproj, sens_img, niter, 4, 
-                     fwhm = fwhm, verbose = True, beta = beta,
-                     callback = _cb, callback_kwargs = cbs_emtv)
+x_emtv7 = lm_emtv(events, attn_list, sens_list, contam_list, lmproj, sens_img, niter, 7, 
+                  fwhm = fwhm, verbose = True, beta = beta, callback = _cb, 
+                  callback_kwargs  = {'cost':cost_emtv[0,:],'psnr':psnr_emtv[0,:],'xref':ref_recon})
+
+x_emtv28 = lm_emtv(events, attn_list, sens_list, contam_list, lmproj, sens_img, niter, 28, 
+                   fwhm = fwhm, verbose = True, beta = beta, callback = _cb, 
+                   callback_kwargs = {'cost':cost_emtv[1,:],'psnr':psnr_emtv[1,:],'xref':ref_recon})
+
+x_emtv56 = lm_emtv(events, attn_list, sens_list, contam_list, lmproj, sens_img, niter, 56, 
+                   fwhm = fwhm, verbose = True, beta = beta, callback = _cb, 
+                   callback_kwargs = {'cost':cost_emtv[2,:],'psnr':psnr_emtv[2,:],'xref':ref_recon})
 
 
 #-----------------------------------------------------------------------------------------------------
-cost_spdhg = np.zeros(niter)
-psnr_spdhg = np.zeros(niter)
-cbs_spdhg  = {'cost':cost_spdhg,'psnr':psnr_spdhg,'xref':ref_recon}
+# calculate better intializer for the dual of that data
+
+xinit = lm_emtv(events, attn_list, sens_list, contam_list, lmproj, sens_img, 2, 28, 
+                fwhm = fwhm, verbose = True, beta = beta)
+
+proj.init_subsets(1)
+x_fwd = ppp.pet_fwd_model(xinit, proj, attn_sino, sens_sino, 0, fwhm = fwhm) + contam_sino
+yinit = 1 - (em_sino / x_fwd)
+
+#-----------------------------------------------------------------------------------------------------
+
+cost_spdhg = np.zeros((2,niter))
+psnr_spdhg = np.zeros((2,niter))
 
 gamma  = 1 / img.max()
 proj.init_subsets(nsubsets)
+
 x_sino = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
-               fwhm = fwhm, gamma = gamma, verbose = True, 
-               beta = beta, grad_operator = grad_operator,
-               callback = _cb, callback_kwargs = cbs_spdhg)
+               fwhm = fwhm, gamma = gamma, verbose = True, ystart = None, xstart = None,
+               beta = beta, grad_operator = grad_operator, callback = _cb,  
+               callback_kwargs = {'cost':cost_spdhg[0,:],'psnr':psnr_spdhg[0,:],'xref':ref_recon})
+
+x_sino_warm = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
+                    fwhm = fwhm, gamma = gamma, verbose = True, ystart = yinit, xstart = xinit,
+                    beta = beta, grad_operator = grad_operator, callback = _cb,  
+                    callback_kwargs = {'cost':cost_spdhg[1,:],'psnr':psnr_spdhg[1,:],'xref':ref_recon})
 
 #-----------------------------------------------------------------------------------------------------
 ni = np.arange(1,niter+1)
 
-fig, ax = plt.subplots(2,3, figsize = (9,6))
-ax[0,0].imshow(img.squeeze(), vmax = 1.2*img.max(), cmap = plt.cm.Greys)
-ax[0,0].set_title('ground truth')
-ax[0,1].imshow(recon_emtv.squeeze(), vmax = 1.2*img.max(), cmap = plt.cm.Greys)
-ax[0,1].set_title('EM-TV')
-ax[1,0].imshow(x_sino.squeeze(), vmax = 1.2*img.max(), cmap = plt.cm.Greys)
-ax[1,0].set_title('SPDHG')
-ax[1,1].imshow(ref_recon.squeeze(), vmax = 1.2*img.max(), cmap = plt.cm.Greys)
-ax[1,1].set_title('long PDHG (reference)')
-ax[0,2].semilogy(ni, cost_emtv - cost_ref.min(), label = 'EM-TV')
-ax[0,2].semilogy(ni, cost_spdhg - cost_ref.min(), label = 'SPDHG')
-ax[0,2].set_xlabel('iteration')
-ax[0,2].set_ylabel('cost - cost(ref)')
-ax[1,2].plot(ni, psnr_emtv, label = 'EM-TV')
-ax[1,2].plot(ni, psnr_spdhg, label = 'SPDHG')
-ax[1,2].set_xlabel('iteration')
-ax[1,2].set_ylabel('PSNR to reference')
+fig, ax = plt.subplots(2,4, figsize = (14,7))
+ax[0,0].imshow(x_emtv7.squeeze(), vmax = 1.2*img.max(), cmap = plt.cm.Greys)
+ax[0,0].set_title(f'EM-TV {niter}it/7ss', fontsize = 'medium')
+ax[0,1].imshow(x_emtv28.squeeze(), vmax = 1.2*img.max(), cmap = plt.cm.Greys)
+ax[0,1].set_title(f'EM-TV {niter}it/28ss', fontsize = 'medium')
+ax[0,2].imshow(x_emtv56.squeeze(), vmax = 1.2*img.max(), cmap = plt.cm.Greys)
+ax[0,2].set_title(f'EM-TV {niter}it/56ss', fontsize = 'medium')
 
-ax[0,2].legend()
+ax[1,0].imshow(ref_recon.squeeze(), vmax = 1.2*img.max(), cmap = plt.cm.Greys)
+ax[1,0].set_title('long PDHG (reference)', fontsize = 'medium')
+ax[1,1].imshow(x_sino.squeeze(), vmax = 1.2*img.max(), cmap = plt.cm.Greys)
+ax[1,1].set_title(f'SPDHG {niter}it/{nsubsets}ss', fontsize = 'medium')
+ax[1,2].imshow(x_sino_warm.squeeze(), vmax = 1.2*img.max(), cmap = plt.cm.Greys)
+ax[1,2].set_title(f'w. SPDHG {niter}it/{nsubsets}ss', fontsize = 'medium')
+
+ax[0,-1].semilogy(ni, cost_emtv[0,:] - cost_ref.min(), label = f'EM-TV 7ss' , color = 'tab:blue', ls = '-')
+ax[0,-1].semilogy(ni, cost_emtv[1,:] - cost_ref.min(), label = f'EM-TV 28ss', color = 'tab:blue', ls = ':')
+ax[0,-1].semilogy(ni, cost_emtv[2,:] - cost_ref.min(), label = f'EM-TV 56ss', color = 'tab:blue', ls = '-.')
+ax[0,-1].semilogy(ni, cost_spdhg[0,:] - cost_ref.min(), label = f'SPDHG {nsubsets}ss',
+                  color = 'tab:orange', ls = ':')
+ax[0,-1].semilogy(ni, cost_spdhg[1,:] - cost_ref.min(), label = f'w. SPDHG {nsubsets}ss', 
+                  color = 'tab:orange', ls = '-')
+ax[0,-1].set_xlabel('iteration')
+ax[0,-1].set_ylabel('cost - cost(ref)')
+
+ax[1,-1].plot(ni, psnr_emtv[0,:], label = f'EM-TV 7ss' , color = 'tab:blue', ls = '-')
+ax[1,-1].plot(ni, psnr_emtv[1,:], label = f'EM-TV 28ss', color = 'tab:blue', ls = ':')
+ax[1,-1].plot(ni, psnr_emtv[2,:], label = f'EM-TV 56ss', color = 'tab:blue', ls = '-.')
+ax[1,-1].plot(ni, psnr_spdhg[0,:], label = f'SPDHG {nsubsets}ss',color = 'tab:orange', ls = ':')
+ax[1,-1].plot(ni, psnr_spdhg[1,:], label = f'w. SPDHG {nsubsets}ss', color = 'tab:orange', ls = '-')
+ax[1,-1].set_xlabel('iteration')
+ax[1,-1].set_ylabel('PSNR to reference')
+ax[0,-1].grid(ls = ":")
+ax[1,-1].grid(ls = ":")
+
+ax[0,-1].legend()
 fig.tight_layout()
 fig.show()
+fig.savefig(f'data/emtv_{niter}_{nsubsets}_counts_{counts:.1E}_seed_{seed}_beta_{beta:.1E}.png')
