@@ -161,14 +161,8 @@ def lm_emtv(events, attn_list, sens_list, contam_list, lmproj, sens_img, niter, 
   for it in range(niter):
     for i in range(nsubsets):
       if verbose: print(f'iteration {it+1} subset {i+1}')
-    
-      exp_list = pet_fwd_model_lm(recon, lmproj, events[i::nsubsets,:], attn_list[i::nsubsets], 
-                                      sens_list[i::nsubsets], fwhm = fwhm) + contam_list[i::nsubsets]
 
-      recon *= (pet_back_model_lm(1/exp_list, lmproj, events[i::nsubsets,:], attn_list[i::nsubsets], 
-                                  sens_list[i::nsubsets], fwhm = fwhm)*nsubsets / sens_img)
-
-
+      # calculate the weights for weighted denoising problem that we have to solve
       if beta > 0:
         # post EM TV denoise step
         tmp = (recon*beta)
@@ -176,6 +170,17 @@ def lm_emtv(events, attn_list, sens_list, contam_list, lmproj, sens_img, niter, 
         weights = sens_img / tmp
         # clip also max of weights to avoid float overflow
         weights = np.clip(weights, None, 0.1*np.finfo(np.float32).max)
+
+
+      # EM step
+      exp_list = pet_fwd_model_lm(recon, lmproj, events[i::nsubsets,:], attn_list[i::nsubsets], 
+                                      sens_list[i::nsubsets], fwhm = fwhm) + contam_list[i::nsubsets]
+
+      recon *= (pet_back_model_lm(1/exp_list, lmproj, events[i::nsubsets,:], attn_list[i::nsubsets], 
+                                  sens_list[i::nsubsets], fwhm = fwhm)*nsubsets / sens_img)
+
+      # weighted denoising
+      if beta > 0:
         recon   = cp_tv_denoise(recon, weights = weights, niter = niter_denoise, nonneg = True)
 
       if subset_callback is not None:
