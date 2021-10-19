@@ -4,7 +4,7 @@ import os
 import matplotlib.pyplot as plt
 import pyparallelproj as ppp
 from pyparallelproj.phantoms import ellipse2d_phantom, brain2d_phantom
-from pyparallelproj.utils import GradientOperator
+from pyparallelproj.utils import GradientOperator, GradientNorm
 from pyparallelproj.algorithms import spdhg
 
 from algorithms import spdhg_lm
@@ -135,6 +135,8 @@ if prior == 'DTV':
 else:
   grad_operator  = GradientOperator()
 
+grad_norm = GradientNorm(name = 'l2_l1', beta = beta)
+
 #-----------------------------------------------------------------------------------------------------
 def calc_cost(x):
   cost = 0
@@ -151,8 +153,7 @@ def calc_cost(x):
   proj.init_subsets(ns)
 
   if beta > 0:
-    x_grad = grad_operator.fwd(x)
-    cost += beta*np.linalg.norm(x_grad, axis = 0).sum()
+    cost += grad_norm.eval(grad_operator.fwd(x))
 
   return cost
 
@@ -286,7 +287,7 @@ for ig,gamma in enumerate(gammas):
   x_lm[ig,...] = spdhg_lm(events, multi_index, attn_sino, sens_sino, contam_sino, 
                           proj, lmproj, niter, nsubsets,
                           fwhm = fwhm, gamma = gamma, verbose = True, 
-                          beta = beta, callback = _cb, callback_kwargs = cblm,
+                          grad_norm = grad_norm, callback = _cb, callback_kwargs = cblm,
                           grad_operator = grad_operator)
 
 #-----------------------------------------------------------------------------------------------------

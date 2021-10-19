@@ -1,6 +1,6 @@
 import numpy as np
 from pyparallelproj.models import pet_fwd_model, pet_back_model, pet_fwd_model_lm, pet_back_model_lm
-from pyparallelproj.utils import GradientOperator
+from pyparallelproj.utils import GradientOperator, GradientNorm
 from utils import count_event_multiplicity
 
 def spdhg_lm(events, multi_index, attn_sino, sens_sino, contam_sino, 
@@ -8,7 +8,7 @@ def spdhg_lm(events, multi_index, attn_sino, sens_sino, contam_sino,
              fwhm = 0, gamma = 1., rho = 0.999, verbose = False, 
              callback = None, subset_callback = None,
              callback_kwargs = None, subset_callback_kwargs = None,
-             beta = 0, grad_operator = None):
+             grad_norm = None, grad_operator = None):
 
   # count the "multiplicity" of every event in the list
   # if an event occurs n times in the list of events, the multiplicity is n
@@ -24,17 +24,20 @@ def spdhg_lm(events, multi_index, attn_sino, sens_sino, contam_sino,
   if grad_operator is None:
     grad_operator = GradientOperator()
 
+  if grad_norm is None:
+    grad_norm = GradientNorm()
+
   # setup the probabilities for doing a pet data or gradient update
   # p_g is the probablility for doing a gradient update
   # p_p is the probablility for doing a PET data subset update
-  
-  if beta == 0:
+ 
+  if grad_norm.beta == 0:
     p_g = 0
   else: 
     p_g = 0.5
     # norm of the gradient operator = sqrt(ndim*4)
     ndim  = len([x for x in img_shape if x > 1])
-    grad_norm = np.sqrt(ndim*4)
+    grad_op_norm = np.sqrt(ndim*4)
   
   p_p = (1 - p_g) / nsubsets
   
@@ -57,8 +60,8 @@ def spdhg_lm(events, multi_index, attn_sino, sens_sino, contam_sino,
 
   # calculate S for the gradient operator
   if p_g > 0:
-    S_g = (gamma*rho/grad_norm)
-    T_g = p_g*rho/(gamma*grad_norm)
+    S_g = (gamma*rho/grad_op_norm)
+    T_g = p_g*rho/(gamma*grad_op_norm)
 
   # calculate the "step sizes" S_i for the PET fwd operator
   S_i = []
@@ -121,8 +124,7 @@ def spdhg_lm(events, multi_index, attn_sino, sens_sino, contam_sino,
         y_grad_plus = (y_grad + S_g*grad_operator.fwd(x))
   
         # apply the prox for the gradient norm
-        gnorm = np.linalg.norm(y_grad_plus, axis = 0) / beta
-        y_grad_plus /= np.clip(gnorm, 1, None)
+        grad_norm.prox_convex_dual(y_grad_plus)
  
         dz = grad_operator.adjoint(y_grad_plus - y_grad)
   
