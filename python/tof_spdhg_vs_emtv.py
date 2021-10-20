@@ -4,10 +4,10 @@ import os
 import matplotlib.pyplot as plt
 import pyparallelproj as ppp
 from pyparallelproj.phantoms import ellipse2d_phantom, brain2d_phantom
-from pyparallelproj.utils import GradientOperator
-from pyparallelproj.algorithms import spdhg
+from pyparallelproj.utils import GradientOperator, GradientNorm
+from pyparallelproj.algorithms import spdhg, osem_lm_emtv
 
-from algorithms import spdhg_lm, lm_emtv
+from algorithms import spdhg_lm
 from utils import  plot_lm_spdhg_results
 
 from scipy.ndimage import gaussian_filter
@@ -137,12 +137,11 @@ if prior == 'DTV':
 else:
   grad_operator  = GradientOperator()
 
+grad_norm = GradientNorm(name = 'l2_l1', beta = beta)
+
 #-----------------------------------------------------------------------------------------------------
 def calc_cost(x):
   cost = 0
-
-  ns = proj.nsubsets
-  proj.init_subsets(1)
 
   for i in range(proj.nsubsets):
     # get the slice for the current subset
@@ -150,11 +149,8 @@ def calc_cost(x):
     exp = ppp.pet_fwd_model(x, proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm) + contam_sino[ss]
     cost += (exp - em_sino[ss]*np.log(exp)).sum()
 
-  proj.init_subsets(ns)
-
-  if beta > 0:
-    x_grad = grad_operator.fwd(x)
-    cost += beta*np.linalg.norm(x_grad, axis = 0).sum()
+  if grad_norm.beta > 0:
+    cost += grad_norm.eval(grad_operator.fwd(x))
 
   return cost
 
@@ -205,23 +201,25 @@ proj.init_subsets(1)
 ones_sino = np.ones(proj.sino_params.shape , dtype = np.float32)
 sens_img  = ppp.pet_back_model(ones_sino, proj, attn_sino, sens_sino, 0, fwhm = fwhm)
  
-xinit = lm_emtv(events, attn_list, sens_list, contam_list, lmproj, sens_img, 2, 28, 
-                fwhm = fwhm, verbose = True, beta = beta)
+xinit = osem_lm_emtv(events, attn_list, sens_list, contam_list, lmproj, sens_img, 2, 28, 
+                     grad_operator = grad_operator, grad_norm = grad_norm,
+                     fwhm = fwhm, verbose = True)
 
 proj.init_subsets(1)
 x_fwd = ppp.pet_fwd_model(xinit, proj, attn_sino, sens_sino, 0, fwhm = fwhm) + contam_sino
 yinit = 1 - (em_sino / x_fwd)
 
-y_init_grad = beta*np.tanh(grad_operator.fwd(xinit/xinit.max()))
+#y_init_grad = beta*np.tanh(grad_operator.fwd(xinit/xinit.max()))
 
 #-----------------------------------------------------------------------------------------------------
 
 cost_emtv = np.zeros(niter)
 x_emtv_intermed = np.zeros((niter,) + img.shape) 
 
-x_emtv = lm_emtv(events, attn_list, sens_list, contam_list, lmproj, sens_img, niter, nsubsets, 
-                 fwhm = fwhm, verbose = True, beta = beta, callback = _cb,
-                 callback_kwargs = {'cost':cost_emtv, 'intermed': x_emtv_intermed})
+x_emtv = osem_lm_emtv(events, attn_list, sens_list, contam_list, lmproj, sens_img, niter, nsubsets, 
+                      fwhm = fwhm, verbose = True, callback = _cb,
+                      grad_operator = grad_operator, grad_norm = grad_norm,
+                      callback_kwargs = {'cost':cost_emtv, 'intermed': x_emtv_intermed})
 
 #-----------------------------------------------------------------------------------------------------
 

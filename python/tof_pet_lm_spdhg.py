@@ -141,18 +141,13 @@ grad_norm = GradientNorm(name = 'l2_l1', beta = beta)
 def calc_cost(x):
   cost = 0
 
-  ns = proj.nsubsets
-  proj.init_subsets(1)
-
   for i in range(proj.nsubsets):
     # get the slice for the current subset
     ss = proj.subset_slices[i]
     exp = ppp.pet_fwd_model(x, proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm) + contam_sino[ss]
     cost += (exp - em_sino[ss]*np.log(exp)).sum()
 
-  proj.init_subsets(ns)
-
-  if beta > 0:
+  if grad_norm.beta > 0:
     cost += grad_norm.eval(grad_operator.fwd(x))
 
   return cost
