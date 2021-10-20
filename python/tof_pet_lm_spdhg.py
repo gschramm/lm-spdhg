@@ -206,8 +206,8 @@ else:
   cost_ref  = np.zeros(niter_ref)
   ref_recon = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter_ref,
                     gamma = 1/img.max(), fwhm = fwhm, verbose = True, 
-                    beta = beta, callback = _cb, callback_kwargs = {'cost': cost_ref},
-                    grad_operator = grad_operator)
+                    callback = _cb, callback_kwargs = {'cost': cost_ref},
+                    grad_operator = grad_operator, grad_norm = grad_norm)
 
 
   proj.init_subsets(ns)
@@ -268,8 +268,8 @@ for ig,gamma in enumerate(gammas):
 
   x_sino[ig,...] = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
                          fwhm = fwhm, gamma = gamma, verbose = True, 
-                         beta = beta, callback = _cb, callback_kwargs = cbs,
-                         grad_operator = grad_operator)
+                         callback = _cb, callback_kwargs = cbs,
+                         grad_operator = grad_operator, grad_norm = grad_norm)
 
   # LM SPDHG
   proj.init_subsets(1)
@@ -282,8 +282,8 @@ for ig,gamma in enumerate(gammas):
   x_lm[ig,...] = spdhg_lm(events, multi_index, attn_sino, sens_sino, contam_sino, 
                           proj, lmproj, niter, nsubsets,
                           fwhm = fwhm, gamma = gamma, verbose = True, 
-                          grad_norm = grad_norm, callback = _cb, callback_kwargs = cblm,
-                          grad_operator = grad_operator)
+                          callback = _cb, callback_kwargs = cblm,
+                          grad_operator = grad_operator, grad_norm = grad_norm)
 
 #-----------------------------------------------------------------------------------------------------
 # calculate cost of initial recon (image full or zeros)

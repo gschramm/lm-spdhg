@@ -209,7 +209,7 @@ proj.init_subsets(1)
 x_fwd = ppp.pet_fwd_model(xinit, proj, attn_sino, sens_sino, 0, fwhm = fwhm) + contam_sino
 yinit = 1 - (em_sino / x_fwd)
 
-#y_init_grad = beta*np.tanh(grad_operator.fwd(xinit/xinit.max()))
+#y_init_grad = grad_norm.beta*np.tanh(grad_operator.fwd(xinit/xinit.max()))
 
 #-----------------------------------------------------------------------------------------------------
 
@@ -232,14 +232,13 @@ x_spdhg_warm_intermed = np.zeros((niter,) + img.shape)
 proj.init_subsets(nsubsets)
 x_sino = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
                fwhm = fwhm, gamma = gamma/img.max(), verbose = True, ystart = None, xstart = None,
-               beta = beta, grad_operator = grad_operator, callback = _cb,  
-               callback_kwargs = {'cost':cost_spdhg, 'intermed': x_spdhg_intermed})
+               grad_operator = grad_operator, grad_norm = grad_norm,
+               callback = _cb, callback_kwargs = {'cost':cost_spdhg, 'intermed': x_spdhg_intermed})
 
 x_sino_warm = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
                     fwhm = fwhm, gamma = gamma/img.max(), verbose = True, ystart = yinit, xstart = xinit,
-                    beta = beta, grad_operator = grad_operator, callback = _cb,  
-                    callback_kwargs = {'cost':cost_spdhg_warm, 'intermed': x_spdhg_warm_intermed})
-
+                    grad_operator = grad_operator, grad_norm = grad_norm, 
+                    callback = _cb, callback_kwargs = {'cost':cost_spdhg_warm, 'intermed': x_spdhg_warm_intermed})
 
 #-----------------------------------------------------------------------------------------------------
 
