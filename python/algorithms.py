@@ -3,9 +3,9 @@ from pyparallelproj.models import pet_fwd_model, pet_back_model, pet_fwd_model_l
 from pyparallelproj.utils import GradientOperator, GradientNorm
 from utils import count_event_multiplicity
 
-def spdhg_lm(events, multi_index, attn_sino, sens_sino, contam_sino, 
-             proj, niter, nsubsets,
-             fwhm = 0, gamma = 1., rho = 0.999, verbose = False, 
+def spdhg_lm(events, attn_list, sens_list, contam_list, sens_img,
+             proj, niter, nsubsets, 
+             x0 = None, fwhm = 0, gamma = 1., rho = 0.999, verbose = False, 
              callback = None, subset_callback = None,
              callback_kwargs = None, subset_callback_kwargs = None,
              grad_norm = None, grad_operator = None):
@@ -14,11 +14,6 @@ def spdhg_lm(events, multi_index, attn_sino, sens_sino, contam_sino,
   # if an event occurs n times in the list of events, the multiplicity is n
   mu = count_event_multiplicity(events, use_gpu_if_possible = True)
  
-  # generate the 1d contamination, sensitivity and attenuation lists from the sinograms
-  attn_list   = attn_sino[multi_index[:,0],multi_index[:,1],multi_index[:,2],0]
-  sens_list   = sens_sino[multi_index[:,0],multi_index[:,1],multi_index[:,2],0]
-  contam_list = contam_sino[multi_index[:,0],multi_index[:,1],multi_index[:,2], multi_index[:,3]]
-
   img_shape = tuple(proj.img_dim)
 
   if grad_operator is None:
@@ -43,18 +38,17 @@ def spdhg_lm(events, multi_index, attn_sino, sens_sino, contam_sino,
   
   #--------------------------------------------------------------------------------------------
   # initialize variables
-  x = np.zeros(img_shape, dtype = np.float32)
-  y = np.zeros(events.shape[0], dtype = np.float32)
+  if x0 is None:
+    x = np.zeros(img_shape, dtype = np.float32)
+  else:
+    x = x0.copy()
 
-  # creat a tempory TOF sinogram that is 1 in all bins without counts and 0 in all other bins
-  tmp = np.ones(contam_sino.shape, dtype = np.float32)
-  tmp[multi_index[:,0],multi_index[:,1],multi_index[:,2], multi_index[:,3]] = 0
-  
-  z  = pet_back_model(tmp, proj, attn_sino, sens_sino, fwhm = fwhm)
-  del tmp
+  # initialize y for data
+  y = 1 - (mu / (pet_fwd_model_lm(x, proj, events, attn_list, sens_list, fwhm = fwhm) + contam_list))
 
+  z = sens_img + pet_back_model_lm((y - 1)/mu, proj, events, attn_list, sens_list, fwhm = fwhm)
   zbar = z.copy()
-  
+
   # allocate arrays for gradient operations
   y_grad = np.zeros((len(img_shape),) + img_shape, dtype = np.float32)
 
@@ -76,11 +70,8 @@ def spdhg_lm(events, multi_index, attn_sino, sens_sino, contam_sino,
     S_i.append((gamma*rho) / tmp)
 
   # calculate the step size T
-  # the norm of every subset operator is the norm of the full operator / nsubsets
-  # in theory we need to backproject a full sino of ones
-  # however, z already contains a backprojections of a sino with ones in all empty data bins
-  # the missing part can be done by backprojecting the LM events with a value of 1/mu 
-  tmp = (pet_back_model_lm(1./mu, proj, events, attn_list, sens_list, fwhm = fwhm) + z)/nsubsets
+  # sens img is back_model(1)
+  tmp = sens_img / nsubsets
   T = p_p*rho/(gamma*tmp)
 
   if p_g > 0:

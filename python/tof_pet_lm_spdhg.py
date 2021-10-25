@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import pyparallelproj as ppp
 from pyparallelproj.phantoms import ellipse2d_phantom, brain2d_phantom
 from pyparallelproj.utils import GradientOperator, GradientNorm
-from pyparallelproj.algorithms import spdhg
+from pyparallelproj.algorithms import spdhg, osem_lm_emtv
 
 from algorithms import spdhg_lm
 from utils import  plot_lm_spdhg_results
@@ -173,6 +173,37 @@ def _cb(x, **kwargs):
 
 
 #-------------------------------------------------------------------------------------
+
+# generate list mode events and the corresponting values in the contamination and sensitivity
+# for every subset sinogram
+
+# events is a list of nsubsets containing (nevents,6) arrays where
+# [:,0:2] are the transaxial/axial crystal index of the 1st detector
+# [:,2:4] are the transaxial/axial crystal index of the 2nd detector
+# [:,4]   are the event TOF bins
+
+events, multi_index = sino_params.sinogram_to_listmode(em_sino, 
+                                                       return_multi_index = True,
+                                                       return_counts = False)
+
+attn_list   = attn_sino[multi_index[:,0],multi_index[:,1],multi_index[:,2],0]
+sens_list   = sens_sino[multi_index[:,0],multi_index[:,1],multi_index[:,2],0]
+contam_list = contam_sino[multi_index[:,0],multi_index[:,1],multi_index[:,2], multi_index[:,3]]
+
+#-----------------------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------
+
+sens_img  = ppp.pet_back_model(np.ones(proj.sino_params.shape, dtype = np.float32), 
+                               proj, attn_sino, sens_sino, fwhm = fwhm)
+
+xinit = osem_lm_emtv(events, attn_list, sens_list, contam_list, proj, sens_img, 2, 28, 
+                     grad_operator = grad_operator, grad_norm = grad_norm,
+                     fwhm = fwhm, verbose = True)
+
+yinit = 1 - (em_sino / (ppp.pet_fwd_model(xinit, proj, attn_sino, sens_sino, fwhm = fwhm) + contam_sino))
+
+#-------------------------------------------------------------------------------------
 # rerfence reconstruction using PDHG
 
 niter_ref = 10000
@@ -193,7 +224,8 @@ else:
   # do long PDHG recon
   cost_ref  = np.zeros(niter_ref)
   ref_recon = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter_ref,
-                    gamma = 1/img.max(), fwhm = fwhm, verbose = True, 
+                    gamma = 3/img.max(), fwhm = fwhm, verbose = True, 
+                    xstart = xinit, ystart = yinit,
                     callback = _cb, callback_kwargs = {'cost': cost_ref},
                     grad_operator = grad_operator, grad_norm = grad_norm)
 
@@ -201,25 +233,10 @@ else:
   proj.init_subsets(ns)
   np.savez(ref_fname, ref_recon = ref_recon, cost_ref = cost_ref)
 
-#-------------------------------------------------------------------------------------
-
-# generate list mode events and the corresponting values in the contamination and sensitivity
-# for every subset sinogram
-
-# events is a list of nsubsets containing (nevents,6) arrays where
-# [:,0:2] are the transaxial/axial crystal index of the 1st detector
-# [:,2:4] are the transaxial/axial crystal index of the 2nd detector
-# [:,4]   are the event TOF bins
-
-events, multi_index = sino_params.sinogram_to_listmode(em_sino, 
-                                                       return_multi_index = True,
-                                                       return_counts = False)
 
 #-----------------------------------------------------------------------------------------------------
-#-----------------------------------------------------------------------------------------------------
-#-----------------------------------------------------------------------------------------------------
 
-gammas = np.array([1.]) / img.max()
+gammas = np.array([1., 3., 10.]) / img.max()
 
 cost_spdhg_sino = np.zeros((len(gammas),niter))
 cost_spdhg_lm   = np.zeros((len(gammas),niter))
@@ -250,6 +267,7 @@ for ig,gamma in enumerate(gammas):
 
   x_sino[ig,...] = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
                          fwhm = fwhm, gamma = gamma, verbose = True, 
+                         xstart = xinit, ystart = yinit,
                          callback = _cb, callback_kwargs = cbs,
                          grad_operator = grad_operator, grad_norm = grad_norm)
 
@@ -261,16 +279,15 @@ for ig,gamma in enumerate(gammas):
          'it_early3':5, 'x_early3':x_early3_lm[ig,:],
          'it_early4':10,'x_early4':x_early4_lm[ig,:]}
 
-  import pdb; pdb.set_trace()
-  x_lm[ig,...] = spdhg_lm(events, multi_index, attn_sino, sens_sino, contam_sino, 
-                          proj, niter, nsubsets,
+  x_lm[ig,...] = spdhg_lm(events, attn_list, sens_list, contam_list, sens_img,
+                          proj, niter, nsubsets, x0 = xinit,
                           fwhm = fwhm, gamma = gamma, verbose = True, 
                           callback = _cb, callback_kwargs = cblm,
                           grad_operator = grad_operator, grad_norm = grad_norm)
 
 #-----------------------------------------------------------------------------------------------------
 # calculate cost of initial recon (image full or zeros)
-c_0   = calc_cost(np.zeros(ref_recon.shape, dtype = np.float32))
+c_0 = calc_cost(xinit)
 
 # save the results
 ofile = os.path.join('data',f'{base_str}_niter_{niter}_nsub_{nsubsets}.npz')
