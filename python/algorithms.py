@@ -4,7 +4,7 @@ from pyparallelproj.utils import GradientOperator, GradientNorm
 from utils import count_event_multiplicity
 
 def spdhg_lm(events, multi_index, attn_sino, sens_sino, contam_sino, 
-             proj, lmproj, niter, nsubsets,
+             proj, niter, nsubsets,
              fwhm = 0, gamma = 1., rho = 0.999, verbose = False, 
              callback = None, subset_callback = None,
              callback_kwargs = None, subset_callback_kwargs = None,
@@ -19,7 +19,7 @@ def spdhg_lm(events, multi_index, attn_sino, sens_sino, contam_sino,
   sens_list   = sens_sino[multi_index[:,0],multi_index[:,1],multi_index[:,2],0]
   contam_list = contam_sino[multi_index[:,0],multi_index[:,1],multi_index[:,2], multi_index[:,3]]
 
-  img_shape = tuple(lmproj.img_dim)
+  img_shape = tuple(proj.img_dim)
 
   if grad_operator is None:
     grad_operator = GradientOperator()
@@ -50,7 +50,7 @@ def spdhg_lm(events, multi_index, attn_sino, sens_sino, contam_sino,
   tmp = np.ones(contam_sino.shape, dtype = np.float32)
   tmp[multi_index[:,0],multi_index[:,1],multi_index[:,2], multi_index[:,3]] = 0
   
-  z  = pet_back_model(tmp, proj, attn_sino, sens_sino, 0, fwhm = fwhm)
+  z  = pet_back_model(tmp, proj, attn_sino, sens_sino, fwhm = fwhm)
   del tmp
 
   zbar = z.copy()
@@ -71,7 +71,7 @@ def spdhg_lm(events, multi_index, attn_sino, sens_sino, contam_sino,
   for i in range(nsubsets):
     ss = slice(i,None,nsubsets)
     # clip inf values
-    tmp = pet_fwd_model_lm(ones_img, lmproj, events[ss,:], attn_list[ss], sens_list[ss], fwhm = fwhm)
+    tmp = pet_fwd_model_lm(ones_img, proj, events[ss,:], attn_list[ss], sens_list[ss], fwhm = fwhm)
     tmp = np.clip(tmp, tmp[tmp > 0].min(), None)
     S_i.append((gamma*rho) / tmp)
 
@@ -80,7 +80,7 @@ def spdhg_lm(events, multi_index, attn_sino, sens_sino, contam_sino,
   # in theory we need to backproject a full sino of ones
   # however, z already contains a backprojections of a sino with ones in all empty data bins
   # the missing part can be done by backprojecting the LM events with a value of 1/mu 
-  tmp = (pet_back_model_lm(1./mu, lmproj, events, attn_list, sens_list, fwhm = fwhm) + z)/nsubsets
+  tmp = (pet_back_model_lm(1./mu, proj, events, attn_list, sens_list, fwhm = fwhm) + z)/nsubsets
   T = p_p*rho/(gamma*tmp)
 
   if p_g > 0:
@@ -105,13 +105,13 @@ def spdhg_lm(events, multi_index, attn_sino, sens_sino, contam_sino,
   
         x = np.clip(x - T*zbar, 0, None)
   
-        y_plus = y[ss] + S_i[i]*(pet_fwd_model_lm(x, lmproj, events[ss,:], attn_list[ss], sens_list[ss], 
+        y_plus = y[ss] + S_i[i]*(pet_fwd_model_lm(x, proj, events[ss,:], attn_list[ss], sens_list[ss], 
                                                   fwhm = fwhm) + contam_list[ss])
   
         # apply the prox for the dual of the poisson logL
         y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*S_i[i]*mu[ss]))
   
-        dz = pet_back_model_lm((y_plus - y[ss])/mu[ss], lmproj, events[ss,:], 
+        dz = pet_back_model_lm((y_plus - y[ss])/mu[ss], proj, events[ss,:], 
                                attn_list[ss], sens_list[ss], fwhm = fwhm)
   
         # update variables

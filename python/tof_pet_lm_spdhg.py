@@ -18,15 +18,15 @@ import argparse
 # parse the command line
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--counts',   help = 'counts to simulate',    default = 1e6,  type = float)
-parser.add_argument('--niter',    help = 'number of iterations',  default = 100,  type = int)
-parser.add_argument('--nsubsets', help = 'number of subsets',     default = 224,  type = int)
-parser.add_argument('--fwhm_mm',  help = 'psf modeling FWHM mm',  default = 4.5, type = float)
-parser.add_argument('--fwhm_data_mm',  help = 'psf for data FWHM mm',  default = 4.5, type = float)
-parser.add_argument('--phantom', help = 'phantom to use', default = 'brain2d')
-parser.add_argument('--seed',    help = 'seed for random generator', default = 1, type = int)
-parser.add_argument('--beta',  help = 'TV weight',  default = 3e-3, type = float)
-parser.add_argument('--prior',  help = 'prior',  default = 'TV', choices = ['TV','DTV'])
+parser.add_argument('--counts',       help = 'counts to simulate',        default = 1e6, type = float)
+parser.add_argument('--niter',        help = 'number of iterations',      default = 100, type = int)
+parser.add_argument('--nsubsets',     help = 'number of subsets',         default = 56,  type = int)
+parser.add_argument('--fwhm_mm',      help = 'psf modeling FWHM mm',      default = 4.5, type = float)
+parser.add_argument('--fwhm_data_mm', help = 'psf for data FWHM mm',      default = 4.5, type = float)
+parser.add_argument('--phantom',      help = 'phantom to use',            default = 'brain2d')
+parser.add_argument('--seed',         help = 'seed for random generator', default = 1, type = int)
+parser.add_argument('--beta',         help = 'TV weight',                 default = 3e-2, type = float)
+parser.add_argument('--prior',        help = 'prior',                     default = 'TV', choices = ['TV','DTV'])
 args = parser.parse_args()
 
 #---------------------------------------------------------------------------------
@@ -71,21 +71,18 @@ img_origin = (-(np.array(img.shape) / 2) +  0.5) * voxsize
 # so mu should be in 1/mm
 att_img = (img > 0) * 0.01
 
-# generate nonTOF sinogram parameters and the nonTOF projector for attenuation projection
-sino_params_nt = ppp.PETSinogramParameters(scanner)
-proj_nt        = ppp.SinogramProjector(scanner, sino_params_nt, img.shape, nsubsets = 1, 
-                                    voxsize = voxsize, img_origin = img_origin)
-
-attn_sino = np.exp(-proj_nt.fwd_project(att_img))
-
-# generate the sensitivity sinogram
-sens_sino = np.ones(sino_params_nt.shape, dtype = np.float32)
-
 # generate TOF sinogram parameters and the TOF projector
 sino_params = ppp.PETSinogramParameters(scanner, ntofbins = 17, tofbin_width = 15.)
 proj        = ppp.SinogramProjector(scanner, sino_params, img.shape, nsubsets = 1, 
                                     voxsize = voxsize, img_origin = img_origin,
                                     tof = True, sigma_tof = 60./2.35, n_sigmas = 3.)
+
+# create the attenuation sinogram
+proj.set_tof(False)
+attn_sino = np.exp(-proj.fwd_project(att_img))
+proj.set_tof(True)
+# generate the sensitivity sinogram
+sens_sino = np.ones(proj.sino_params.nontof_shape, dtype = np.float32)
 
 # power iterations to estimte norm of PET fwd operator
 rimg = np.random.rand(*img.shape).astype(np.float32)
@@ -101,12 +98,8 @@ for i in range(40):
 # eual to the norm of the 2D gradient operator
 sens_sino /= (np.sqrt(pnsq)/np.sqrt(8))
 
-# allocate array for the subset sinogram
-sino_shape = sino_params.shape
-img_fwd    = np.zeros(sino_shape, dtype = np.float32)
-
 # forward project the image
-img_fwd = ppp.pet_fwd_model(img, proj, attn_sino, sens_sino, 0, fwhm = fwhm_data)
+img_fwd = ppp.pet_fwd_model(img, proj, attn_sino, sens_sino, fwhm = fwhm_data)
 
 # scale sum of fwd image to counts
 if counts > 0:
@@ -139,13 +132,8 @@ grad_norm = GradientNorm(name = 'l2_l1', beta = beta)
 
 #-----------------------------------------------------------------------------------------------------
 def calc_cost(x):
-  cost = 0
-
-  for i in range(proj.nsubsets):
-    # get the slice for the current subset
-    ss = proj.subset_slices[i]
-    exp = ppp.pet_fwd_model(x, proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm) + contam_sino[ss]
-    cost += (exp - em_sino[ss]*np.log(exp)).sum()
+  exp  = ppp.pet_fwd_model(x, proj, attn_sino, sens_sino, fwhm = fwhm) + contam_sino
+  cost = (exp - em_sino*np.log(exp)).sum()
 
   if grad_norm.beta > 0:
     cost += grad_norm.eval(grad_operator.fwd(x))
@@ -215,12 +203,6 @@ else:
 
 #-------------------------------------------------------------------------------------
 
-# create a listmode projector for the LM MLEM iterations
-lmproj = ppp.LMProjector(proj.scanner, proj.img_dim, voxsize = proj.voxsize, 
-                         img_origin = proj.img_origin,
-                         tof = proj.tof, sigma_tof = proj.sigma_tof, tofbin_width = proj.tofbin_width,
-                         n_sigmas = proj.nsigmas)
-
 # generate list mode events and the corresponting values in the contamination and sensitivity
 # for every subset sinogram
 
@@ -279,8 +261,9 @@ for ig,gamma in enumerate(gammas):
          'it_early3':5, 'x_early3':x_early3_lm[ig,:],
          'it_early4':10,'x_early4':x_early4_lm[ig,:]}
 
+  import pdb; pdb.set_trace()
   x_lm[ig,...] = spdhg_lm(events, multi_index, attn_sino, sens_sino, contam_sino, 
-                          proj, lmproj, niter, nsubsets,
+                          proj, niter, nsubsets,
                           fwhm = fwhm, gamma = gamma, verbose = True, 
                           callback = _cb, callback_kwargs = cblm,
                           grad_operator = grad_operator, grad_norm = grad_norm)
