@@ -197,7 +197,7 @@ contam_list = contam_sino[multi_index[:,0],multi_index[:,1],multi_index[:,2], mu
 sens_img  = ppp.pet_back_model(np.ones(proj.sino_params.shape, dtype = np.float32), 
                                proj, attn_sino, sens_sino, fwhm = fwhm)
 
-xinit = osem_lm_emtv(events, attn_list, sens_list, contam_list, proj, sens_img, 2, 28, 
+xinit = osem_lm_emtv(events, attn_list, sens_list, contam_list, proj, sens_img, 1, 28, 
                      grad_operator = grad_operator, grad_norm = grad_norm,
                      fwhm = fwhm, verbose = True)
 
@@ -224,7 +224,7 @@ else:
   # do long PDHG recon
   cost_ref  = np.zeros(niter_ref)
   ref_recon = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter_ref,
-                    gamma = 3/img.max(), fwhm = fwhm, verbose = True, 
+                    gamma = 3./img.max(), fwhm = fwhm, verbose = True, 
                     xstart = xinit, ystart = yinit,
                     callback = _cb, callback_kwargs = {'cost': cost_ref},
                     grad_operator = grad_operator, grad_norm = grad_norm)
@@ -236,7 +236,7 @@ else:
 
 #-----------------------------------------------------------------------------------------------------
 
-gammas = np.array([1., 3., 10.]) / img.max()
+gammas = np.array([0.1,0.3,1.,3.,10.,30.]) / gaussian_filter(xinit.squeeze(),2).max()
 
 cost_spdhg_sino = np.zeros((len(gammas),niter))
 cost_spdhg_lm   = np.zeros((len(gammas),niter))
