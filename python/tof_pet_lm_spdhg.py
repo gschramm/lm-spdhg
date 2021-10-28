@@ -20,7 +20,6 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--counts',       help = 'counts to simulate',        default = 1e6, type = float)
 parser.add_argument('--niter',        help = 'number of iterations',      default = 100, type = int)
-parser.add_argument('--nsubsets',     help = 'number of subsets',         default = 56,  type = int)
 parser.add_argument('--fwhm_mm',      help = 'psf modeling FWHM mm',      default = 4.5, type = float)
 parser.add_argument('--fwhm_data_mm', help = 'psf for data FWHM mm',      default = 4.5, type = float)
 parser.add_argument('--phantom',      help = 'phantom to use',            default = 'brain2d')
@@ -33,7 +32,6 @@ args = parser.parse_args()
 
 counts        = args.counts
 niter         = args.niter
-nsubsets      = args.nsubsets
 fwhm_mm       = args.fwhm_mm
 fwhm_data_mm  = args.fwhm_data_mm
 phantom       = args.phantom
@@ -147,22 +145,13 @@ def _cb(x, **kwargs):
   it_early3 = kwargs.get('it_early3',-1)
   it_early4 = kwargs.get('it_early4',-1)
 
-  if it_early1 == it:
-    if 'x_early1' in kwargs:
-      kwargs['x_early1'][:] = x
+  if it == 10:
+    if 'x_early' in kwargs:
+      kwargs['x_early'][0,...] = x
 
-  if it_early2 == it:
-    if 'x_early2' in kwargs:
-      kwargs['x_early2'][:] = x
-
-  if it_early3 == it:
-    if 'x_early3' in kwargs:
-      kwargs['x_early3'][:] = x
-
-  if it_early4 == it:
-    if 'x_early4' in kwargs:
-      kwargs['x_early4'][:] = x
-
+  if it == 20:
+    if 'x_early' in kwargs:
+      kwargs['x_early'][1,...] = x
 
   if 'cost' in kwargs:
     kwargs['cost'][it-1] = calc_cost(x)
@@ -236,70 +225,73 @@ else:
 
 #-----------------------------------------------------------------------------------------------------
 
-gammas = np.array([0.1,0.3,1.,3.,10.,30.]) / gaussian_filter(xinit.squeeze(),2).max()
+nsubsets = [56,112,224]
+gamma    = 3. / gaussian_filter(xinit.squeeze(),2).max()
 
-cost_spdhg_sino = np.zeros((len(gammas),niter))
-cost_spdhg_lm   = np.zeros((len(gammas),niter))
+cost_spdhg_sino = np.zeros((len(nsubsets),niter))
+cost_spdhg_lm   = np.zeros((len(nsubsets),niter))
 
-psnr_spdhg_sino = np.zeros((len(gammas),niter))
-psnr_spdhg_lm   = np.zeros((len(gammas),niter))
+psnr_spdhg_sino = np.zeros((len(nsubsets),niter))
+psnr_spdhg_lm   = np.zeros((len(nsubsets),niter))
 
-x_sino = np.zeros((len(gammas),) + img.shape)
-x_lm   = np.zeros((len(gammas),) + img.shape)
+x_sino = np.zeros((len(nsubsets),) + img.shape)
+x_lm   = np.zeros((len(nsubsets),) + img.shape)
 
-x_early1_sino = np.zeros((len(gammas),) + img.shape)
-x_early2_sino = np.zeros((len(gammas),) + img.shape)
-x_early3_sino = np.zeros((len(gammas),) + img.shape)
-x_early4_sino = np.zeros((len(gammas),) + img.shape)
-x_early1_lm   = np.zeros((len(gammas),) + img.shape)
-x_early2_lm   = np.zeros((len(gammas),) + img.shape)
-x_early3_lm   = np.zeros((len(gammas),) + img.shape)
-x_early4_lm   = np.zeros((len(gammas),) + img.shape)
+x_sino_early = np.zeros((len(nsubsets),2) + img.shape)
+x_lm_early   = np.zeros((len(nsubsets),2) + img.shape)
 
-for ig,gamma in enumerate(gammas):
+for iss, nss in enumerate(nsubsets):
   # sinogram SPDHG
-  proj.init_subsets(nsubsets)
-  cbs = {'cost':cost_spdhg_sino[ig,:],'psnr':psnr_spdhg_sino[ig,:],'xref':ref_recon,
-         'it_early1':1, 'x_early1':x_early1_sino[ig,:],
-         'it_early2':2, 'x_early2':x_early2_sino[ig,:],
-         'it_early3':5, 'x_early3':x_early3_sino[ig,:],
-         'it_early4':10,'x_early4':x_early4_sino[ig,:]}
-
-  x_sino[ig,...] = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
-                         fwhm = fwhm, gamma = gamma, verbose = True, 
-                         xstart = xinit, ystart = yinit,
-                         callback = _cb, callback_kwargs = cbs,
-                         grad_operator = grad_operator, grad_norm = grad_norm)
+  proj.init_subsets(nss)
+  cbs = {'cost':cost_spdhg_sino[iss,:],'psnr':psnr_spdhg_sino[iss,:],'xref':ref_recon, 
+         'x_early':x_sino_early[iss,...]}
+  x_sino[iss,...] = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
+                          fwhm = fwhm, gamma = gamma, verbose = True, 
+                          xstart = xinit, ystart = yinit,
+                          callback = _cb, callback_kwargs = cbs,
+                          grad_operator = grad_operator, grad_norm = grad_norm)
 
   # LM SPDHG
-  proj.init_subsets(1)
-  cblm = {'cost':cost_spdhg_lm[ig,:],'psnr':psnr_spdhg_lm[ig,:],'xref':ref_recon,
-         'it_early1':1, 'x_early1':x_early1_lm[ig,:],
-         'it_early2':2, 'x_early2':x_early2_lm[ig,:],
-         'it_early3':5, 'x_early3':x_early3_lm[ig,:],
-         'it_early4':10,'x_early4':x_early4_lm[ig,:]}
+  cblm = {'cost':cost_spdhg_lm[iss,:],'psnr':psnr_spdhg_lm[iss,:],'xref':ref_recon,
+          'x_early':x_lm_early[iss,...]}
+  x_lm[iss,...] = spdhg_lm(events, attn_list, sens_list, contam_list, sens_img,
+                           proj, niter, nss, x0 = xinit,
+                           fwhm = fwhm, gamma = gamma, verbose = True, 
+                           callback = _cb, callback_kwargs = cblm,
+                           grad_operator = grad_operator, grad_norm = grad_norm)
 
-  x_lm[ig,...] = spdhg_lm(events, attn_list, sens_list, contam_list, sens_img,
-                          proj, niter, nsubsets, x0 = xinit,
-                          fwhm = fwhm, gamma = gamma, verbose = True, 
-                          callback = _cb, callback_kwargs = cblm,
-                          grad_operator = grad_operator, grad_norm = grad_norm)
+#-----------------------------------------------------------------------------------------------------
+# run EM-TV with 1, 7 and nsubsets subsets for comparison
+
+nsubsets_emtv = [1,7,28]
+
+cost_emtv = np.zeros((len(nsubsets_emtv),niter))
+psnr_emtv = np.zeros((len(nsubsets_emtv),niter))
+
+x_emtv = np.zeros((len(nsubsets_emtv),) + img.shape)
+x_emtv_early = np.zeros((len(nsubsets_emtv),2) + img.shape)
+
+for ie, nsemtv in enumerate(nsubsets_emtv):
+  cbemtv = {'cost':cost_emtv[ie,:],'psnr':psnr_emtv[ie,:],'xref':ref_recon, 'x_early':x_emtv_early[ie,...]}
+  x_emtv[ie,...] = osem_lm_emtv(events, attn_list, sens_list, contam_list, proj, sens_img, niter, nsemtv, 
+                                grad_operator = grad_operator, grad_norm = grad_norm,
+                                callback = _cb, callback_kwargs = cbemtv, xstart = xinit,
+                                fwhm = fwhm, verbose = True)
 
 #-----------------------------------------------------------------------------------------------------
 # calculate cost of initial recon (image full or zeros)
 c_0 = calc_cost(xinit)
 
 # save the results
-ofile = os.path.join('data',f'{base_str}_niter_{niter}_nsub_{nsubsets}.npz')
+ofile = os.path.join('data',f'{base_str}_niter_{niter}.npz')
 np.savez(ofile, ref_recon = ref_recon, cost_ref = cost_ref,
                 cost_spdhg_sino = cost_spdhg_sino, psnr_spdhg_sino = psnr_spdhg_sino, 
-                cost_spdhg_lm   = cost_spdhg_lm, psnr_spdhg_lm = psnr_spdhg_lm, 
-                x_sino = x_sino, x_lm = x_lm,
-                x_early1_sino = x_early1_sino, x_early1_lm = x_early1_lm,
-                x_early2_sino = x_early2_sino, x_early2_lm = x_early2_lm,
-                x_early3_sino = x_early3_sino, x_early3_lm = x_early3_lm,
-                x_early4_sino = x_early4_sino, x_early4_lm = x_early4_lm,
-                gammas = gammas, img = img, c_0 = c_0)
+                cost_spdhg_lm = cost_spdhg_lm, psnr_spdhg_lm = psnr_spdhg_lm, 
+                cost_emtv = cost_emtv, psnr_emtv = psnr_emtv, 
+                x_sino = x_sino, x_lm = x_lm, x_emtv = x_emtv,
+                x_sino_early = x_sino_early, x_lm_early = x_lm_early, x_emtv_early = x_emtv_early,
+                nsubsets = nsubsets, nsubsets_emtv = nsubsets_emtv,
+                gamma = gamma, img = img, c_0 = c_0)
 
 #-----------------------------------------------------------------------------------------------------
 # plot the results
