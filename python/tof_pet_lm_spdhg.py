@@ -26,6 +26,7 @@ parser.add_argument('--phantom',      help = 'phantom to use',            defaul
 parser.add_argument('--seed',         help = 'seed for random generator', default = 1, type = int)
 parser.add_argument('--beta',         help = 'TV weight',                 default = 3e-2, type = float)
 parser.add_argument('--prior',        help = 'prior',                     default = 'TV', choices = ['TV','DTV'])
+parser.add_argument('--gam',          help = 'step size ratio',           default = 3., type = float)
 args = parser.parse_args()
 
 #---------------------------------------------------------------------------------
@@ -38,6 +39,7 @@ phantom       = args.phantom
 seed          = args.seed
 beta          = args.beta
 prior         = args.prior
+gam           = args.gam
 
 #---------------------------------------------------------------------------------
 
@@ -195,7 +197,7 @@ yinit = 1 - (em_sino / (ppp.pet_fwd_model(xinit, proj, attn_sino, sens_sino, fwh
 #-------------------------------------------------------------------------------------
 # rerfence reconstruction using PDHG
 
-niter_ref = 10000
+niter_ref = 20000
 
 base_str = f'{phantom}_counts_{counts:.1E}_seed_{seed}_beta_{beta:.1E}_prior_{prior}_niter_ref_{niter_ref}_fwhm_{fwhm_mm:.1f}_{fwhm_data_mm:.1f}'
 
@@ -226,7 +228,7 @@ else:
 #-----------------------------------------------------------------------------------------------------
 
 nsubsets = [56,112,224]
-gamma    = 3. / gaussian_filter(xinit.squeeze(),2).max()
+gamma    = gam / gaussian_filter(xinit.squeeze(),2).max()
 
 cost_spdhg_sino = np.zeros((len(nsubsets),niter))
 cost_spdhg_lm   = np.zeros((len(nsubsets),niter))
