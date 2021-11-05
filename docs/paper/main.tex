@@ -83,13 +83,31 @@ foo bar
 
 \section{Introduction}
 
-\lipsum[2-4]
+\lipsum[2-6]
 
 %-------------------------------------------------------------------------------------------
 %%%%% main text %%%%%    
+
+\section{Materials and Methods}
+
+\subsection{Problem}
+
 \begin{equation}
 \argmin _{x\geq 0} \sum_j (Px)_j -  d_j \log \left( (Px)_ j + s_j \right) + R (K x),
 \end{equation}
+
+
+\subsection{Better intialization of sinogram SPDHG}
+
+Use quick EM-TV (e.g. 1 iteration 28 susbets) as initializtion for $x$.
+Initialize $y$ (dual variable of data) as
+\begin{equation}
+y^0 = 1 - \frac{d}{Px^0 + s} \ .
+\end{equation}
+Note that this also means that the initial y is 1 in bins where we have
+no data such that we don't need to keep y in memory during the iterations.
+
+(optionally) intialize $w$ (dual of gradient) in subgradient of $R(Kx^0)$
 
 %-----------------------------------------------------------------------------
 \begin{algorithm}[t]
@@ -118,6 +136,9 @@ foo bar
 \caption{SPDHG for PET reconstruction}
 \label{alg:spdhg}
 \end{algorithm}
+
+
+
 
 %-----------------------------------------------------------------------------
 \begin{algorithm}[t]
@@ -150,6 +171,18 @@ foo bar
 \caption{LM-SPDHG for PET reconstruction}
 \label{alg:lmspdhg}
 \end{algorithm}
+
+\clearpage
+
+%-----------------------------------------------------------------------------
+
+\begin{figure*}
+  \centering
+    \includegraphics[width=1.0\textwidth]{figs/SPDHG_sino_init.png}
+    \includegraphics[width=0.8\textwidth]{figs/SPDHG_sino_init_metrics.pdf}
+  \caption{$1\cdot10^6$ counts, DTV, $\beta = 0.03$, 112 subsets sinogram SPDHG. ``warm'' start leads to faster convergence in the early iterations.}
+  \label{fig:metrics}
+\end{figure*}
 
 
 

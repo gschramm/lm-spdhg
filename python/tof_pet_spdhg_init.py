@@ -19,8 +19,8 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--counts',       help = 'counts to simulate',        default = 1e6, type = float)
-parser.add_argument('--niter',        help = 'number of iterations',      default = 100, type = int)
-parser.add_argument('--nsubsets',     help = 'number of subsets',         default = 56,  type = int)
+parser.add_argument('--niter',        help = 'number of iterations',      default = 20,  type = int)
+parser.add_argument('--nsubsets',     help = 'number of subsets',         default = 112, type = int)
 parser.add_argument('--fwhm_mm',      help = 'psf modeling FWHM mm',      default = 4.5, type = float)
 parser.add_argument('--fwhm_data_mm', help = 'psf for data FWHM mm',      default = 4.5, type = float)
 parser.add_argument('--phantom',      help = 'phantom to use',            default = 'brain2d')
@@ -206,7 +206,7 @@ yinit = 1 - (em_sino / (ppp.pet_fwd_model(xinit, proj, attn_sino, sens_sino, fwh
 #-------------------------------------------------------------------------------------
 # rerfence reconstruction using PDHG
 
-niter_ref = 10000
+niter_ref = 20000
 
 base_str = f'{phantom}_counts_{counts:.1E}_seed_{seed}_beta_{beta:.1E}_prior_{prior}_niter_ref_{niter_ref}_fwhm_{fwhm_mm:.1f}_{fwhm_data_mm:.1f}'
 
@@ -267,15 +267,25 @@ x3 = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
            callback = _cb, callback_kwargs = cbs3,
            grad_operator = grad_operator, grad_norm = grad_norm)
 
+#----------------------------------------------------------------------------------------
 
-fig, ax = plt.subplots()
-ax.plot(psnr_spdhg_sino[0,...], label = 'cold')
-ax.plot(psnr_spdhg_sino[1,...], label = 'warm data')
-ax.plot(psnr_spdhg_sino[2,...], label = 'warm data + grad')
-ax.set_xlabel('iteration')
-ax.set_ylabel('PSNR')
-ax.legend()
+c_ref = cost_ref.min()
+
+fig, ax = plt.subplots(1,2, figsize = (10,5))
+ax[0].semilogy(cost_spdhg_sino[0,...] - c_ref, label = 'cold')
+ax[0].semilogy(cost_spdhg_sino[1,...] - c_ref, label = 'warm data')
+ax[0].semilogy(cost_spdhg_sino[2,...] - c_ref, label = 'warm data + grad')
+ax[0].set_xlabel('iteration')
+ax[0].set_ylabel('cost - ref.cost')
+
+ax[1].plot(psnr_spdhg_sino[0,...], label = 'cold')
+ax[1].plot(psnr_spdhg_sino[1,...], label = 'warm data')
+ax[1].plot(psnr_spdhg_sino[2,...], label = 'warm data + grad')
+ax[1].set_xlabel('iteration')
+ax[1].set_ylabel('PSNR')
+ax[1].legend()
 fig.tight_layout()
+fig.savefig('SPDHG_sino_init_metrics.pdf')
 fig.show()
 
 fig2, ax2 = plt.subplots(1,4, figsize = (16,4))
@@ -288,4 +298,5 @@ ax2[1].set_title('cold')
 ax2[2].set_title('warm data')
 ax2[3].set_title('warm data + grad')
 fig2.tight_layout()
+fig2.savefig('SPDHG_sino_init.png')
 fig2.show()
