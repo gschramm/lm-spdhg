@@ -39,7 +39,9 @@ def plot_lm_spdhg_results(ofile):
   # show the results
   vmax = 1.2*img.max()
   ncols = len(nsubsets)+ + len(nsubsets_emtv) + 1
-  
+ 
+  title_kwargs = {'fontweight':'bold', 'fontsize':'medium'}
+ 
   fig, ax = plt.subplots(4, ncols, figsize = (2.5*ncols,2.5*4))
   for i,nss in enumerate(nsubsets):
     ax[0,i].imshow(x_sino[i,...].squeeze(), vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
@@ -50,10 +52,10 @@ def plot_lm_spdhg_results(ofile):
     ax[3,i].imshow(x_lm[i,...].squeeze() - ref_recon.squeeze(),   
                    vmin = -0.1*vmax, vmax = 0.1*vmax, cmap = plt.cm.bwr)
   
-    ax[0,i].set_title(f'SPDHG {nss}ss', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
-    ax[1,i].set_title(f'LM-SPDHG {nss}ss', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
-    ax[2,i].set_title(f'bias SPDHG {nss}ss', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
-    ax[3,i].set_title(f'bias LM-SPDHG {nss}ss', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
+    ax[0,i].set_title(f'SPDHG {nss}ss', color = plt.get_cmap("tab10")(i), **title_kwargs)
+    ax[1,i].set_title(f'LM-SPDHG {nss}ss', color = plt.get_cmap("tab10")(i), **title_kwargs)
+    ax[2,i].set_title(f'bias SPDHG {nss}ss', color = plt.get_cmap("tab10")(i), **title_kwargs)
+    ax[3,i].set_title(f'bias LM-SPDHG {nss}ss', color = plt.get_cmap("tab10")(i), **title_kwargs)
   
   for i,nss in enumerate(nsubsets_emtv):
     col = i+len(nsubsets)
@@ -61,14 +63,14 @@ def plot_lm_spdhg_results(ofile):
     ax[2,col].imshow(x_emtv[i,...].squeeze() - ref_recon.squeeze(), 
                      vmin = -0.1*vmax, vmax = 0.1*vmax, cmap = plt.cm.bwr)
   
-    ax[0,col].set_title(f'EMTV {nss}ss', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
-    ax[2,col].set_title(f'bias EMTV {nss}ss', fontsize = 'medium', color = plt.get_cmap("tab10")(i))
+    ax[0,col].set_title(f'EMTV {nss}ss', color = plt.get_cmap("tab10")(i + len(nsubsets)), **title_kwargs)
+    ax[2,col].set_title(f'bias EMTV {nss}ss', color = plt.get_cmap("tab10")(i + len(nsubsets)), **title_kwargs)
   
   
   ax[0,-1].imshow(ref_recon.squeeze(), vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
   ax[1,-1].imshow(img.squeeze(),   vmin = 0, vmax = vmax, cmap = plt.cm.Greys)
-  ax[0,-1].set_title(f'reference PDHG', fontsize = 'medium')
-  ax[1,-1].set_title(f'ground truth', fontsize = 'medium')
+  ax[0,-1].set_title(f'reference PDHG', **title_kwargs)
+  ax[1,-1].set_title(f'ground truth', **title_kwargs)
   
   for axx in ax.ravel():
     axx.set_axis_off()
@@ -117,7 +119,6 @@ def plot_lm_spdhg_results(ofile):
   fig.savefig(base_str + '.png')
   fig2.savefig(base_str + '_metrics.pdf')
   fig2.savefig(base_str + '_metrics.png')
-
 #----------------------------------------------------------------------------------------------------
 
 def count_event_multiplicity(events, use_gpu_if_possible = True):
