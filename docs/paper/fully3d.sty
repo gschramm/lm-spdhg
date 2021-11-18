@@ -3,11 +3,8 @@
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
 \usepackage[utf8]{inputenc}
+\usepackage{mathptmx}
 \usepackage[scaled=0.95]{helvet}
-%\usepackage{mathptmx}
-\usepackage{newtxtext,newtxmath}
-\usepackage{amsmath}
-\usepackage{graphicx}
 \usepackage{xcolor,calc}
 \usepackage[colorlinks]{hyperref}
 \hypersetup{linkcolor = black, citecolor = black, urlcolor = blue} 
@@ -19,21 +16,9 @@
 \usepackage{booktabs}
 \usepackage{fancyhdr}
 \usepackage{setspace}
-\usepackage[backend=bibtex,minnames=3,maxnames=3,isbn=false,url=false,eprint=false,giveninits=true,sorting=none,citestyle=numeric-comp]{biblatex}
 \usepackage{csquotes}
 
-% pacakge to generate dummy text
-\usepackage{lipsum}
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% define page header and footer
-%\pagestyle{fancy}
-%\fancyhf{} % clear all header and footer fields
-%\fancyhead[L]{\sffamily\bfseries\scriptsize 16th International Meeting on %
-%              Fully 3D Image Reconstruction in Radiology and Nuclear Medicine}
-%\fancyhead[R]{\sffamily\bfseries\scriptsize 19 - 23 July 2021, Leuven, Belgium}
 
 \setlength{\parindent}{0cm}
 \setlength{\columnsep}{0.6cm}
@@ -66,8 +51,6 @@
     \vspace{-0.3cm}
     }
 
-% void In before journals in references
-\renewbibmacro{in:}{}    
-
+%\usepackage[backend=bibtex,minnames=3,maxnames=3,isbn=false,url=false,eprint=false,giveninits=true,sorting=none,citestyle=numeric-comp]{biblatex}
 % use smaller font size for references
-\AtBeginBibliography{\footnotesize}
+%\AtBeginBibliography{\footnotesize}
