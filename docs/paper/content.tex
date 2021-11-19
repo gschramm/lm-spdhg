@@ -1,4 +1,4 @@
-\section{Summary}
+\section*{Summary}
 
 \begin{itemize}
 \item SPDHG excellent alg for non-smooth priors, but only sinogram
@@ -11,13 +11,45 @@
 \item 2nd step: rewrite SPDHG in terms of LM updates
 \end{itemize}
 
-\section{Materials and Methods}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Introduction}
+
+One of the major challenges in image reconstruction in positron emission tomography (PET)
+is noise suppression since the acquired emission data suffers from high levels of Poisson
+noise due to limitations in acquisition time, injectable dose and scanner sensitivity.
+To limit the transfer of the data noise into the image during model-based iterative
+reconstruction (MBIR), different strategies exist. 
+One possibility is to add a ``smoothing'' prior to the data fidelity term in the cost
+function that is optimized in MBIR.
+In general, we can write the resulting optimization problem for PET image reconstruction as
+%
+\begin{equation}
+\argmin _{x\geq 0} \sum_{i=1}^{n} \underbrace{(Px + s)_i -  d_i \log \left( (Px + s)_i \right)}_{D_i(x)} + \, \beta R(Kx),
+\label{eq:primal}
+\end{equation}
+%
+where $x$ is the PET image to be reconstructed, $P$ is the (TOF) forward projector including the effects
+of attenuation and normalization, $d$ are the acquired prompt TOF coincidences (the emission sinogram),
+and $s$ are additive contaminations including random and scattered coincidences. 
+$R(Kx)$ is the ``smoothing prior'' consisting of a generic linear operator $K$ that evaluates 
+local differences and a proper, convex, lower-semicontinous function $R$, and $\beta$ is a scalar controlling the level of regularization.
+A specific example for $K$ would be the gradient operator $\nabla$, approximated by the finite forward 
+differences. 
+Combing it with mixed L2-L1 norm for $R$ leads to the well-known Total Variation (TV) prior 
+\cite{Rudin1992}.
+
+Unfortunately, many advanced smoothing priors aiming for edge-preservation 
+such as e.g. TV \cite{Rudin1992}, Total Generalized Variation (TGV) 
+\cite{Bredies2010}, Joint T(G)V \cite{Rigie2015,Knoll2016}
+Parallel Level Sets \cite{Ehrhardt2016a,Schramm2017} or directional Total Variation (DTV)
+\cite{Ehrhardt2016} use non-smmoth functions for $R$ which permits the use of simple and efficient 
+purely gradient-based optimization algorithms to solve \eqref{eq:primal}.
 
 \subsection{Problem}
-
-\begin{equation}
-\argmin _{x\geq 0} \sum_{i=1}^{n} \underbrace{(Px + s)_i -  d_i \log \left( (Px + s)_i \right)}_{D_i(x)} + R (K x),
-\end{equation}
 
 \begin{equation}
 \argmin _{x\geq 0} \, \sup_{y,w} \,  \langle Px + s, y \rangle + \langle Kx, w \rangle - \sum_{i=1}^{n} D_i^*(y_i) - R^*(w),
@@ -35,6 +67,8 @@ D_i^*(y_i) =
 (\prox_{D_i^*}^{S}(y))_i = \frac{1}{2} \left(y_i + 1 - \sqrt{ (y_i-1)^2 + 4 S_i d_i} \right)
 \label{eq:proxD}
 \end{equation} 
+
+\section{Materials and Methods}
 
 \subsection{Better intialization of sinogram SPDHG}
 
@@ -112,7 +146,13 @@ no data such that we don't need to keep y in memory during the iterations.
 \end{algorithm}
 
 
-%-----------------------------------------------------------------------------
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 \section{Results}
 
