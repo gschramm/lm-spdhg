@@ -52,7 +52,7 @@ purely gradient-based optimization algorithms to solve \eqref{eq:primal}.
 \subsection{Problem}
 
 \begin{equation}
-\argmin _{x\geq 0} \, \sup_{y,w} \,  \langle Px + s, y \rangle + \langle Kx, w \rangle - \sum_{i=1}^{n} D_i^*(y_i) - R^*(w),
+\argmin _{x\geq 0} \, \sup_{y,w} \,  \langle Px + s, y \rangle + \langle Kx, w \rangle - \sum_{i=1}^{n} D_i^*(y_i) - \beta R^*(w/\beta),
 \end{equation}
 
 \begin{equation}
@@ -96,7 +96,7 @@ no data such that we don't need to keep y in memory during the iterations.
 	\State $\delta z \gets P_i^T (y_i^+ - y_i)$
 	\State $y_i \gets y_i^+$
   \Else
-	\State $w^+ \gets \prox_{R^*}^{S_i} ( w + S_i  K x)$
+	\State $w^+ \gets \beta \prox_{R^*}^{S_i/\beta} ((w + S_i  K x)/\beta)$
 	\State $\delta z \gets K^T (w^+ - w)$
 	\State $w \gets w^+$
   \EndIf
@@ -131,7 +131,7 @@ no data such that we don't need to keep y in memory during the iterations.
 	  \State $\delta z \gets {P^{LM}_{N_i}}^T \left(\frac{l_{N_i}^+ - l_{N_i}}{\mu_{N_i}}\right)$
 	  \State $l_{N_i} \gets l_{N_i}^+$
   \Else
-	  \State $w^+ \gets \prox_{R^*}^{S_i} \left( w + S_i K x \right)$
+	  \State $w^+ \gets \beta \prox_{R^*}^{S_i/\beta} ((w + S_i  K x)/\beta)$
 	  \State $\delta z \gets K^T \left(w^+ - w\right)$
 	  \State $w \gets w^+$
   \EndIf
