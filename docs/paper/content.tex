@@ -1,11 +1,40 @@
+\section{Summary}
+
+\begin{itemize}
+\item SPDHG excellent alg for non-smooth priors, but only sinogram
+\item modern TOF PET data is extremly sparse (Figure) -> SPDHG inefficient
+      in terms of memory and speed
+\item LM projections are much faster than sino projections for usual count levels
+      (Table)
+\item propose LM-SPDHG that solves both issues
+\item 1st step: better init
+\item 2nd step: rewrite SPDHG in terms of LM updates
+\end{itemize}
+
 \section{Materials and Methods}
 
 \subsection{Problem}
 
 \begin{equation}
-\argmin _{x\geq 0} \sum_j (Px)_j -  d_j \log \left( (Px)_ j + s_j \right) + R (K x),
+\argmin _{x\geq 0} \sum_{i=1}^{n} \underbrace{(Px + s)_i -  d_i \log \left( (Px + s)_i \right)}_{D_i(x)} + R (K x),
 \end{equation}
 
+\begin{equation}
+\argmin _{x\geq 0} \, \sup_{y,w} \,  \langle Px + s, y \rangle + \langle Kx, w \rangle - \sum_{i=1}^{n} D_i^*(y_i) - R^*(w),
+\end{equation}
+
+\begin{equation}
+D_i^*(y_i) =
+\begin{cases}
+-d_i + d_i \log \left( \frac{d_i}{1-y_i} \right) & \text{if } y_i \leq 1 \\
+\infty & \text{else}
+\end{cases}
+\end{equation}
+
+\begin{equation}
+(\prox_{D_i^*}^{S}(y))_i = \frac{1}{2} \left(y_i + 1 - \sqrt{ (y_i-1)^2 + 4 S_i d_i} \right)
+\label{eq:proxD}
+\end{equation} 
 
 \subsection{Better intialization of sinogram SPDHG}
 
@@ -82,9 +111,10 @@ no data such that we don't need to keep y in memory during the iterations.
 \label{alg:lmspdhg}
 \end{algorithm}
 
-\clearpage
 
 %-----------------------------------------------------------------------------
+
+\section{Results}
 
 \begin{figure*}
   \centering
@@ -94,11 +124,6 @@ no data such that we don't need to keep y in memory during the iterations.
   \label{fig:metrics}
 \end{figure*}
 
-
-
-%-----------------------------------------------------------------------------
-
-\section{Results}
 
 \begin{figure*}
   \centering
