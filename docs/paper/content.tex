@@ -52,6 +52,8 @@ Parallel Level Sets \cite{Ehrhardt2016a,Schramm2017} or directional Total Variat
 \cite{Ehrhardt2016} use non-smmoth functions for $R$ which permits the use of simple and efficient 
 purely gradient-based optimization algorithms to solve \eqref{eq:primal}.
 
+\subsection*{PDHG and SPDHG for PET reconstruction}
+
 Using the fact that $D = \sum_i D_i$ and $R$ are equal to their convex biconjugates 
 $D^{**} = \sup_y \langle Px + s, y \rangle - \sum_{i=1}^{m} D_i^*(y_i)$ 
 and $R^{**} = \sup_w \langle Kx, w \rangle - R^*(w)$, respectively,
@@ -72,7 +74,7 @@ D_i^*(y_i) =
 \end{cases}
 \end{equation}
 %
-Problem \eqref{eq:saddle}, can be efficiently solve using the generic primal-dual hybrid gradient (PDHG) 
+Problem \eqref{eq:saddle}, can be solved using the generic primal-dual hybrid gradient (PDHG) 
 algorithm by Chambolle and Pock \cite{Chambolle2011} even for non-smooth priors.
 PDHG is in iterative algorithm that requires the evaluation of the complete forward and adjoint operator
 in every update.
@@ -111,11 +113,6 @@ and
 \[ S_{n+1} = \gamma \, \frac{\rho}{\|K\|} \qquad T_{n+1} = \gamma^{-1} \frac{p_i\rho}{\|K\|} \ , \]
 %
 setting $T = \min_{k=1,\ldots,n+1} T_i$ pointwise, and choosing $\rho<1$ and $\gamma>0$.
-
-%
-%
-%
-%
 %
 \begin{algorithm}[t]
 \begin{algorithmic}[1]
@@ -144,10 +141,49 @@ setting $T = \min_{k=1,\ldots,n+1} T_i$ pointwise, and choosing $\rho<1$ and $\g
 \label{alg:spdhg}
 \end{algorithm}
 %
-%
-%
 
-\subsection{Problem}
+\subsection*{Limitations of PDHG and SPDHG for PET reconstruction}
+
+Whilst SPDHG is a big step forward for an efficient solution of \eqref{eq:saddle} using
+in terms of computational speed, it also comes with two main limitations.
+First of all, as discussed in Remark 2 of \cite{Ehrhardt2019}, 
+a potential drawback of SPDHG is that it requires to keep at least one more complete 
+(TOF) sinogram in memory (the dual variable $y$). 
+Moreover, if the proposed preconditioning is used, a second complete (TOF) sinogram
+(the sequence of step sizes $(S_k)_{k=1}^n$) needs to be stored in memory.
+The latter is not a major problem for static single-bed non-TOF PET data, where sinogram sizes
+are relatively small.
+However, for simultaneous multi-bed, dynamic or TOF PET data, the size of the complete data sinograms
+can be become problematic, especially when we would like to run Algorithm \ref{alg:spdhg} on
+state-of-the-art GPUs with limited memory.
+E.g., for a TOF PET scanner with 25\,cm axial FOV and a TOF resolution of ca. 400\,ps, 
+a complete unmashed static TOF sinogram for one bed position 
+has approximately $4.4\cdot10^9$ data bins, requiring ca. 17\,GB of memory in 32\,bit floating
+point precision.
+Note that with improved TOF resolution and increasing axial field of view (e.g. total body 
+PET scanners), the memory required to store a complete TOF sinogram will substantially increase
+in the future.
+
+Second, PDHG and SPDHG only work with ``binned'' data.
+In the case of TOF PET reconstruction that means that the acquired raw listmode data first needs to be
+binned into TOF sinograms and that the forward and back projections need to be computed using
+sinogram projectors.
+For most acquisitions with modern TOF PET scanners, this is inefiicient both in terms of memory and
+computational time since the TOF emission data is extremely sparse.
+In contrast, storage and processing of the data in listmode format (event by event) is usually 
+more efficient.
+
+\subsection*{Sparsity of TOF PET data}
+
+E.g., for a typical 80\,s-per-bed-position whole-body FDG scan with an injected dose 
+of around 200\,MBq acquired 60\,min p.i. on a state-of-the-art TOF PET/CT scanner, 
+more than 95\% of the data (TOF sinogram) bins are empty.
+For short early frames in dynamic brain scans, this fraction is even higher.
+And even for ``high count'' late static 20\,min FDG brain scans with an injected dose of 150\,MBq
+acquired 60\,min p.i., still around 70\% of the data bins are empty.
+
+[XXX] Figure sparsity of TOF sinogram
+
 
 \section{Materials and Methods}
 
