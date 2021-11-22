@@ -197,6 +197,17 @@ linear compared to the improvement of the TOF resolution.
 This is because with better TOF resolution, every dected event carries more information such
 that less detected events are needed to reconstruct an image with the same variance \cite{Tomitani1981}.
 
+\subsection*{Contributions and Aim}
+
+To improve the efficiency of SPDHG in terms of memory and computation time when reconstructing 
+sparse TOF PET data, we present and analyze a listmode version of the stochastic primal-dual 
+hybrid gradient algorithm (LM-SPDHG) that allows event-by-event processing using 
+listmode forward and back projectors.
+We first of all show that the convergence of LM-SPDHG is as fast as the convergence of SPDHG
+based on dedicated numeric examples.
+Moreover, we analyze the requirements in terms of memory and computational time
+for LM-SPDHG compared to SPDHG for typical scans of state-of-the-art TOF scanners.
+
 
 \section{Materials and Methods}
 
