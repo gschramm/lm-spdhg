@@ -54,10 +54,10 @@ purely gradient-based optimization algorithms to solve \eqref{eq:primal}.
 
 \subsection*{PDHG and SPDHG for PET reconstruction}
 
-Using the fact that $D = \sum_i D_i$ and $R$ are equal to their convex biconjugates 
-$D^{**} = \sup_y \langle Px + s, y \rangle - \sum_{i=1}^{m} D_i^*(y_i)$ 
-and $R^{**} = \sup_w \langle Kx, w \rangle - R^*(w)$, respectively,
-we can rewrite \eqref{eq:primal} as the saddle point problem
+Using the fact that $D(x) = \sum_i D_i(x)$ and $R(x)$ are equal to their convex biconjugates 
+$D^{**}(x) = \sup_y \langle Px + s, y \rangle - \sum_{i=1}^{m} D_i^*(y_i)$ 
+and $R^{**}(x) = \sup_w \langle Kx, w \rangle - R^*(w)$, respectively, and that 
+$(\beta R(x))^* = \beta R^*(w / \beta)$, we can rewrite \eqref{eq:primal} as the saddle point problem
 %
 \begin{equation}
 \argmin _{x\geq 0} \, \sup_{y,w} \,  \langle Px + s, y \rangle + \langle Kx, w \rangle - \sum_{i=1}^{m} D_i^*(y_i) - \beta R^*(w/\beta) ,
@@ -175,14 +175,27 @@ more efficient.
 
 \subsection*{Sparsity of TOF PET data}
 
-E.g., for a typical 80\,s-per-bed-position whole-body FDG scan with an injected dose 
-of around 200\,MBq acquired 60\,min p.i. on a state-of-the-art TOF PET/CT scanner, 
-more than 95\% of the data (TOF sinogram) bins are empty.
-For short early frames in dynamic brain scans, this fraction is even higher.
+In contrast to non-TOF PET emission sinograms, TOF PET emission sinograms of most acquisitions
+with state-of-the-art TOF PET scanners are extremely sparse.
+This is because the every geometrical line of response (LOR) has to be subdivided into
+several small TOF bins.
+To achieve sufficient sampling of the TOF information, the number of TOF bins has to
+inversely propotional to the TOF resolution of the scanner. 
+Consequently, for a fixed number of acquired prompt coincidences, the sparsity of the
+sinogram is proportional to the TOF resolution.
+
+As an example, for a typical 80\,s-per-bed-position whole-body FDG scan with an injected dose 
+of around 200\,MBq acquired 60\,min p.i. on a state-of-the-art TOF PET/CT scanner with
+20\,cm axial FOV, more than 95\% of the data (TOF sinogram) bins are empty.
+An example that demonstrates the sparsity is shown in Fig.~[XXX].
+For short early frames in dynamic brain scans, this fraction isi of course even higher.
 And even for ``high count'' late static 20\,min FDG brain scans with an injected dose of 150\,MBq
 acquired 60\,min p.i., still around 70\% of the data bins are empty.
 
-[XXX] Figure sparsity of TOF sinogram
+Note that we expect that the sparsity of the TOF emission data will increase even faster than
+linear compared to the improvement of the TOF resolution.
+This is because with better TOF resolution, every dected event carries more information such
+that less detected events are needed to reconstruct an image with the same variance \cite{Tomitani1981}.
 
 
 \section{Materials and Methods}
