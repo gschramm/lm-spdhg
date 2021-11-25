@@ -287,15 +287,48 @@ problem \eqref{eq:problem} also for listmode data.
 However, in contrast to SPDHG, EM-TV does not converge when using subsets, as will
 be shown later.
 
-%Use quick EM-TV (e.g. 1 iteration 28 susbets) as initializtion for $x$.
-%Initialize $y$ (dual variable of data) as
-%\begin{equation}
-%y^0 = 1 - \frac{d}{Px^0 + s} \ .
-%\end{equation}
-%Note that this also means that the initial y is 1 in bins where we have
-%no data such that we don't need to keep y in memory during the iterations.
-%
-%(optionally) intialize $w$ (dual of gradient) in subgradient of $R(Kx^0)$
+\subsection*{Listmode SPDHG}
+
+As indicated by the name, emission data in list-mode format is a chronological list $N$ of detected 
+events $e \in N$, where each event is characterized by a small set of numbers 
+(e.g. the number of the two detector, the discretized TOF difference, and time stamp).
+To process the list-mode data during reconstruction without binning it into a sinogram,
+we introduce the list-mode forward operator $P_N$ mapping the image data $x$ to a 
+data-vector of dimension $|N|$ via \[ (P^{LM}_N x)_e  = (Px)_{i_e} , \text{ for each }e \in N,\]
+where $i_e$ is the sinogram bin in which event $e$ was detected.
+
+Re-writing the gradient of the negative Poisson loglikihood using list-mode data and the
+list-mode forward and adjoint model is straight forward such that any gradient-based
+PET reconstruction algorithm can be quiete easily adapted to listmode data.
+However, for SPDHG - which has the advantage of being able to handle non-smooth priors and
+has guaranteed convergence, an adaptation to listmode is possible but more complex.
+
+Our proposed list-mode SPDHG algorithm (LM-SPDHG) is shown in algorithm~\ref{alg:lmspdhg}.
+In contrast to the original SPDHG using binned data (sinograms), the forward and adjoint
+PET models have been replaced by their list-mode equivilants as defined above (lines 11 and 13).
+Moreover, the dual variable for data fidelity is also replaced by the list $l_N$ which has the
+same length as the measured event list $N$.
+If an event with a fixed sinogram bin $i_e$ occurs more than once in the event list
+$N$, it is also forward and back-projected multiple times in steps 11 and 12.
+To compensate for this fact, we have to divide by the event count $\mu_e$ before back projection
+in line 12.
+Note that (i) as shown in Fig.~\ref{fig:sparsity} in most standard acquisitions the event count
+of most events is 1 and that (ii) calculating the event count $\mu_e$ which is a pre-requisit
+creates a small pre-processing overhead (step 2)
+However, when implemented on a modern GPU this overhead is small compared to the computation
+time needed to calculate all iterations.
+Moreover, it is in the similar order of the time needed to unlist the list-mode data into
+a sinogram which is a pre-requisit and pre-processing overhead for SPDHG.
+
+Another difference compared to SPDHG is the fact that we split the data into subsets by
+assigning every $n$-th event of the event list $N$ into $n$ sub list as usually done in list-mode
+OSEM.
+Compared to the full list-mode forward operator $P^{LM}_N$, we can think of the subset forwad
+operator as the same operator with sensivity reduced by a factor of $n$.
+In contrast to SPDHG where ever subset usually only contains counts from a subset of sinogram
+bins (e.g. from a subset of all acquired views), every subset in LM-SPDHG contains a subset of 
+events possibly originating from all bins $i$. 
+
 
 
 
