@@ -94,14 +94,17 @@ to obtain reasonable convergence using SPDHG with 252 subsets.
 Moreover, the authors also demonstrated that preconditioning further accelerates convergence.
 The resulting SPDHG algorithm to solve \eqref{eq:saddle} is summarized in Algorithm \ref{alg:spdhg},
 where the proximal operator of the convex conjugate of the negative Poisson log-likehood $D_i^*$ 
-is given by
+can be calculated point-wise and is given by
 %
 \begin{equation}
-(\prox_{D_i^*}^{S}(y))_i = \frac{1}{2} \left(y_i + 1 - \sqrt{ (y_i-1)^2 + 4 S_i d_i} \right) \ .
+\begin{split}
+(\prox_{D_i^*}^{S}(y))_i &= \prox_{D_i^*}^{S}(y_i) \\ 
+&= \frac{1}{2} \left(y_i + 1 - \sqrt{ (y_i-1)^2 + 4 S_i d_i} \right) \ .
+\end{split}
 \label{eq:proxD}
 \end{equation} 
 %
-The proximal operator for $R^*$, obviously depends on choice of $R$ but can be efficiently 
+The proximal operator for $R^*$, obviously depends on choice of $R$ but can be also efficiently 
 computed using point-wise operations for many popular choices of $R$.
 As mentioned in \cite{Ehrhardt2019}, Algorithm \ref{alg:spdhg} converges if we use the preconditioned
 step sizes
@@ -185,22 +188,31 @@ Consequently, for a fixed number of acquired prompt coincidences, the sparsity o
 sinogram is proportional to the TOF resolution.
 
 As an example, for a typical 80\,s-per-bed-position whole-body FDG scan with an injected dose 
-of around 200\,MBq acquired 60\,min p.i. on a state-of-the-art TOF PET/CT scanner with
-20\,cm axial FOV, more than 95\% of the data (TOF sinogram) bins are empty.
-An example that demonstrates the sparsity is shown in Fig.~[XXX].
-For short early frames in dynamic brain scans, this fraction isi of course even higher.
-And even for ``high count'' late static 20\,min FDG brain scans with an injected dose of 150\,MBq
-acquired 60\,min p.i., still around 70\% of the data bins are empty.
+of around 323\,MBq acquired 60\,min p.i. on a state-of-the-art TOF PET/CT scanner with
+20\,cm axial FOV, more than 94\% of the data (TOF sinogram) bins are empty.
+An example that demonstrates this extreme sparsity of TOF sinograms is shown in Fig.~\ref{fig:sparsity}.
+For shorter frames, as present e.g. in the early phase of dynamic scans or when gating is used, 
+the fraction of empty bins can even higher.
+%And even for ``high count'' late static 20\,min FDG brain scans with an injected dose of 150\,MBq
+%acquired 60\,min p.i., still around 70\% of the data bins are empty.
 
-Note that we expect that the sparsity of the TOF emission data will increase even faster than
-linear compared to the improvement of the TOF resolution.
-This is because with better TOF resolution, every dected event carries more information such
-that less detected events are needed to reconstruct an image with the same variance \cite{Tomitani1981}.
+Note that we expect that the sparsity of the TOF emission data of future PET systems will increase 
+faster than linear compared to the improvement of the TOF resolution.
+This is because with better TOF resolution, every detected event carries more information such
+that fewer detected events are needed to reconstruct images with the same variance \cite{Tomitani1981}.
 
 \begin{figure}
   \centering
     \includegraphics[width=1.0\columnwidth]{./figs/sparsity.png}
-  \caption{foo bar}
+  \caption{Representative slices through a single view of an emission sinogram of an 
+  80s [\textsuperscript{18}F]FDG acquisition of a liver bed position. 
+  The scan was acquired 1\,h post injection with an injected dose of 323\,MBq on
+  a GE DMI PET/CT with a TOF resolution of 400\,ps (29 TOF bins). 
+  The horizontal and vertical axis represent the radial and axial direction (direct planes only), 
+  respectively. 
+  (top) sum over all TOF bins. (middle) central TOF bin 15/29 with 94\% empty bins. 
+  (bottom) TOF bin 22/29 with 97\% empty bins.}
+
   \label{fig:sparsity}
 \end{figure}
 
@@ -208,28 +220,82 @@ that less detected events are needed to reconstruct an image with the same varia
 \subsection*{Contributions and Aim}
 
 To improve the efficiency of SPDHG in terms of memory and computation time when reconstructing 
-sparse TOF PET data, we present and analyze a listmode version of the stochastic primal-dual 
-hybrid gradient algorithm (LM-SPDHG) that allows event-by-event processing using 
-listmode forward and back projectors.
-We first of all show that the convergence of LM-SPDHG is as fast as the convergence of SPDHG
-based on dedicated numeric examples.
+sparse TOF PET data, we propose and analyze a listmode version of the SPDHG algorithm (LM-SPDHG) 
+that allows event-by-event processing using dedicated listmode forward and back projectors.
+We first of all derive LM-SPDHG from SPDHG and show that the convergence of LM-SPDHG is as 
+fast as the convergence of SPDHG based on dedicated numeric examples.
 Moreover, we analyze the requirements in terms of memory and computational time
-for LM-SPDHG compared to SPDHG for typical scans of state-of-the-art TOF scanners.
+for LM-SPDHG compared to SPDHG for typical scans acquired on state-of-the-art TOF scanners.
 
 
-\section{Materials and Methods}
+\section{Theory}
 
-\subsection{Better intialization of sinogram SPDHG}
+In the next subsection, we first of all show how to reduce the memory requirements
+when reconstructing sparse TOF sinograms before deriving the complete LM-SPDHG algorithm.
 
-Use quick EM-TV (e.g. 1 iteration 28 susbets) as initializtion for $x$.
-Initialize $y$ (dual variable of data) as
+\subsection*{Memory-efficient SPDHG for sparse TOF sinograms}
+
+As shown in \cite{Schramm2021}, the memory requirements for SPDHG can substantially reduced by choosing
+a better intialization of the dual variable $y$.
+
+From Eq.~(\ref{eq:proxD}) we can observe that for data bins $i$ where $d_i = 0$ 
+(empty TOF sinogram bins), $\prox_{D_i^*}(a_i) = 1$ for $a_i \geq 1$ and $\prox_{D_i^*}(a_i) = a_i$ 
+otherwise. 
+Moreover, we see that $ a_i = y_i + S_i (P_i x + s_i) \geq 1$ provided that $y_i \geq 1$ 
+since all other quantities are non-negative. 
+Consequently, if we initialize all bins of $y$ where the data $d$ equals zero with one, 
+these bins of $y$ remain $1$ during all iterations. 
+This in turn means that these bins do not contribute to the update of $\delta z$, $z$, $\bar{z}$, 
+and $x$, since only the difference between
+$y$ and $y^+$ is backprojected in line 8 of algorithm~\ref{alg:spdhg} and
+do not have to be kept in memory during the iteration loop (lines 3 until 17). 
+The only place where the empty data bins contribute is the initialization of $z$ and $\bar{z}$
+in line 2.
+However, this linear one time operation can be split into smaller chunks to also reduce
+the required memory of this step.
+
+At a first glance the initialization of $y$ proposed above seems very artificial.
+But, if we construct a better initialization $y^0$ in a way such that it is the solution of our
+saddle point problem \eqref{eq:saddle} for a fixed initial $x^0$, it has to satisfy
+%
 \begin{equation}
-y^0 = 1 - \frac{d}{Px^0 + s} \ .
+\langle P x^0, y^0 \rangle - D^*(y^0) = D(Px^0 + s) \ ,
 \end{equation}
-Note that this also means that the initial y is 1 in bins where we have
-no data such that we don't need to keep y in memory during the iterations.
+%
+which is the case when
+%
+\begin{equation}
+y^0 \in \partial D(Px + s) |_{x^0} \ .
+\end{equation}
+%
+Since $D$ (the negative Poisson loglikelihood) is differentiable, this leads
+to the condition
+\begin{equation}
+y^0 = 1 - \frac{d}{Px^0 + s} \ ,
+\end{equation}
+where the division is to be understood point-wise.
+We see that under this condition, $y^0$ is indeed one in bins where $d$ is zero,
+irrespective of the choice of $x^0$.
+As argued above, this improved intialization of $y$ naturally reduces the 
+memory requirements of SPDHG and also improves the speed of convergence in case a
+``warm start'' for $x^0$ is chosen. 
+The latter can be e.g. achieved by applying one iteration
+and a reasonable amount of subsets of the EM-TV algorithm \cite{Sawatzky2008, Burger2008} 
+which can be also implemented in a listmode way. 
+Note that EM-TV in general seems to be an appealing algorithm to solve our optimization
+problem \eqref{eq:problem} also for listmode data.
+However, in contrast to SPDHG, EM-TV does not converge when using subsets, as will
+be shown later.
 
-(optionally) intialize $w$ (dual of gradient) in subgradient of $R(Kx^0)$
+%Use quick EM-TV (e.g. 1 iteration 28 susbets) as initializtion for $x$.
+%Initialize $y$ (dual variable of data) as
+%\begin{equation}
+%y^0 = 1 - \frac{d}{Px^0 + s} \ .
+%\end{equation}
+%Note that this also means that the initial y is 1 in bins where we have
+%no data such that we don't need to keep y in memory during the iterations.
+%
+%(optionally) intialize $w$ (dual of gradient) in subgradient of $R(Kx^0)$
 
 
 
@@ -281,7 +347,6 @@ no data such that we don't need to keep y in memory during the iterations.
     \includegraphics[width=1.0\textwidth]{figs/SPDHG_sino_init.png}
     \includegraphics[width=0.8\textwidth]{figs/SPDHG_sino_init_metrics.pdf}
   \caption{$1\cdot10^6$ counts, DTV, $\beta = 0.03$, 112 subsets sinogram SPDHG. ``warm'' start leads to faster convergence in the early iterations.}
-  \label{fig:metrics}
 \end{figure*}
 
 
@@ -290,7 +355,6 @@ no data such that we don't need to keep y in memory during the iterations.
     \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
     \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200_metrics.pdf}
   \caption{$1\cdot10^6$ counts, TV, $\beta = 0.03$}
-  \label{fig:metrics}
 \end{figure*}
 
 \begin{figure*}
@@ -298,7 +362,6 @@ no data such that we don't need to keep y in memory during the iterations.
     \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_3.0E+06_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
     \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_3.0E+06_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200_metrics.pdf}
   \caption{$3\cdot10^6$ counts, TV, $\beta = 0.03$}
-  \label{fig:metrics}
 \end{figure*}
 
 \begin{figure*}
@@ -306,7 +369,6 @@ no data such that we don't need to keep y in memory during the iterations.
     \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_3.0E+05_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
     \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_3.0E+05_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200_metrics.pdf}
   \caption{$3\cdot10^5$ counts, TV, $\beta = 0.03$}
-  \label{fig:metrics}
 \end{figure*}
 
 \begin{figure*}
@@ -314,7 +376,6 @@ no data such that we don't need to keep y in memory during the iterations.
     \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_1.0E-01_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
     \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_1.0E-01_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200_metrics.pdf}
   \caption{$1\cdot10^6$ counts, TV, $\beta = 0.1$}
-  \label{fig:metrics}
 \end{figure*}
 
 \begin{figure*}
@@ -322,7 +383,6 @@ no data such that we don't need to keep y in memory during the iterations.
     \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_1.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
     \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_1.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200_metrics.pdf}
   \caption{$1\cdot10^6$ counts, TV, $\beta = 0.01$}
-  \label{fig:metrics}
 \end{figure*}
 
 \begin{figure*}
@@ -330,5 +390,4 @@ no data such that we don't need to keep y in memory during the iterations.
     \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_1.0E-01_prior_DTV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
     \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_1.0E-01_prior_DTV_niter_ref_20000_fwhm_4.5_4.5_niter_200_metrics.pdf}
   \caption{$1\cdot10^6$ counts, DTV, $\beta = 0.1$}
-  \label{fig:metrics}
 \end{figure*}
