@@ -382,11 +382,11 @@ P^T y^0 = P^T 1 - {P^{LM}_{N}}^T \frac{1}{P^{LM}_N x^0 + s_N} \ ,
 %
 we notice that we do not have to store the sinogram $y$ in memory.
 Note, however, that the calculation of $P^T 1$ corresponding to a sinogram backprojection of ones
-is needed.
-Calculating and storing this (sensitivity) image once is beneficial since it
+is needed and has to be done once.
+Note that storing this image is beneficial since it
 is also needed in the calculation of the step size $T_k$ in \eqref{eq:lm_stepsizes}.
 Moreover, if we use the listmode EM-TV algorithm to calculate a warm start for $x^0$, 
-the sensitivity image has to be calculated anyway and can be re-used.
+the sensitivity image is needed as well and can be re-used.
 
 In summary, LM-SPDHG as shown in algorithm~\ref{alg:lmspdhg} as the advantage over SPDHG
 that (i) only lists ($N$ and $l_{N_i}$) instead of complete sinograms ($y$ and $d$) need to be 
@@ -397,10 +397,32 @@ the number of data bins, the required memory and computation time is reduced.
 The latter depends on the actual implementation of the sinogram and listmode projectors
 and on the computational hardware.
 According to our experience using a state-of-the art GPU implementation of a Joseph TOF projectors
-for TOF PET scanner with 400\,ps TOF resolution and 25\,cm axial field of view,
-a forward and back projection is faster in listmode if less than XXX events have to be processed.
+for a TOF PET scanner with 400\,ps TOF resolution and 25\,cm axial field of view,
+a forward and back projection is faster in listmode if approximately less than XXX events 
+have to be processed.
 A detailed comparison of the required memory for SPDHG and LM-SPDHG for different typical
-acquisitions are listed in Table XXX.
+acquisitions are listed in Table~\ref{tab:mem}.
+
+\begin{table}
+\begin{center}
+\footnotesize
+\begin{tabular}{ c c r r r}
+         & general               & 5e8 counts & 7e7 counts  & 1e7 counts\\ \hline
+         & 8 images              &   0.4\,GB  &   0.4\,GB   &   0.4\,GB \\
+SPDHG    & 1 uint + 3 float sino.&  55.6\,GB  &  55.6\,GB   &  55.6\,GB \\ \hline
+LM-      & 8 images              &   0.4\,GB  &   0.4\,GB   &   0.4\,GB \\
+SPDHG    & event + 3 float lists &  11.0\,GB  &   1.5\,GB   &   0.2\,GB
+%         & $5 \, n_\text{voxels} \cdot 4\,\text{B} + 4\,\text{B} + m(1\,\text{B} + 3\cdot 4\,\text{B})$ &  \\ \hline
+%         & $5 \, n_\text{voxels} \cdot 4\,\text{B} + n_\text{events}(10\,\text{B} + 3\cdot 4\,\text{B})$ &
+\end{tabular}
+\end{center}
+\caption{Estimation of required memory for SPDHG and LM-SPDHG assuming an image size of (300,300,125)
+         and a TOF sinogram of (357,224,1981,27) correspoding to a TOF PET scanner with 400\,ps TOF
+         resolution and 25\,cm axial FOV for three counts levels. 5e8 counts approximately correspond
+         to a high count 20\,min static FDG brain scan, 7e7 counts to an 80\,s static FDG body bed 
+         position, and 1e7 counts to a short early dynamic frame.}
+\label{tab:mem}
+\end{table}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
