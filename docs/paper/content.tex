@@ -414,11 +414,12 @@ acquisitions are listed in Table~\ref{tab:mem}.
 \begin{center}
 \footnotesize
 \begin{tabular}{ c c r r r}
-         & general               & 5e8 counts & 7e7 counts  & 1e7 counts\\ \hline
+         &                       &            & counts      & \\ 
+         &                       & 5e8        & 7e7         & 1e7 \\ \hline
          & 8 images              &   0.4\,GB  &   0.4\,GB   &   0.4\,GB \\
 SPDHG    & 1 uint + 3 float sino.&  55.6\,GB  &  55.6\,GB   &  55.6\,GB \\ \hline
 LM-      & 8 images              &   0.4\,GB  &   0.4\,GB   &   0.4\,GB \\
-SPDHG    & event + 3 float lists &  11.0\,GB  &   1.5\,GB   &   0.2\,GB
+SPDHG    & event + 1 uint + 3 float lists &  12.0\,GB  &   1.7\,GB   &   0.3\,GB
 %         & $5 \, n_\text{voxels} \cdot 4\,\text{B} + 4\,\text{B} + m(1\,\text{B} + 3\cdot 4\,\text{B})$ &  \\ \hline
 %         & $5 \, n_\text{voxels} \cdot 4\,\text{B} + n_\text{events}(10\,\text{B} + 3\cdot 4\,\text{B})$ &
 \end{tabular}
