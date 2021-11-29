@@ -398,9 +398,16 @@ The latter depends on the actual implementation of the sinogram and listmode pro
 and on the computational hardware.
 According to our experience using a state-of-the art GPU implementation of a Joseph TOF projectors
 for a TOF PET scanner with 400\,ps TOF resolution and 25\,cm axial field of view,
-a forward and back projection is faster in listmode if approximately less than XXX events 
+a forward and back projection is faster in listmode if approximately less than 3e8 events 
 have to be processed.
-A detailed comparison of the required memory for SPDHG and LM-SPDHG for different typical
+For 7e7 and 1e7 counts, the projections are approximately faster by a factor of 3 and 5,
+respectively\footnote{The reported computational times for the projections include the time
+needed to transfer the image and projection data to and from host to the GPU and thus
+correspond to a hybrid CPU/GPU computational model.}.
+Note that the difference in the computation time of the projection for sinogram and listmode 
+depends on the specific implementation - especially on the optimization of the memory access - 
+and the computational hardware.
+A detailed comparison of the required memory for SPDHG and LM-SPDHG for different typical PET
 acquisitions are listed in Table~\ref{tab:mem}.
 
 \begin{table}
@@ -419,8 +426,9 @@ SPDHG    & event + 3 float lists &  11.0\,GB  &   1.5\,GB   &   0.2\,GB
 \caption{Estimation of required memory for SPDHG and LM-SPDHG assuming an image size of (300,300,125)
          and a TOF sinogram of (357,224,1981,27) correspoding to a TOF PET scanner with 400\,ps TOF
          resolution and 25\,cm axial FOV for three counts levels. 5e8 counts approximately correspond
-         to a high count 20\,min static FDG brain scan, 7e7 counts to an 80\,s static FDG body bed 
-         position, and 1e7 counts to a short early dynamic frame.}
+         to a high count 20\,min late static FDG brain scan, 
+         7e7 counts to an 80\,s static FDG body bed position 1\,h p.i., 
+         and 1e7 counts to a short early frame in a dynamic acquisition.}
 \label{tab:mem}
 \end{table}
 
