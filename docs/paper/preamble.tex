@@ -5,9 +5,9 @@
 
 \usepackage{algpseudocode}
 \usepackage{grffile}
-\usepackage{caption}
+\usepackage[font={footnotesize}]{caption}
 \usepackage{subcaption}
-\usepackage[nolists,nomarkers]{endfloat}
+%\usepackage[nolists,nomarkers]{endfloat}
 
 \usepackage[backend=bibtex,minnames=3,maxnames=3,isbn=false,url=false,eprint=false,giveninits=true,sorting=none,citestyle=numeric-comp]{biblatex}
 \addbibresource{gs.bib}
@@ -24,4 +24,4 @@
 \DeclareMathOperator*{\argmin}{argmin}
 
 
-
+\AtBeginBibliography{\small}
