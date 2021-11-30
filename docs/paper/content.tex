@@ -441,54 +441,51 @@ SPDHG    & event + 1 uint + 3 float lists &  12.0\,GB  &   1.7\,GB   &   0.3\,GB
 
 \section{Materials and Methods}
 
+\begin{figure}
+  \centering
+    \includegraphics[width=1.0\columnwidth]{figs/SPDHG_cold_vs_warm_start.png}
+  \caption{foo bar}
+\end{figure}
+
+
 \section{Results}
 
 \begin{figure*}
   \centering
-    \includegraphics[width=1.0\textwidth]{figs/SPDHG_sino_init.png}
-    \includegraphics[width=0.8\textwidth]{figs/SPDHG_sino_init_metrics.pdf}
-  \caption{$1\cdot10^6$ counts, DTV, $\beta = 0.03$, 112 subsets sinogram SPDHG. ``warm'' start leads to faster convergence in the early iterations.}
-\end{figure*}
-
-
-\begin{figure*}
-  \centering
-    \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
-    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200_metrics.pdf}
+    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
   \caption{$1\cdot10^6$ counts, TV, $\beta = 0.03$}
 \end{figure*}
 
 \begin{figure*}
   \centering
-    \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_3.0E+06_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
-    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_3.0E+06_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200_metrics.pdf}
-  \caption{$3\cdot10^6$ counts, TV, $\beta = 0.03$}
+    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_1.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
+  \caption{$1\cdot10^6$ counts, TV, $\beta = 0.01$}
 \end{figure*}
+
 
 \begin{figure*}
   \centering
-    \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_3.0E+05_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
-    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_3.0E+05_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200_metrics.pdf}
+    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_3.0E+05_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
   \caption{$3\cdot10^5$ counts, TV, $\beta = 0.03$}
 \end{figure*}
 
 \begin{figure*}
   \centering
-    \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_1.0E-01_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
-    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_1.0E-01_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200_metrics.pdf}
-  \caption{$1\cdot10^6$ counts, TV, $\beta = 0.1$}
-\end{figure*}
-
-\begin{figure*}
-  \centering
-    \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_1.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
-    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_1.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200_metrics.pdf}
-  \caption{$1\cdot10^6$ counts, TV, $\beta = 0.01$}
-\end{figure*}
-
-\begin{figure*}
-  \centering
-    \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_1.0E-01_prior_DTV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
-    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_1.0E-01_prior_DTV_niter_ref_20000_fwhm_4.5_4.5_niter_200_metrics.pdf}
+    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_1.0E-01_prior_DTV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
   \caption{$1\cdot10^6$ counts, DTV, $\beta = 0.1$}
 \end{figure*}
+
+
+%\begin{figure*}
+%  \centering
+%    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_1.0E-01_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
+%  \caption{$1\cdot10^6$ counts, TV, $\beta = 0.1$}
+%\end{figure*}
+%
+%\begin{figure*}
+%  \centering
+%    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_3.0E+06_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
+%  \caption{$3\cdot10^6$ counts, TV, $\beta = 0.03$}
+%\end{figure*}
+
+
