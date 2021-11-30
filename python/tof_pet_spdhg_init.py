@@ -20,7 +20,7 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--counts',       help = 'counts to simulate',        default = 1e6, type = float)
 parser.add_argument('--niter',        help = 'number of iterations',      default = 20,  type = int)
-parser.add_argument('--nsubsets',     help = 'number of subsets',         default = 112, type = int)
+parser.add_argument('--nsubsets',     help = 'number of subsets',         default = 56,  type = int)
 parser.add_argument('--fwhm_mm',      help = 'psf modeling FWHM mm',      default = 4.5, type = float)
 parser.add_argument('--fwhm_data_mm', help = 'psf for data FWHM mm',      default = 4.5, type = float)
 parser.add_argument('--phantom',      help = 'phantom to use',            default = 'brain2d')
@@ -142,27 +142,10 @@ def calc_cost(x):
 
 def _cb(x, **kwargs):
   it = kwargs.get('iteration',0)
-  it_early1 = kwargs.get('it_early1',-1)
-  it_early2 = kwargs.get('it_early2',-1)
-  it_early3 = kwargs.get('it_early3',-1)
-  it_early4 = kwargs.get('it_early4',-1)
 
-  if it_early1 == it:
-    if 'x_early1' in kwargs:
-      kwargs['x_early1'][:] = x
-
-  if it_early2 == it:
-    if 'x_early2' in kwargs:
-      kwargs['x_early2'][:] = x
-
-  if it_early3 == it:
-    if 'x_early3' in kwargs:
-      kwargs['x_early3'][:] = x
-
-  if it_early4 == it:
-    if 'x_early4' in kwargs:
-      kwargs['x_early4'][:] = x
-
+  if it == 3:
+    if 'x_early' in kwargs:
+      kwargs['x_early'][:] = x
 
   if 'cost' in kwargs:
     kwargs['cost'][it-1] = calc_cost(x)
@@ -240,15 +223,13 @@ y_init_grad = grad_norm.beta*np.sign(grad_operator.fwd(xinit))
 
 gamma = 3. / gaussian_filter(xinit.squeeze(),2).max()
 
-cost_spdhg_sino       = np.zeros((3,niter))
-
-psnr_spdhg_sino       = np.zeros((3,niter))
+cost_spdhg_sino = np.zeros((2,niter))
+psnr_spdhg_sino = np.zeros((2,niter))
 
 # sinogram SPDHG
 proj.init_subsets(nsubsets)
-cbs1 = {'cost':cost_spdhg_sino[0,:],'psnr':psnr_spdhg_sino[0,:],'xref':ref_recon}
-cbs2 = {'cost':cost_spdhg_sino[1,:],'psnr':psnr_spdhg_sino[1,:],'xref':ref_recon}
-cbs3 = {'cost':cost_spdhg_sino[2,:],'psnr':psnr_spdhg_sino[2,:],'xref':ref_recon}
+cbs1 = {'cost':cost_spdhg_sino[0,:],'psnr':psnr_spdhg_sino[0,:],'xref':ref_recon, 'x_early':np.zeros(img.shape)}
+cbs2 = {'cost':cost_spdhg_sino[1,:],'psnr':psnr_spdhg_sino[1,:],'xref':ref_recon, 'x_early':np.zeros(img.shape)}
 
 x1 = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
            fwhm = fwhm, gamma = gamma, verbose = True, 
@@ -261,42 +242,51 @@ x2 = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
            callback = _cb, callback_kwargs = cbs2,
            grad_operator = grad_operator, grad_norm = grad_norm)
 
-x3 = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
-           fwhm = fwhm, gamma = gamma, verbose = True, 
-           xstart = xinit, ystart = yinit, y_grad_start = y_init_grad,
-           callback = _cb, callback_kwargs = cbs3,
-           grad_operator = grad_operator, grad_norm = grad_norm)
-
 #----------------------------------------------------------------------------------------
 
+c0    = calc_cost(xinit)
 c_ref = cost_ref.min()
 
-fig, ax = plt.subplots(1,2, figsize = (10,5))
-ax[0].semilogy(cost_spdhg_sino[0,...] - c_ref, label = 'cold')
-ax[0].semilogy(cost_spdhg_sino[1,...] - c_ref, label = 'warm data')
-ax[0].semilogy(cost_spdhg_sino[2,...] - c_ref, label = 'warm data + grad')
-ax[0].set_xlabel('iteration')
-ax[0].set_ylabel('cost - ref.cost')
+n = np.arange(1, niter+1)
 
-ax[1].plot(psnr_spdhg_sino[0,...], label = 'cold')
-ax[1].plot(psnr_spdhg_sino[1,...], label = 'warm data')
-ax[1].plot(psnr_spdhg_sino[2,...], label = 'warm data + grad')
-ax[1].set_xlabel('iteration')
-ax[1].set_ylabel('PSNR')
-ax[1].legend()
+plt.rcParams['font.size'] = 9
+
+fig, ax = plt.subplots(2,4, figsize = (7,5))
+
+ax[0,0].semilogy(n, (cost_spdhg_sino[0,...] - c_ref)/(c0 - c_ref), label = 'cold start')
+ax[0,0].semilogy(n, (cost_spdhg_sino[1,...] - c_ref)/(c0 - c_ref), label = 'warm start')
+ax[0,0].set_xlabel('iteration')
+ax[0,0].set_ylabel('relative cost')
+ax[0,0].grid(ls = ':')
+      
+ax[1,0].plot(n, psnr_spdhg_sino[0,...], label = 'cold start')
+ax[1,0].plot(n, psnr_spdhg_sino[1,...], label = 'warm start')
+ax[1,0].set_xlabel('iteration')
+ax[1,0].set_ylabel('PSNR')
+ax[1,0].legend()
+ax[1,0].grid(ls = ':')
+
+
+ax[0,1].imshow(ref_recon.squeeze()[:,19:-19], vmax = 1.2*img.max(), cmap = plt.cm.Greys)
+ax[0,1].set_title('reference', fontsize = 'medium')
+ax[1,1].imshow(xinit.squeeze()[:,19:-19], vmax = 1.2*img.max(), cmap = plt.cm.Greys)
+ax[1,1].set_title('initializer warm start', fontsize = 'medium')
+
+ax[0,2].imshow(cbs1['x_early'].squeeze()[:,19:-19], vmax = 1.2*img.max(), cmap = plt.cm.Greys)
+ax[0,2].set_title('SPDHG cold start 3it', fontsize = 'medium')
+ax[1,2].imshow(cbs2['x_early'].squeeze()[:,19:-19], vmax = 1.2*img.max(), cmap = plt.cm.Greys)
+ax[1,2].set_title('SPDHG warm start 3it', fontsize = 'medium')
+
+
+ax[0,3].imshow(x1.squeeze()[:,19:-19], vmax = 1.2*img.max(), cmap = plt.cm.Greys)
+ax[0,3].set_title(f'SPDHG cold start {niter}it', fontsize = 'medium')
+ax[1,3].imshow(x2.squeeze()[:,19:-19], vmax = 1.2*img.max(), cmap = plt.cm.Greys)
+ax[1,3].set_title(f'SPDHG warm start {niter}it', fontsize = 'medium')
+
+
+for axx in ax[:,1:].ravel():
+  axx.set_axis_off()
+
 fig.tight_layout()
-fig.savefig('SPDHG_sino_init_metrics.pdf')
+#fig.savefig('SPDHG_cold_vs_warm_start.png')
 fig.show()
-
-fig2, ax2 = plt.subplots(1,4, figsize = (16,4))
-ax2[0].imshow(ref_recon.squeeze(), vmax = 1.2*img.max(), cmap = plt.cm.Greys)
-ax2[1].imshow(x1.squeeze(), vmax = 1.2*img.max(), cmap = plt.cm.Greys)
-ax2[2].imshow(x2.squeeze(), vmax = 1.2*img.max(), cmap = plt.cm.Greys)
-ax2[3].imshow(x3.squeeze(), vmax = 1.2*img.max(), cmap = plt.cm.Greys)
-ax2[0].set_title('ref')
-ax2[1].set_title('cold')
-ax2[2].set_title('warm data')
-ax2[3].set_title('warm data + grad')
-fig2.tight_layout()
-fig2.savefig('SPDHG_sino_init.png')
-fig2.show()
