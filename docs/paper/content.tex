@@ -315,7 +315,7 @@ has guaranteed convergence, an adaptation to listmode is possible but more compl
 \State \textbf{Initialize} $n$ sub lists $l_{N_i}$ with 0s
 \Repeat
 	\State $x = \proj_{\geq 0} (x - T \overline{z})$
-	\State Select $i \in \{1,\ldots,m+1\}$ randomly accord. to $(p_i)_i$
+	\State Select $i \in \{1,\ldots,n+1\}$ randomly accord. to $(p_i)_i$
   \If{$i \leq n$}
 	  \State $l_{N_i}^+ \gets \prox_{D^*}^{S_i} \left( l_{N_i} + S_i \left(P^{LM}_{N_i} x + s_{N_i} \right) \right)$
 	  \State $\delta z \gets {P^{LM}_{N_i}}^T \left(\frac{l_{N_i}^+ - l_{N_i}}{\mu_{N_i}}\right)$
@@ -456,23 +456,30 @@ SPDHG    & event + 1 uint + 3 float lists &  12.0\,GB  &   1.7\,GB   &   0.3\,GB
   \caption{$1\cdot10^6$ counts, TV, $\beta = 0.03$}
 \end{figure*}
 
+
+
+
 \begin{figure*}
   \centering
+  \begin{subfigure}[]{1.0\textwidth}
+    \centering
     \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_1.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
-  \caption{$1\cdot10^6$ counts, TV, $\beta = 0.01$}
-\end{figure*}
-
-
-\begin{figure*}
-  \centering
+    \caption{$1\cdot10^6$ counts, TV, $\beta = 0.01$}
+  \end{subfigure}
+  \vfill
+  \begin{subfigure}[]{1.0\textwidth}
+    \centering
     \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_3.0E+05_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
-  \caption{$3\cdot10^5$ counts, TV, $\beta = 0.03$}
-\end{figure*}
-
-\begin{figure*}
-  \centering
+    \caption{$3\cdot10^5$ counts, TV, $\beta = 0.03$}
+  \end{subfigure}
+  \vfill
+  \begin{subfigure}[]{1.0\textwidth}
+    \centering
     \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_1.0E-01_prior_DTV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
-  \caption{$1\cdot10^6$ counts, DTV, $\beta = 0.1$}
+    \caption{$1\cdot10^6$ counts, DTV, $\beta = 0.1$}
+  \end{subfigure}
+  \caption{foo bar}
+  \label{fig:conv2}
 \end{figure*}
 
 
