@@ -20,7 +20,7 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--counts',       help = 'counts to simulate',        default = 1e6, type = float)
 parser.add_argument('--niter',        help = 'number of iterations',      default = 20,  type = int)
-parser.add_argument('--nsubsets',     help = 'number of subsets',         default = 56,  type = int)
+parser.add_argument('--nsubsets',     help = 'number of subsets',         default = 112, type = int)
 parser.add_argument('--fwhm_mm',      help = 'psf modeling FWHM mm',      default = 4.5, type = float)
 parser.add_argument('--fwhm_data_mm', help = 'psf for data FWHM mm',      default = 4.5, type = float)
 parser.add_argument('--phantom',      help = 'phantom to use',            default = 'brain2d')
@@ -249,7 +249,9 @@ c_ref = cost_ref.min()
 
 n = np.arange(1, niter+1)
 
-plt.rcParams['font.size'] = 9
+plt.rcParams['font.size'] = 10
+plt.rcParams['legend.fontsize'] = 'small'
+title_kwargs = {'fontweight':'bold', 'fontsize':'medium'}
 
 fig, ax = plt.subplots(2,4, figsize = (7,5))
 
@@ -262,31 +264,31 @@ ax[0,0].grid(ls = ':')
 ax[1,0].plot(n, psnr_spdhg_sino[0,...], label = 'cold start')
 ax[1,0].plot(n, psnr_spdhg_sino[1,...], label = 'warm start')
 ax[1,0].set_xlabel('iteration')
-ax[1,0].set_ylabel('PSNR')
-ax[1,0].legend()
+ax[1,0].set_ylabel('PSNR to reference')
+ax[0,0].legend(loc = 0)
 ax[1,0].grid(ls = ':')
 
 
 ax[0,1].imshow(ref_recon.squeeze()[:,19:-19], vmax = 1.2*img.max(), cmap = plt.cm.Greys)
-ax[0,1].set_title('reference', fontsize = 'medium')
+ax[0,1].set_title('reference\nPDHG', **title_kwargs)
 ax[1,1].imshow(xinit.squeeze()[:,19:-19], vmax = 1.2*img.max(), cmap = plt.cm.Greys)
-ax[1,1].set_title('initializer warm start', fontsize = 'medium')
+ax[1,1].set_title('initializer\nwarm start', **title_kwargs)
 
 ax[0,2].imshow(cbs1['x_early'].squeeze()[:,19:-19], vmax = 1.2*img.max(), cmap = plt.cm.Greys)
-ax[0,2].set_title('SPDHG cold start 3it', fontsize = 'medium')
+ax[0,2].set_title('SPDHG cold start\n3 iterations', **title_kwargs)
 ax[1,2].imshow(cbs2['x_early'].squeeze()[:,19:-19], vmax = 1.2*img.max(), cmap = plt.cm.Greys)
-ax[1,2].set_title('SPDHG warm start 3it', fontsize = 'medium')
+ax[1,2].set_title('SPDHG warm start\n3 itertations', **title_kwargs)
 
 
 ax[0,3].imshow(x1.squeeze()[:,19:-19], vmax = 1.2*img.max(), cmap = plt.cm.Greys)
-ax[0,3].set_title(f'SPDHG cold start {niter}it', fontsize = 'medium')
+ax[0,3].set_title(f'SPDHG cold start\n{niter} iterations', **title_kwargs)
 ax[1,3].imshow(x2.squeeze()[:,19:-19], vmax = 1.2*img.max(), cmap = plt.cm.Greys)
-ax[1,3].set_title(f'SPDHG warm start {niter}it', fontsize = 'medium')
+ax[1,3].set_title(f'SPDHG warm start\n{niter} iterations', **title_kwargs)
 
 
 for axx in ax[:,1:].ravel():
   axx.set_axis_off()
 
 fig.tight_layout()
-#fig.savefig('SPDHG_cold_vs_warm_start.png')
+fig.savefig('SPDHG_cold_vs_warm_start.png')
 fig.show()
