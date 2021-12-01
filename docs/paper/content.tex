@@ -228,7 +228,7 @@ Moreover, we analyze the requirements in terms of memory and computational time
 for LM-SPDHG compared to SPDHG for typical scans acquired on state-of-the-art TOF scanners.
 
 
-\section{Theory}
+\section{Theory and Algorithms}
 
 In the next subsection, we first of all show how to reduce the memory requirements
 when reconstructing sparse TOF sinograms before deriving the complete LM-SPDHG algorithm.
@@ -315,7 +315,7 @@ has guaranteed convergence, an adaptation to listmode is possible but more compl
 \State \textbf{Initialize} $n$ sub lists $l_{N_i}$ with 0s
 \Repeat
 	\State $x = \proj_{\geq 0} (x - T \overline{z})$
-	\State Select $i \in \{1,\ldots,m+1\}$ randomly accord. to $(p_i)_i$
+	\State Select $i \in \{1,\ldots,n+1\}$ randomly accord. to $(p_i)_i$
   \If{$i \leq n$}
 	  \State $l_{N_i}^+ \gets \prox_{D^*}^{S_i} \left( l_{N_i} + S_i \left(P^{LM}_{N_i} x + s_{N_i} \right) \right)$
 	  \State $\delta z \gets {P^{LM}_{N_i}}^T \left(\frac{l_{N_i}^+ - l_{N_i}}{\mu_{N_i}}\right)$
@@ -439,56 +439,141 @@ SPDHG    & event + 1 uint + 3 float lists &  12.0\,GB  &   1.7\,GB   &   0.3\,GB
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\section{Materials and Methods}
+\section{Numerical Experiments}
 
-\section{Results}
+Recalling the fact that more most common TOF PET acquisitions, LM-SPDHG requires less memory and 
+is also faster, one would probably prefer LM-SPDHG over SPDHG if the speed of convergence is the same.
+In the following we describe a set of numerical experiments that we conducted to show that this
+is indeed the case.
+This is because in the absence of an analytical solution to the optimization problems \eqref{eq:primal}
+and \eqref{eq:saddle}, we analyzed the convergence of LM-SPDHG and SPDHG with respect to a 
+reference solution as done in \cite{Ehrhardt2019}.
+Convergence was monitored by tracking the relative cost function
+\begin{equation}
+c_\text{rel}(x) = (c(x) - c(x^*)) / (c(x^0) - c(x^*)) \ ,
+\end{equation}
+where $c(x)$ is the cost function to be optimized in \eqref{eq:primal} and $x^0$ is the initial value
+used for $x$.
+Moreover, convergence was also montiored in image space by tracking the peak signal to noise ratio
+\begin{equation}
+\text{PSNR}(x) = 20\,\log_{10} \left( \|x^*\|_\infty/\sqrt{\text{MSE}(x,x^*)} \right) \ ,
+\end{equation}
+where $x^*$ is a reference solution obtained by running the deterministic PDHG (SPDHG with only 1 subset)
+for 20000 iterations, and MSE is the mean squared error.
+Since running PDHG with 20000 iterations using realistic 3D TOF PET data takes a very long 
+time (ca. 250\,h), all numerical convergence experiments were performed using simulated 2D TOF PET data.
+A 2D software brain phantom with a gray to white matter contrast of 4:1 was created
+based on the brainweb phantom [XXX] and used to generate simulated 2D TOF data including the effects
+limited spatial resolution, attenuation and a flat contamination mimicking 
+random and scattered coincidences with a contamination fraction of 16\%.
+The geometry of and TOF resolution of the simulated 2D PET system was chosen to 
+mimick one direct plane of the GE SIGNA PET/MR 
+(sinogram dimension: 357 radial bins, 224 projection angles, 27 TOF bins, 400\,ps TOF resolution).
+Noisy simulated prompt emission TOF sinograms and corresponding listmode data were generated
+for different count levels (5e3, 1e6, and 3e6 prompt counts).
+Unless stated otherwise, we always used the EM-TV algorithm using 1 iteration and 28 subsets
+to initialize $x^0$ and $y^0$ according to \eqref{eq:yinit}.
+In all experiments, the step size ratio $\gamma$ was set to $3 / \|x^0\|_\infty$ and $\rho$ was
+set to 0.999.
+When splitting the data into $n$ subsets, the vector of probabilities determining 
+whether an update with respect to a subset of the data of with respect to the prior is 
+done was set to 
+%
+\begin{equation}
+p_k = 
+  \begin{cases}
+  \frac{1}{2n} \ &\text{if } i \leq n \\
+  \frac{1}{2}  \ &\text{else} \ ,
+  \end{cases}
+\end{equation}
+%
+such that on average an update with respect to the prior was done on every second update
+as suggested in \cite{Ehrhardt2019}. 
+In this work, we use the term iteration for $2n$ updates such that on average in every iteration
+the complete data is forward and backprojected once and $n$ updates with respect to the
+prior are performed.
+
+As benchmark examples for non-smooth priors, we consider two ``Total Variation like'' priors
+in this work. 
+These priors have the form
+%
+\begin{equation}
+  R(Kx) = \|K x\|_{2,1} \ ,
+\end{equation}
+%
+where $\|K x \|_{2,1}$ is sum over all entries of the pointwise Euclidean norm of $K x$.
+The proximal operator for the convex dual of these prior functionals is given by
+%
+\begin{equation}
+(\prox_{R^*}^S(w) )_i = \frac{w_i}{\max(1,|w_i|)} \ .
+\end{equation}
+%
+For the linear operator $K$, we first used discrete forward differences resulting
+in the classical Total Variation (TV) prior \cite{Rudin1992}.
+Moreover, we also implemented the Directional Total Variation (DTV) prior incorporating
+structural information by only considering the component of forward difference operator 
+that is perpendicular to a joint gradient field in every point \cite{Ehrhardt2016}.
+In our convergence experiments using DTV, we assumed perfect structural prior information
+meaning that the joint gradient field used for DTV, was calculated on the ground truth image
+itself.
+Note that in real acquisitions the quality of the available structural prior information is
+never perfect.
+However, this should not affect the convergence of SPDHG and LM-SPDHG. 
+
+\subsection*{SPDHG with warm start}
+
+\begin{figure}
+  \centering
+    \includegraphics[width=1.0\columnwidth]{figs/SPDHG_cold_vs_warm_start.png}
+  \caption{foo bar}
+\end{figure}
+
 
 \begin{figure*}
   \centering
-    \includegraphics[width=1.0\textwidth]{figs/SPDHG_sino_init.png}
-    \includegraphics[width=0.8\textwidth]{figs/SPDHG_sino_init_metrics.pdf}
-  \caption{$1\cdot10^6$ counts, DTV, $\beta = 0.03$, 112 subsets sinogram SPDHG. ``warm'' start leads to faster convergence in the early iterations.}
-\end{figure*}
-
-
-\begin{figure*}
-  \centering
-    \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
-    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200_metrics.pdf}
+    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
   \caption{$1\cdot10^6$ counts, TV, $\beta = 0.03$}
 \end{figure*}
 
-\begin{figure*}
-  \centering
-    \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_3.0E+06_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
-    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_3.0E+06_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200_metrics.pdf}
-  \caption{$3\cdot10^6$ counts, TV, $\beta = 0.03$}
-\end{figure*}
+
+
+\subsection*{Convergence of LM-SPDHG}
 
 \begin{figure*}
   \centering
-    \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_3.0E+05_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
-    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_3.0E+05_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200_metrics.pdf}
-  \caption{$3\cdot10^5$ counts, TV, $\beta = 0.03$}
+  \begin{subfigure}[]{1.0\textwidth}
+    \centering
+    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_1.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
+    \caption{$1\cdot10^6$ counts, TV, $\beta = 0.01$}
+  \end{subfigure}
+  \vfill
+  \begin{subfigure}[]{1.0\textwidth}
+    \centering
+    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_3.0E+05_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
+    \caption{$3\cdot10^5$ counts, TV, $\beta = 0.03$}
+  \end{subfigure}
+  \vfill
+  \begin{subfigure}[]{1.0\textwidth}
+    \centering
+    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_1.0E-01_prior_DTV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
+    \caption{$1\cdot10^6$ counts, DTV, $\beta = 0.1$}
+  \end{subfigure}
+  \caption{foo bar}
+  \label{fig:conv2}
 \end{figure*}
 
-\begin{figure*}
-  \centering
-    \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_1.0E-01_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
-    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_1.0E-01_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200_metrics.pdf}
-  \caption{$1\cdot10^6$ counts, TV, $\beta = 0.1$}
-\end{figure*}
+\section{Discussion}
 
-\begin{figure*}
-  \centering
-    \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_1.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
-    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_1.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200_metrics.pdf}
-  \caption{$1\cdot10^6$ counts, TV, $\beta = 0.01$}
-\end{figure*}
+%\begin{figure*}
+%  \centering
+%    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_1.0E-01_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
+%  \caption{$1\cdot10^6$ counts, TV, $\beta = 0.1$}
+%\end{figure*}
+%
+%\begin{figure*}
+%  \centering
+%    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_3.0E+06_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
+%  \caption{$3\cdot10^6$ counts, TV, $\beta = 0.03$}
+%\end{figure*}
 
-\begin{figure*}
-  \centering
-    \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_1.0E-01_prior_DTV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
-    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_1.0E-01_prior_DTV_niter_ref_20000_fwhm_4.5_4.5_niter_200_metrics.pdf}
-  \caption{$1\cdot10^6$ counts, DTV, $\beta = 0.1$}
-\end{figure*}
+
