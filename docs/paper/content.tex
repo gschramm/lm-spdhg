@@ -463,8 +463,8 @@ for 20000 iterations, and MSE is the mean squared error.
 Since running PDHG with 20000 iterations using realistic 3D TOF PET data takes a very long 
 time (ca. 250\,h), all numerical convergence experiments were performed using simulated 2D TOF PET data.
 A 2D software brain phantom with a gray to white matter contrast of 4:1 was created
-based on the brainweb phantom [XXX] and used to generate simulated 2D TOF data including the effects
-limited spatial resolution, attenuation and a flat contamination mimicking 
+based on the brainweb phantom \cite{Collins1998} and used to generate simulated 2D TOF data 
+including the effects limited spatial resolution, attenuation and a flat contamination mimicking 
 random and scattered coincidences with a contamination fraction of 16\%.
 The geometry of and TOF resolution of the simulated 2D PET system was chosen to 
 mimick one direct plane of the GE SIGNA PET/MR 
@@ -482,7 +482,7 @@ done was set to
 \begin{equation}
 p_k = 
   \begin{cases}
-  \frac{1}{2n} \ &\text{if } i \leq n \\
+  \frac{1}{2n} \ &\text{if } k \leq n \\
   \frac{1}{2}  \ &\text{else} \ ,
   \end{cases}
 \end{equation}
@@ -522,12 +522,37 @@ However, this should not affect the convergence of SPDHG and LM-SPDHG.
 
 \subsection*{SPDHG with warm start}
 
+Before investigating the convergene behavior of LM-SPDHG, we first of all tested whether 
+a warm start could already help to lead to faster convergence of SPDHG using sinograms.
+Figure~\ref{fig:warm_start} shows the results of SPDHG reconstructions with a cold 
+($x^0 = 0$ and $y^0 = 0$) and warm start as described above.
+It can be seen that after 8 iterations the the relative cost of SPDHG using the warm start is lower
+and decreases faster.
+Moreover, the PSNR is higher after 4 iterations and increases faster in the early iterations such
+that after 20 iterations is closer to there reference PDHG reconstruction.
+
 \begin{figure}
   \centering
     \includegraphics[width=1.0\columnwidth]{figs/SPDHG_cold_vs_warm_start.png}
-  \caption{foo bar}
+  \caption{Comparison of convergence of sinogram SPDHG using a cold and warm start
+           for 1e6 counts and a TV prior with $\beta = 0.03$ using 112 subsets.
+           For the warm start, $x^0$ was taken from 1 EM-TV iteration with 28 subsets
+           and $y^0$ was calculated according to \eqref{eq:yinit}.
+           Left column: relative cost and PSNR to with respect to the reference solution as
+           a function of the iterations.
+           Second column: reference PDHG reconstruciton using 20000 iterations (top) and
+           initializer $x^0$ used in the warm start.
+           Third column: Reconstructions after 3 iterations with cold start (top) and warm
+           start start (bottom)
+           Fourth column: Reconstructions after 20 iterations.
+           Note that in the calculation of the relative cost the same $x^0$ was used
+           and that in both cases the same step size ratio $\gamma$ was used.
+          }
+  \label{fig:warm_start}
 \end{figure}
 
+
+\subsection*{Convergence of LM-SPDHG compared to SPDHG}
 
 \begin{figure*}
   \centering
@@ -535,9 +560,6 @@ However, this should not affect the convergence of SPDHG and LM-SPDHG.
   \caption{$1\cdot10^6$ counts, TV, $\beta = 0.03$}
 \end{figure*}
 
-
-
-\subsection*{Convergence of LM-SPDHG}
 
 \begin{figure*}
   \centering
