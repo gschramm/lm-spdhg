@@ -441,6 +441,27 @@ SPDHG    & event + 1 uint + 3 float lists &  12.0\,GB  &   1.7\,GB   &   0.3\,GB
 
 \section{Numerical Experiments}
 
+\begin{figure}
+  \centering
+    \includegraphics[width=1.0\columnwidth]{figs/SPDHG_cold_vs_warm_start.png}
+  \caption{Comparison of convergence of sinogram SPDHG using a cold and warm start
+           for 1e6 counts and a TV prior with $\beta = 0.03$ using 112 subsets.
+           For the warm start, $x^0$ was taken from 1 EM-TV iteration with 28 subsets
+           and $y^0$ was calculated according to \eqref{eq:yinit}.
+           Left column: relative cost and PSNR to with respect to the reference solution as
+           a function of the iterations.
+           Second column: reference PDHG reconstruciton using 20000 iterations (top) and
+           initializer $x^0$ used in the warm start.
+           Third column: Reconstructions after 3 iterations with cold start (top) and warm
+           start start (bottom)
+           Fourth column: Reconstructions after 20 iterations.
+           Note that in the calculation of the relative cost the same $x^0$ was used
+           and that in both cases the same step size ratio $\gamma$ was used.
+          }
+  \label{fig:warm_start}
+\end{figure}
+
+
 Recalling the fact that more most common TOF PET acquisitions, LM-SPDHG requires less memory and 
 is also faster, one would probably prefer LM-SPDHG over SPDHG if the speed of convergence is the same.
 In the following we describe a set of numerical experiments that we conducted to show that this
@@ -463,8 +484,8 @@ for 20000 iterations, and MSE is the mean squared error.
 Since running PDHG with 20000 iterations using realistic 3D TOF PET data takes a very long 
 time (ca. 250\,h), all numerical convergence experiments were performed using simulated 2D TOF PET data.
 A 2D software brain phantom with a gray to white matter contrast of 4:1 was created
-based on the brainweb phantom [XXX] and used to generate simulated 2D TOF data including the effects
-limited spatial resolution, attenuation and a flat contamination mimicking 
+based on the brainweb phantom \cite{Collins1998} and used to generate simulated 2D TOF data 
+including the effects limited spatial resolution, attenuation and a flat contamination mimicking 
 random and scattered coincidences with a contamination fraction of 16\%.
 The geometry of and TOF resolution of the simulated 2D PET system was chosen to 
 mimick one direct plane of the GE SIGNA PET/MR 
@@ -482,7 +503,7 @@ done was set to
 \begin{equation}
 p_k = 
   \begin{cases}
-  \frac{1}{2n} \ &\text{if } i \leq n \\
+  \frac{1}{2n} \ &\text{if } k \leq n \\
   \frac{1}{2}  \ &\text{else} \ ,
   \end{cases}
 \end{equation}
@@ -501,7 +522,7 @@ These priors have the form
   R(Kx) = \|K x\|_{2,1} \ ,
 \end{equation}
 %
-where $\|K x \|_{2,1}$ is sum over all entries of the pointwise Euclidean norm of $K x$.
+where $\|K x \|_{2,1}$ is the sum over all entries of the pointwise Euclidean norm of $K x$.
 The proximal operator for the convex dual of these prior functionals is given by
 %
 \begin{equation}
@@ -520,47 +541,72 @@ Note that in real acquisitions the quality of the available structural prior inf
 never perfect.
 However, this should not affect the convergence of SPDHG and LM-SPDHG. 
 
-\subsection*{SPDHG with warm start}
+\subsection*{SPDHG with a warm start vs cold start}
 
-\begin{figure}
-  \centering
-    \includegraphics[width=1.0\columnwidth]{figs/SPDHG_cold_vs_warm_start.png}
-  \caption{foo bar}
-\end{figure}
+Before investigating the convergene behavior of LM-SPDHG, we first of all tested whether 
+a warm start could already help to lead to faster convergence of SPDHG using sinograms.
+Figure~\ref{fig:warm_start} shows the results of SPDHG reconstructions with a cold 
+($x^0 = 0$ and $y^0 = 0$) and warm start as described above for a data set with 1e6 prompt counts
+and a TV prior with $\beta = 0.03$.
+It can be seen that the relative cost of SPDHG using the warm start is lower after 8 iterations
+and decreases faster compared to SPDHG using the cold start.
+Moreover, the PSNR is higher after 4 iterations and increases faster in the early iterations such
+that after 20 iterations is closer to there reference PDHG reconstruction.
+A similar trend was observed at all count levels, with different $\beta$ values and using
+the DTV prior indicating that as expected the warm start helps to accelerate convergence
+in the early iterations.
+\subsection*{Convergence of LM-SPDHG compared to SPDHG}
 
+Figure~\ref{fig:1e6_TV_003} summarizes the convergence comparison between sinogram SPDHG and LM-SPDHG for
+the same data set and prior as described in the previous subsection using the same warm start
+for both algorithms.
+As demonstrated by the convergence metrics and the reconstructed images, the convergence of
+sinogram SPDHG and LM-SPDHG is almost identical.
+The same holds smaller and bigger values of $\beta$, different count levels and also the
+DTV priors as shown in Fig.~\ref{fig:lm-spdhg-var} and Suppl. Fig. XXX.
+For the example with the DTV prior shown in subfigure (c), the convergence in terms of
+PSNR seems to be even a bit faster with LM-SPDHG.
 
 \begin{figure*}
   \centering
     \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
-  \caption{$1\cdot10^6$ counts, TV, $\beta = 0.03$}
+  \caption{Comparison of convergence of sinogram SPDHG and LM-SPDHG
+           for 1e6 counts and a TV prior with $\beta = 0.03$ using 112 subsets.
+           Left column: relative cost and PSNR to with respect to the reference solution as
+           a function of the iterations for sinogram SPDHG (blue) and LM-SPDHG (orange).
+           Second column: SPDHG (top) and LM-SPDHG (bottom) reconstruction after 200 iterations.
+           Third column: absolute difference between SPDHG/LM-SPDHG and reference PDHG reconstruction.
+           Forth column: reference PDHG reconstruction using 20000 iterations (top) and ground truth
+           used to generate the data (bottom).
+          }
+  \label{fig:1e6_TV_003}
 \end{figure*}
 
-
-
-\subsection*{Convergence of LM-SPDHG}
 
 \begin{figure*}
   \centering
   \begin{subfigure}[]{1.0\textwidth}
     \centering
     \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_1.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
-    \caption{$1\cdot10^6$ counts, TV, $\beta = 0.01$}
+    \caption{1e6 counts, TV prior, $\beta = 0.01$}
   \end{subfigure}
   \vfill
   \begin{subfigure}[]{1.0\textwidth}
     \centering
     \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_3.0E+05_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
-    \caption{$3\cdot10^5$ counts, TV, $\beta = 0.03$}
+    \caption{3e5 counts, TV prior, $\beta = 0.03$}
   \end{subfigure}
   \vfill
   \begin{subfigure}[]{1.0\textwidth}
     \centering
     \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_1.0E-01_prior_DTV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
-    \caption{$1\cdot10^6$ counts, DTV, $\beta = 0.1$}
+    \caption{1e6 counts, DTV prior, $\beta = 0.1$}
   \end{subfigure}
-  \caption{foo bar}
-  \label{fig:conv2}
+  \caption{Same as Fig.~\ref{fig:1e6_TV_003} for a smaller value of $\beta$ (a), less counts (b) and the DTV prior (c).}
+  \label{fig:lm-spdhg-var}
 \end{figure*}
+
+\subsection*{Convergence vs number of subsets}
 
 \section{Discussion}
 
