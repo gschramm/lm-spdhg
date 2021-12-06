@@ -109,7 +109,7 @@ if counts > 0:
 
   # contamination sinogram with scatter and randoms
   # useful to avoid division by 0 in the ratio of data and exprected data
-  contam_sino = np.full(img_fwd.shape, 0.2*img_fwd.mean(), dtype = np.float32)
+  contam_sino = np.full(img_fwd.shape, 0.75*img_fwd.mean(), dtype = np.float32)
   
   em_sino = np.random.poisson(img_fwd + contam_sino)
 else:
@@ -117,7 +117,7 @@ else:
 
   # contamination sinogram with sctter and randoms
   # useful to avoid division by 0 in the ratio of data and exprected data
-  contam_sino = np.full(img_fwd.shape, 0.2*img_fwd.mean(), dtype = np.float32)
+  contam_sino = np.full(img_fwd.shape, 0.75*img_fwd.mean(), dtype = np.float32)
 
   em_sino = img_fwd + contam_sino
 
@@ -221,7 +221,7 @@ else:
 
 y_init_grad = grad_norm.beta*np.sign(grad_operator.fwd(xinit))
 
-gamma = 3. / gaussian_filter(xinit.squeeze(),2).max()
+gamma = 3 / gaussian_filter(xinit.squeeze(),3).max()
 
 cost_spdhg_sino = np.zeros((2,niter))
 psnr_spdhg_sino = np.zeros((2,niter))
@@ -290,5 +290,5 @@ for axx in ax[:,1:].ravel():
   axx.set_axis_off()
 
 fig.tight_layout()
-fig.savefig('SPDHG_cold_vs_warm_start.png')
+#fig.savefig('SPDHG_cold_vs_warm_start.png')
 fig.show()

@@ -109,7 +109,7 @@ if counts > 0:
 
   # contamination sinogram with scatter and randoms
   # useful to avoid division by 0 in the ratio of data and exprected data
-  contam_sino = np.full(img_fwd.shape, 0.2*img_fwd.mean(), dtype = np.float32)
+  contam_sino = np.full(img_fwd.shape, 0.75*img_fwd.mean(), dtype = np.float32)
   
   em_sino = np.random.poisson(img_fwd + contam_sino)
 else:
@@ -117,7 +117,7 @@ else:
 
   # contamination sinogram with sctter and randoms
   # useful to avoid division by 0 in the ratio of data and exprected data
-  contam_sino = np.full(img_fwd.shape, 0.2*img_fwd.mean(), dtype = np.float32)
+  contam_sino = np.full(img_fwd.shape, 0.75*img_fwd.mean(), dtype = np.float32)
 
   em_sino = img_fwd + contam_sino
 
