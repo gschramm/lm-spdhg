@@ -606,7 +606,55 @@ PSNR seems to be even a bit faster with LM-SPDHG.
   \label{fig:lm-spdhg-var}
 \end{figure*}
 
+
+
+
 \subsection*{Convergence vs number of subsets}
+
+Figure~\ref{fig:num_subsets} shows the convergence of LM-SPDHG as a function of the number of data
+subsets used for low (3e5) and high (3e6) counts and the TV and DTV prior.
+It can be seen that in general using 224 subsets leads to faster convergence compared to 56 subsets.
+The differences between 56 and 224 subsets are most prominent in the PSNR to refeerence curves 
+when using the DTV prior.
+For the TV prior - especially at low counts - the differences in terms of PSNR are much smaller
+and almost non-existent for the low count example.
+For both priors, convergence in terms of PSNR seems slower for 3e5 compared to 3e6 counts.
+E.g. in the case of TV, 18 iterations using 224 subsets are needed to reach a PSNR of 40 at 3e5 counts, 
+whereas at high counts this threshold is already reached at 3 iterations using 224 subsets.
+
+
+\begin{figure*}
+  \centering
+  \begin{subfigure}[b]{0.23\textwidth}
+    \centering
+    \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_3.0E+05_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200_ss.pdf}
+    \caption{3e5 counts, TV prior, $\beta = 0.03$}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[b]{0.23\textwidth}
+    \centering
+    \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_3.0E+05_seed_1_beta_1.0E-01_prior_DTV_niter_ref_20000_fwhm_4.5_4.5_niter_200_ss.pdf}
+    \caption{3e5 counts, DTV prior, $\beta = 0.1$}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[b]{0.23\textwidth}
+    \centering
+    \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_3.0E+06_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200_ss.pdf}
+    \caption{3e6 counts, TV prior, $\beta = 0.03$}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[b]{0.23\textwidth}
+    \centering
+    \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_3.0E+06_seed_1_beta_1.0E-01_prior_DTV_niter_ref_20000_fwhm_4.5_4.5_niter_200_ss.pdf}
+    \caption{3e6 counts, DTV prior, $\beta = 0.1$}
+  \end{subfigure}
+
+  \caption{Converge of LM-SPDHG for different number of subsets at two count levels for the TV and 
+           DTV prior. Note that when increasing the number of data subsets, the number of gradient
+           updates per iteration increases as well.}
+  \label{fig:num_subsets}
+\end{figure*}
+
 
 \section{Discussion}
 
