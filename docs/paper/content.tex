@@ -290,36 +290,36 @@ be shown later.
 
 \subsection*{Listmode SPDHG}
 
-As indicated by the name, emission data in listmode format is a chronological list $N$ of detected 
+As indicated by the name, emission data in listmode format are a chronological list $N$ of detected 
 events $e \in N$, where each event is characterized by a small set of numbers 
-(e.g. the number of the two detector, the discretized TOF difference, and time stamp).
+(e.g. the number of the two detectors, the discretized TOF difference, and a time stamp).
 To process the listmode data during reconstruction without binning it into a sinogram,
 we introduce the listmode forward operator $P_N$ mapping the image data $x$ to a 
 data-vector of dimension $|N|$ via \[ (P^{LM}_N x)_e  = (Px)_{i_e} , \text{ for each }e \in N,\]
 where $i_e$ is the sinogram bin in which event $e$ was detected.
 
 Re-writing the gradient of the negative Poisson loglikihood using listmode data and the
-listmode forward and adjoint model is straight forward such that any gradient-based
-PET reconstruction algorithm can be quiete easily adapted to listmode data.
+listmode operators is straight forward such that any gradient-based
+PET reconstruction algorithm can be easily adapted to listmode data.
 However, for SPDHG - which has the advantage of being able to handle non-smooth priors and
-has guaranteed convergence, an adaptation to listmode is possible but more complex.
+has guaranteed convergence, an adaptation to listmode is possible but more challenging.
 
 \begin{algorithm}[t]
 \begin{algorithmic}[1]
 \small
-\State \textbf{Input} event list $N$
+\State \textbf{Input} event list $N$, contamination list $s_N$
 \State \textbf{Calculate} event counts $\mu_e$ for each e in $N$ (see text)
-\State \textbf{Split} event list $N$ into $m$ sublists $N_i$
 \State \textbf{Initialize} $x,w,(S_i)_i,T,(p_i)_i$
-\State \textbf{Preprocessing} $\overline{z} = z = P^T y + K^T w$ (see \eqref{eq:zinit_lm} and text)
-\State \textbf{Initialize} $n$ sub lists $l_{N_i}$ with 0s
+\State \textbf{Initialize} list $y_{N} = 1 - (\mu_N /(P^{LM}_{N} x + s_{N}))$ 
+\State \textbf{Preprocessing} $\overline{z} = z = {P^T} 1 - {P^{LM}}^T (y_N-1)/\mu_N + K^T w$ %(see \eqref{eq:zinit_lm} and text)
+\State \textbf{Split} lists $N$, $s_N$ and $y_N$ into $n$ sublists $N_i$, $y_{N_i}$ and $s_{N_i}$
 \Repeat
 	\State $x = \proj_{\geq 0} (x - T \overline{z})$
 	\State Select $i \in \{1,\ldots,n+1\}$ randomly accord. to $(p_i)_i$
   \If{$i \leq n$}
-	  \State $l_{N_i}^+ \gets \prox_{D^*}^{S_i} \left( l_{N_i} + S_i \left(P^{LM}_{N_i} x + s_{N_i} \right) \right)$
-	  \State $\delta z \gets {P^{LM}_{N_i}}^T \left(\frac{l_{N_i}^+ - l_{N_i}}{\mu_{N_i}}\right)$
-	  \State $l_{N_i} \gets l_{N_i}^+$
+	  \State $y_{N_i}^+ \gets \prox_{D^*}^{S_i} \left( y_{N_i} + S_i \left(P^{LM}_{N_i} x + s_{N_i} \right) \right)$
+	  \State $\delta z \gets {P^{LM}_{N_i}}^T \left(\frac{y_{N_i}^+ - y_{N_i}}{\mu_{N_i}}\right)$
+	  \State $y_{N_i} \gets y_{N_i}^+$
   \Else
 	  \State $w^+ \gets \beta \prox_{R^*}^{S_i/\beta} ((w + S_i  K x)/\beta)$
 	  \State $\delta z \gets K^T \left(w^+ - w\right)$
@@ -336,10 +336,11 @@ has guaranteed convergence, an adaptation to listmode is possible but more compl
 \end{algorithm}
 
 
-Our proposed listmode SPDHG algorithm (LM-SPDHG) is shown in algorithm~\ref{alg:lmspdhg}.
+Our proposed listmode SPDHG algorithm (LM-SPDHG) is shown in algorithm~\ref{alg:lmspdhg} and
+overcomes those challenges.
 In contrast to the original SPDHG using binned data (sinograms), the forward and adjoint
-PET models have been replaced by their listmode equivilants as defined above (lines 11 and 13).
-Moreover, the dual variable for data fidelity is also replaced by the list $l_N$ which has the
+PET models have been replaced by their listmode equivilants as defined above (lines 11 and 12).
+Moreover, the dual variable for data fidelity is replaced by the list $y_N$ which has the
 same length as the measured event list $N$.
 If an event with a fixed sinogram bin $i_e$ occurs more than once in the event list
 $N$, it is also forward and back-projected multiple times in steps 11 and 12.
@@ -347,49 +348,37 @@ To compensate for this fact, we have to divide by the event count $\mu_e$ before
 in line 12.
 Note that (i) as shown in Fig.~\ref{fig:sparsity} in most standard acquisitions the event count
 of most events is 1 and that (ii) calculating the event count $\mu_e$ which is a pre-requisit
-creates a small pre-processing overhead (step 2)
+creates a small pre-processing overhead (step 2).
 However, when implemented on a modern GPU this overhead is small compared to the computation
 time needed to calculate all iterations.
-Moreover, it is in the similar order of the time needed to unlist the listmode data into
+Moreover, it is in the similar order of the time needed to unlist the native listmode data into
 a sinogram which is a pre-requisit and pre-processing overhead for SPDHG.
 
 Another difference of LM-SPDHG compared to SPDHG is the fact that we split the data into $n$ subsets by
-assigning every $n$-th event of the complete event list $N$ into the $n-th$ sub list - 
+assigning every $n$-th event of the complete event list $N$ into the $n$-th sub list - 
 as commonly done in listmode OSEM.
 In that way, we can think of the subset listmode forward operator $P^{LM}_{N_i}$
-as full listmode forward operator $P$ that has a sensivity reduced by a factor of $n$.
-Consequently, we set the step sizes associated with the subset listmode PET operators to
+as the full forward operator $P$ with a sensivity reduced by a factor of $n$.
+Accordingly, we set the step sizes associated with the subset listmode PET operators to
 %
 \begin{equation}
 S_k = \gamma \, \text{diag}(\frac{\rho}{P^{LM}_{N_k} 1} )\qquad  T_k = n\,\gamma^{-1} \text{diag}(\frac{\rho p_k}{P^T 1}) \ . 
 \label{eq:lm_stepsizes}
 \end{equation}
 % 
-The final non-trivial step in LM-SPDHG is the initialization of $\bar{z}$ and $z$ which requires
-a sinogram back projection of the initial value of $y$ as given in \eqref{eq:yinit}.
-By splitting this backprojection into
-%
-\begin{equation}
-P^T y^0 = P^T 1 - P^T \frac{d}{Px^0 + s} \ ,
-\end{equation}
-%
-and rewriting the second terms as listmode backprojection
-%
-\begin{equation}
-P^T y^0 = P^T 1 - {P^{LM}_{N}}^T \frac{1}{P^{LM}_N x^0 + s_N} \ ,
-\label{eq:zinit_lm}
-\end{equation}
-%
-we notice that we do not have to store the sinogram $y$ in memory.
-Note, however, that the calculation of $P^T 1$ corresponding to a sinogram backprojection of ones
-is needed and has to be done once.
-Note that storing this image is beneficial since it
-is also needed in the calculation of the step size $T_k$ in \eqref{eq:lm_stepsizes}.
-Moreover, if we use the listmode EM-TV algorithm to calculate a warm start for $x^0$, 
-the sensitivity image is needed as well and can be re-used.
+At a first glance, the initialization of $z$ and $\bar{z}$ might look odd.
+However, the first part of the expression in step 4 of the LM-SPDHG algorithm equivalent to 
+applying the adjoint sinogram operator $P^T$ to a sinogram initialized according to \eqref{eq:yinit}.
+Note that step 4 still requires to calcuate a sinogram back projection of a unity sinogram ($P^T 1$)
+which, in general, we would like to avoid in listmode data processing.
+Unfortunately avoiding this single sinogram backprojection is not possible.
+But we note that this ``sensitivity image`` is also needed in the calculation of the step sizes
+$T_k$ and also in the listmode EM-TV algorithm that we use to initialize $x$.
+Hence, we recommend to pre-compute to sensitivity image ($P^T 1$) and to store it in memory.
 
-In summary, LM-SPDHG as shown in algorithm~\ref{alg:lmspdhg} as the advantage over SPDHG
-that (i) only lists ($N$ and $l_{N_i}$) instead of complete sinograms ($y$ and $d$) need to be 
+In summary, compared to SPDHG, LM-SPDHG as shown in algorithm~\ref{alg:lmspdhg} has the advantage
+that (i) only lists ($N$, $y_{N}$, $s_N$, $\mu_N$) instead of complete sinograms 
+($y$ and $d$) have to be 
 stored in memory and (ii) all projections and back projection can be performed using listmode
 projectors.
 This means that for all acquisitions where the number of detected events is smaller than
@@ -426,10 +415,11 @@ SPDHG    & event + 1 uint + 3 float lists &  12.0\,GB  &   1.7\,GB   &   0.3\,GB
 \end{center}
 \caption{Estimation of required memory for SPDHG and LM-SPDHG assuming an image size of (300,300,125)
          and a TOF sinogram of (357,224,1981,27) correspoding to a TOF PET scanner with 400\,ps TOF
-         resolution and 25\,cm axial FOV for three counts levels. 5e8 counts approximately correspond
-         to a high count 20\,min late static FDG brain scan, 
+         resolution and 25\,cm axial FOV for three counts levels. 
+         5e8 counts approximately correspond to a high count 20\,min late static FDG brain scan, 
          7e7 counts to an 80\,s static FDG body bed position 1\,h p.i., 
-         and 1e7 counts to a short early frame in a dynamic acquisition.}
+         and 1e7 counts to a short early frame in a dynamic acquisition.
+         In this estimation we assume that every TOF PET listmode even can be encoded using 10 bytes.}
 \label{tab:mem}
 \end{table}
 
@@ -445,7 +435,7 @@ SPDHG    & event + 1 uint + 3 float lists &  12.0\,GB  &   1.7\,GB   &   0.3\,GB
   \centering
     \includegraphics[width=1.0\columnwidth]{figs/SPDHG_cold_vs_warm_start.png}
   \caption{Comparison of convergence of sinogram SPDHG using a cold and warm start
-           for 1e6 counts and a TV prior with $\beta = 0.03$ using 112 subsets.
+           for 3e5 counts and a TV prior with $\beta = 0.03$ using 112 subsets.
            For the warm start, $x^0$ was taken from 1 EM-TV iteration with 28 subsets
            and $y^0$ was calculated according to \eqref{eq:yinit}.
            Left column: relative cost and PSNR to with respect to the reference solution as
@@ -486,7 +476,7 @@ time (ca. 250\,h), all numerical convergence experiments were performed using si
 A 2D software brain phantom with a gray to white matter contrast of 4:1 was created
 based on the brainweb phantom \cite{Collins1998} and used to generate simulated 2D TOF data 
 including the effects limited spatial resolution, attenuation and a flat contamination mimicking 
-random and scattered coincidences with a contamination fraction of 16\%.
+random and scattered coincidences with a contamination fraction of 42\%.
 The geometry of and TOF resolution of the simulated 2D PET system was chosen to 
 mimick one direct plane of the GE SIGNA PET/MR 
 (sinogram dimension: 357 radial bins, 224 projection angles, 27 TOF bins, 400\,ps TOF resolution).
@@ -655,6 +645,11 @@ whereas at high counts this threshold is already reached at 3 iterations using 2
   \label{fig:num_subsets}
 \end{figure*}
 
+
+\subsection*{3D timing}
+
+% 20cm PET/CT 21 TOF bins: 117s LM, 158s sino per iteration (7e7 counts) 
+%                           98s LM, 237s sino per iteration (1e7 counts) 
 
 \section{Discussion}
 
