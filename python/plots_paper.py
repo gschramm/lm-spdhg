@@ -4,8 +4,8 @@ import math
 
 from pathlib import Path
 
-mdir = Path('data/20211102_TMI')
-nss = 112
+mdir = Path('data/20211206_paper')
+nss = 224
 
 for ofile in mdir.glob('brain2d_*.npz'):
   data = np.load(ofile)
@@ -65,8 +65,8 @@ for ofile in mdir.glob('brain2d_*.npz'):
   ax[1,0].set_xlabel('iteration')
   ax[1,0].set_ylabel('PSNR to reference')
   
-  ax[0,0].set_ylim(1e-3,0.5)
-  ax[1,0].set_ylim(28, 78)
+  ax[0,0].set_ylim(1e-4,0.5)
+  ax[1,0].set_ylim(28, 85)
   ax[1,0].legend()
   
   bfrac = 0.01
