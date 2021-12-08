@@ -639,6 +639,19 @@ to low count data sets.
 
 \subsection*{3D timing}
 
+\begin{figure*}
+  \centering
+    \includegraphics[width=1.0\textwidth]{./figs/xcat_TV_3e-2_4e7.png}
+  \caption{Convergence of LM-SPDHG for reconstruction of 3D TOF data generated from the XCAT phantom
+           using 4e7 true (7e7) prompt counts and a TV prior with $\beta = 0.03$.
+           Left column: evolution of cost function. 
+           Columns 2-3: transversal, sagittal and coronal
+           slice of LM-SPDHG reconstruction after 20 iterations and 224 subsets.
+           Columns 4-5: LM-SPDHG reconstruction after 100 iterations and 224 subsets.
+           Columns 6-7: Ground truth image.}
+  \label{fig:xcat}
+\end{figure*}
+%
 % 20cm PET/CT 21 TOF bins: 117s LM, 158s sino per iteration (7e7 counts) 
 %                           98s LM, 237s sino per iteration (1e7 counts) 
 
