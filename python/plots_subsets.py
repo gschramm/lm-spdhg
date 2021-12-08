@@ -4,7 +4,7 @@ import math
 
 from pathlib import Path
 
-mdir = Path('data/20211102_TMI')
+mdir = Path('data/20211206_paper')
 
 #for ofile in list(mdir.glob('brain2d_counts_3.0E+05*_TV_*.npz')):
 for ofile in list(mdir.glob('brain2d_*.npz')):
@@ -65,8 +65,8 @@ for ofile in list(mdir.glob('brain2d_*.npz')):
   ax[1].set_xlabel('iteration')
   ax[1].set_ylabel('PSNR to reference')
   
-  ax[0].set_ylim(1e-3,0.5)
-  ax[1].set_ylim(28, 78)
+  ax[0].set_ylim(1e-4,0.5)
+  ax[1].set_ylim(28, 85)
   ax[0].legend(ncol = 1, fontsize = 'small', loc = 0)
   
   fig.tight_layout()
