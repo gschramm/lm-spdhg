@@ -13,7 +13,7 @@ ims = {'vmax':1.2*data['img'].max(), 'cmap': plt.cm.Greys}
 it = 20
 i  = np.argwhere(data['it'] == it)[0][0]
 
-fig = plt.figure(figsize = (16,2.7))
+fig = plt.figure(figsize = (0.8*16,0.8*2.7))
 gs = gridspec.GridSpec(2, 7)
 
 ax = fig.add_subplot(gs[:2, :1])
