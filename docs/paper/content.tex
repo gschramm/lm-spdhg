@@ -536,12 +536,10 @@ However, this should not affect the convergence of SPDHG and LM-SPDHG.
 Before investigating the convergene behavior of LM-SPDHG, we first of all tested whether 
 a warm start could already help to lead to faster convergence of SPDHG using sinograms.
 Figure~\ref{fig:warm_start} shows the results of SPDHG reconstructions with a cold 
-($x^0 = 0$ and $y^0 = 0$) and warm start as described above for a data set with 1e6 prompt counts
+($x^0 = 0$ and $y^0 = 0$) and warm start as described above for a data set with 3e5 true counts
 and a TV prior with $\beta = 0.03$.
-It can be seen that the relative cost of SPDHG using the warm start is lower after 8 iterations
-and decreases faster compared to SPDHG using the cold start.
-Moreover, the PSNR is higher after 4 iterations and increases faster in the early iterations such
-that after 20 iterations is closer to there reference PDHG reconstruction.
+It can be seen that SPDHG with the warm start performs better in terms of relative cost
+and PSNR to the reference reconstruction.
 A similar trend was observed at all count levels, with different $\beta$ values and using
 the DTV prior indicating that as expected the warm start helps to accelerate convergence
 in the early iterations.
