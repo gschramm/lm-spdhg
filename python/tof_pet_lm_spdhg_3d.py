@@ -19,13 +19,13 @@ from time import time
 # parse the command line
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--counts',   help = 'counts to simulate',    default = 7e7, type = float)
-parser.add_argument('--niter',    help = 'number of iterations',  default = 30,  type = int)
-parser.add_argument('--nsubsets', help = 'number of subsets',     default = 112, type = int)
+parser.add_argument('--counts',   help = 'counts to simulate',    default = 4e7, type = float)
+parser.add_argument('--niter',    help = 'number of iterations',  default = 100, type = int)
+parser.add_argument('--nsubsets', help = 'number of subsets',     default = 224, type = int)
 parser.add_argument('--fwhm_mm',  help = 'psf modeling FWHM mm',  default = 4.5, type = float)
 parser.add_argument('--fwhm_data_mm',  help = 'psf for data FWHM mm',  default = 4.5, type = float)
 parser.add_argument('--seed',    help = 'seed for random generator', default = 1, type = int)
-parser.add_argument('--beta',  help = 'TV weight',  default = 5e-2, type = float)
+parser.add_argument('--beta',  help = 'TV weight',  default = 3e-2, type = float)
 parser.add_argument('--prior',  help = 'prior',  default = 'TV', choices = ['TV','DTV'])
 args = parser.parse_args()
 
@@ -189,28 +189,28 @@ else:
 
 del img_fwd
 
-##-------------------------------------------------------------------------------------
-#
-## generate list mode events and the corresponting values in the contamination and sensitivity
-## for every subset sinogram
-#
-## events is a list of nsubsets containing (nevents,6) arrays where
-## [:,0:2] are the transaxial/axial crystal index of the 1st detector
-## [:,2:4] are the transaxial/axial crystal index of the 2nd detector
-## [:,4]   are the event TOF bins
-#
-#print('\nCreating LM events')
-#
-#events, multi_index = sino_params.sinogram_to_listmode(em_sino, 
-#                                                       return_multi_index = True,
-#                                                       return_counts = False)
-#
-#attn_list   = attn_sino[multi_index[:,0],multi_index[:,1],multi_index[:,2],0]
-#sens_list   = sens_sino[multi_index[:,0],multi_index[:,1],multi_index[:,2],0]
-#contam_list = contam_sino[multi_index[:,0],multi_index[:,1],multi_index[:,2], multi_index[:,3]]
-#
-#sens_img  = ppp.pet_back_model(np.ones(proj.sino_params.shape, dtype = np.float32), 
-#                               proj, attn_sino, sens_sino, fwhm = fwhm)
+#-------------------------------------------------------------------------------------
+
+# generate list mode events and the corresponting values in the contamination and sensitivity
+# for every subset sinogram
+
+# events is a list of nsubsets containing (nevents,6) arrays where
+# [:,0:2] are the transaxial/axial crystal index of the 1st detector
+# [:,2:4] are the transaxial/axial crystal index of the 2nd detector
+# [:,4]   are the event TOF bins
+
+print('\nCreating LM events')
+
+events, multi_index = sino_params.sinogram_to_listmode(em_sino, 
+                                                       return_multi_index = True,
+                                                       return_counts = False)
+
+attn_list   = attn_sino[multi_index[:,0],multi_index[:,1],multi_index[:,2],0]
+sens_list   = sens_sino[multi_index[:,0],multi_index[:,1],multi_index[:,2],0]
+contam_list = contam_sino[multi_index[:,0],multi_index[:,1],multi_index[:,2], multi_index[:,3]]
+
+sens_img  = ppp.pet_back_model(np.ones(proj.sino_params.shape, dtype = np.float32), 
+                               proj, attn_sino, sens_sino, fwhm = fwhm)
 
 #-----------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------
@@ -233,9 +233,31 @@ xinit = osem_lm_emtv(events, attn_list, sens_list, contam_list, proj, sens_img, 
 
 #-----------------------------------------------------------------------------------------------------
 
+def calc_cost(x):
+  cost = 0
+
+  # split cost calculation over subsets to save memory
+  for i, ss in enumerate(proj.subset_slices):
+    exp = ppp.pet_fwd_model(x, proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm) + contam_sino[ss]
+    cost += (exp - em_sino[ss]*np.log(exp)).sum()
+
+  if grad_norm.beta > 0:
+    cost += grad_norm.eval(grad_operator.fwd(x))
+
+  return cost
+
+
 def _cb(x, **kwargs):
-  kwargs['x_early'].append(x)
   kwargs['t'].append(time())
+  it = kwargs.get('iteration',0)
+
+  if (it <= 10) or ((it % 10) == 0):
+    kwargs['x_early'].append(x)
+    kwargs['it_early'].append(it)
+    np.save(f'it_{it:03}.npy',x)
+
+  if 'cost' in kwargs:
+    kwargs['cost'][it-1] = calc_cost(x)
 
 
 #-----------------------------------------------------------------------------------------------------
@@ -251,19 +273,23 @@ print('gamma ', gamma)
 ##
 #del yinit
 
-cbs_sino2 = {'x_early':[], 't':[]}
-x_sino2 = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
-               fwhm = fwhm, gamma = gamma, verbose = True, 
-               callback = _cb, callback_kwargs = cbs_sino2,
-               grad_operator = grad_operator, grad_norm = grad_norm)
+#cost_sino2 = np.zeros(niter)
+#cbs_sino2 = {'x_early':[], 't':[], 'it_early':[], 'cost' : cost_sino2}
+#x_sino2 = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
+#               fwhm = fwhm, gamma = gamma, verbose = True, 
+#               callback = _cb, callback_kwargs = cbs_sino2,
+#               grad_operator = grad_operator, grad_norm = grad_norm)
 
-
-cbs_lm = {'x_early':[], 't':[]}
+cost_lm = np.zeros(niter)
+cbs_lm = {'x_early':[], 't':[], 'it_early':[], 'cost' : cost_lm}
 x_lm = spdhg_lm(events, attn_list, sens_list, contam_list, sens_img,
                 proj, niter, nsubsets, x0 = xinit,
                 fwhm = fwhm, gamma = gamma, verbose = True, 
                 callback = _cb, callback_kwargs = cbs_lm,
                 grad_operator = grad_operator, grad_norm = grad_norm)
+
+np.savez('debug.npz', x = x_lm, x_early = np.array(cbs_lm['x_early']), it = cbs_lm['it_early'], 
+                      img = img, xinit = xinit, cost = cost_lm)
 
 #-----------------------------------------------------------------------------------------------------
 
