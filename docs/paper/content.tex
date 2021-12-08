@@ -227,6 +227,12 @@ fast as the convergence of SPDHG based on dedicated numeric examples.
 Moreover, we analyze the requirements in terms of memory and computational time
 for LM-SPDHG compared to SPDHG for typical scans acquired on state-of-the-art TOF scanners.
 
+We emphasize that the focus of this work is not on finding the
+optimal (non-smooth) prior or prior strength for a given clinical task in PET imaging.
+Instead, we aim to provide a framework enabling fast and memory efficient reconstruction of 
+sparse TOF PET listmode data which we finally facilitate future research on the use of
+(non-smooth) priors in PET reconstruction. 
+
 
 \section{Theory and Algorithms}
 
@@ -478,10 +484,11 @@ based on the brainweb phantom \cite{Collins1998} and used to generate simulated 
 including the effects limited spatial resolution, attenuation and a flat contamination mimicking 
 random and scattered coincidences with a contamination fraction of 42\%.
 The geometry of and TOF resolution of the simulated 2D PET system was chosen to 
-mimick one direct plane of the GE SIGNA PET/MR 
-(sinogram dimension: 357 radial bins, 224 projection angles, 27 TOF bins, 400\,ps TOF resolution).
+mimick one direct plane of a state-of-the art TOF PET scanner with a ring diameter of 650\,mm
+and a 400\,ps TOF resolution
+(sinogram dimension: 357 radial bins, 224 projection angles, 27 TOF bins).
 Noisy simulated prompt emission TOF sinograms and corresponding listmode data were generated
-for different count levels (5e3, 1e6, and 3e6 prompt counts).
+for two different count levels (5e5 and 5e6 prompt counts).
 Unless stated otherwise, we always used the EM-TV algorithm using 1 iteration and 28 subsets
 to initialize $x^0$ and $y^0$ according to \eqref{eq:yinit}.
 In all experiments, the step size ratio $\gamma$ was set to $3 / \|x^0\|_\infty$ and $\rho$ was
@@ -531,7 +538,17 @@ Note that in real acquisitions the quality of the available structural prior inf
 never perfect.
 However, this should not affect the convergence of SPDHG and LM-SPDHG. 
 
-\subsection*{SPDHG with a warm start vs cold start}
+To demonstrate that LM-SPDHG also works for realistic 3D TOF listmode data,
+we simulated and reconstructed data based on the 3D XCAT [XXX] phantom and a state-of-the-art
+TOF PET scanner with 20\,cm axial field of view, a ring diameter of 650\,mm and a 400\,ps TOF 
+resolution (sinogram dimension: 357 radial bins, 224 projection angles, 1296 planes, 27 TOF bins).
+As before, the data simulation included the effects of attenuation, finite resolution and a
+flat contamination with a contamination fraction of 42\%.
+In total, 7e7 prompt counts were simulated corresponding approximately to a standard 
+80\,s 1\,h p.i. FDG liver bed position acquisition.
+Simulated listmode data was reconstructed using LM-SPDHG with 100 iterations and 224 subsets. 
+
+\subsection*{SPDHG using a warm start vs a cold start}
 
 Before investigating the convergene behavior of LM-SPDHG, we first of all tested whether 
 a warm start could already help to lead to faster convergence of SPDHG using sinograms.
@@ -552,7 +569,7 @@ As demonstrated by the convergence metrics and the reconstructed images, the con
 sinogram SPDHG and LM-SPDHG is almost identical.
 This also holds for different count levels and for the structural DTV priors 
 as shown in subfigures (b) and (c) and for different levels of regularization as shown
-in Suppl. Fig.~[XXX].
+in supplementary Figs.~1 and 2.
 For the example with the DTV prior shown in subfigure (c), the convergence in terms of
 PSNR seems to be even a bit faster with LM-SPDHG which can be also
 seen in the differene images with respect to the reference reconstruction.
@@ -637,7 +654,21 @@ to low count data sets.
 \end{figure*}
 
 
-\subsection*{3D timing}
+\subsection*{Reconstrution of 3D XCAT data}
+
+Figure~\ref{fig:xcat} shows the results of the reconstruction of the listmode data simulated
+from the 3D XCAT phantom using a TV prior with $\beta = 0.03$. 
+From the plot of the cost function and the reconstructions shown in the middle, we can see
+that practical convergence is reached after approximately 20-25 iterations with 224 subsets.
+Note that in contrast to our 2D experiements, the cost function in the first 3 iterations after
+the warm start slightly increases before it decreases and stabilizes after around 25 iterations.
+As mentioned above, calculating the projections in listmode for 7e7 counts is roughly a factor
+of 3 faster compared to sinogram-based processing which substantially speeds up every iteration.
+Note that in our proof-of-concept implementation, the effetive speed up is less than a 
+factor of 3 since we did not implement the gradient operators and proximal mappings on a GPU yet
+which leads to overhead due to gradient-based updates.
+However, we expect once properly implemented on GPUs this overhead will be small compared to
+the time needed to calculate the actial TOF projections.
 
 \begin{figure*}
   \centering
@@ -651,22 +682,8 @@ to low count data sets.
            Columns 6-7: Ground truth image.}
   \label{fig:xcat}
 \end{figure*}
-%
-% 20cm PET/CT 21 TOF bins: 117s LM, 158s sino per iteration (7e7 counts) 
-%                           98s LM, 237s sino per iteration (1e7 counts) 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Discussion}
-
-%\begin{figure*}
-%  \centering
-%    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_1.0E-01_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_100.png}
-%  \caption{$1\cdot10^6$ counts, TV, $\beta = 0.1$}
-%\end{figure*}
-%
-%\begin{figure*}
-%  \centering
-%    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_3.0E+06_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_100.png}
-%  \caption{$3\cdot10^6$ counts, TV, $\beta = 0.03$}
-%\end{figure*}
-
-
