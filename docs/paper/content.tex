@@ -545,52 +545,47 @@ the DTV prior indicating that as expected the warm start helps to accelerate con
 in the early iterations.
 \subsection*{Convergence of LM-SPDHG compared to SPDHG}
 
-Figure~\ref{fig:1e6_TV_003} summarizes the convergence comparison between sinogram SPDHG and LM-SPDHG for
-the same data set and prior as described in the previous subsection using the same warm start
-for both algorithms.
+Figure~\ref{fig:lm-spdhg-var} summarizes the convergence comparison between sinogram SPDHG and 
+LM-SPDHG for the same data set and prior as described in the previous subsection using the 
+same warm start for both algorithms.
 As demonstrated by the convergence metrics and the reconstructed images, the convergence of
 sinogram SPDHG and LM-SPDHG is almost identical.
-The same holds smaller and bigger values of $\beta$, different count levels and also the
-DTV priors as shown in Fig.~\ref{fig:lm-spdhg-var} and Suppl. Fig. XXX.
+This also holds for different count levels and for the structural DTV priors 
+as shown in subfigures (b) and (c) and for different levels of regularization as shown
+in Suppl. Fig.~[XXX].
 For the example with the DTV prior shown in subfigure (c), the convergence in terms of
-PSNR seems to be even a bit faster with LM-SPDHG.
+PSNR seems to be even a bit faster with LM-SPDHG which can be also
+seen in the differene images with respect to the reference reconstruction.
 
 \begin{figure*}
   \centering
-    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
+  \begin{subfigure}[]{1.0\textwidth}
+    \centering
+    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_3.0E+05_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_100.png}
+    \caption{3e5 true (5e5 prompt) counts, TV prior, $\beta = 0.03$}
+  \end{subfigure}
+  \vfill
+  \begin{subfigure}[]{1.0\textwidth}
+    \centering
+    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_3.0E+06_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_100.png}
+    \caption{3e6 true (5e6 prompt) counts, TV prior, $\beta = 0.03$}
+  \end{subfigure}
+  \vfill
+  \begin{subfigure}[]{1.0\textwidth}
+    \centering
+    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_3.0E+05_seed_1_beta_1.0E-01_prior_DTV_niter_ref_20000_fwhm_4.5_4.5_niter_100.png}
+    \caption{3e5 true (5e5 prompt) counts, DTV prior, $\beta = 0.1$}
+  \end{subfigure}
   \caption{Comparison of convergence of sinogram SPDHG and LM-SPDHG
-           for 1e6 counts and a TV prior with $\beta = 0.03$ using 112 subsets.
+           for using 244 subsets.
+           All three subfigures (a) - (c) show the same quantities but for
+           different count levels and priors.
            Left column: relative cost and PSNR to with respect to the reference solution as
            a function of the iterations for sinogram SPDHG (blue) and LM-SPDHG (orange).
-           Second column: SPDHG (top) and LM-SPDHG (bottom) reconstruction after 200 iterations.
+           Second column: SPDHG (top) and LM-SPDHG (bottom) reconstruction after 100 iterations.
            Third column: absolute difference between SPDHG/LM-SPDHG and reference PDHG reconstruction.
            Forth column: reference PDHG reconstruction using 20000 iterations (top) and ground truth
-           used to generate the data (bottom).
-          }
-  \label{fig:1e6_TV_003}
-\end{figure*}
-
-
-\begin{figure*}
-  \centering
-  \begin{subfigure}[]{1.0\textwidth}
-    \centering
-    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_1.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
-    \caption{1e6 counts, TV prior, $\beta = 0.01$}
-  \end{subfigure}
-  \vfill
-  \begin{subfigure}[]{1.0\textwidth}
-    \centering
-    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_3.0E+05_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
-    \caption{3e5 counts, TV prior, $\beta = 0.03$}
-  \end{subfigure}
-  \vfill
-  \begin{subfigure}[]{1.0\textwidth}
-    \centering
-    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_1.0E-01_prior_DTV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
-    \caption{1e6 counts, DTV prior, $\beta = 0.1$}
-  \end{subfigure}
-  \caption{Same as Fig.~\ref{fig:1e6_TV_003} for a smaller value of $\beta$ (a), less counts (b) and the DTV prior (c).}
+           used to generate the data (bottom).}
   \label{fig:lm-spdhg-var}
 \end{figure*}
 
@@ -601,40 +596,38 @@ PSNR seems to be even a bit faster with LM-SPDHG.
 
 Figure~\ref{fig:num_subsets} shows the convergence of LM-SPDHG as a function of the number of data
 subsets used for low (3e5) and high (3e6) counts and the TV and DTV prior.
-It can be seen that in general using 224 subsets leads to faster convergence compared to 56 subsets.
-The differences between 56 and 224 subsets are most prominent in the PSNR to refeerence curves 
-when using the DTV prior.
-For the TV prior - especially at low counts - the differences in terms of PSNR are much smaller
-and almost non-existent for the low count example.
-For both priors, convergence in terms of PSNR seems slower for 3e5 compared to 3e6 counts.
-E.g. in the case of TV, 18 iterations using 224 subsets are needed to reach a PSNR of 40 at 3e5 counts, 
-whereas at high counts this threshold is already reached at 3 iterations using 224 subsets.
-
+In general using 224 subsets leads to faster convergence compared to 56 and 112 subsets.
+For the TV prior, especially at low counts, there is almost no difference between using
+56, 112, and 224 subsets.
+For the DTV prior, however, the difference between using 56, 112, and 224 subsets is more
+pronounced.
+For a fixed number of subsets, convergence seems to be faster for high count compared
+to low count data sets.
 
 \begin{figure*}
   \centering
   \begin{subfigure}[b]{0.23\textwidth}
     \centering
-    \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_3.0E+05_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200_ss.pdf}
-    \caption{3e5 counts, TV prior, $\beta = 0.03$}
+    \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_3.0E+05_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_100_ss.pdf}
+    \caption{3e5 true (5e5 prompt) counts, TV prior, $\beta = 0.03$}
   \end{subfigure}
   \hfill
   \begin{subfigure}[b]{0.23\textwidth}
     \centering
-    \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_3.0E+05_seed_1_beta_1.0E-01_prior_DTV_niter_ref_20000_fwhm_4.5_4.5_niter_200_ss.pdf}
-    \caption{3e5 counts, DTV prior, $\beta = 0.1$}
+    \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_3.0E+05_seed_1_beta_1.0E-01_prior_DTV_niter_ref_20000_fwhm_4.5_4.5_niter_100_ss.pdf}
+    \caption{3e5 true (5e5 prompt) counts, DTV prior, $\beta = 0.1$}
   \end{subfigure}
   \hfill
   \begin{subfigure}[b]{0.23\textwidth}
     \centering
-    \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_3.0E+06_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200_ss.pdf}
-    \caption{3e6 counts, TV prior, $\beta = 0.03$}
+    \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_3.0E+06_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_100_ss.pdf}
+    \caption{3e6 true (5e5 prompt) counts, TV prior, $\beta = 0.03$}
   \end{subfigure}
   \hfill
   \begin{subfigure}[b]{0.23\textwidth}
     \centering
-    \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_3.0E+06_seed_1_beta_1.0E-01_prior_DTV_niter_ref_20000_fwhm_4.5_4.5_niter_200_ss.pdf}
-    \caption{3e6 counts, DTV prior, $\beta = 0.1$}
+    \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_3.0E+06_seed_1_beta_1.0E-01_prior_DTV_niter_ref_20000_fwhm_4.5_4.5_niter_100_ss.pdf}
+    \caption{3e6 true (5e5 prompt) counts, DTV prior, $\beta = 0.1$}
   \end{subfigure}
 
   \caption{Converge of LM-SPDHG for different number of subsets at two count levels for the TV and 
@@ -653,13 +646,13 @@ whereas at high counts this threshold is already reached at 3 iterations using 2
 
 %\begin{figure*}
 %  \centering
-%    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_1.0E-01_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
+%    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_1.0E+06_seed_1_beta_1.0E-01_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_100.png}
 %  \caption{$1\cdot10^6$ counts, TV, $\beta = 0.1$}
 %\end{figure*}
 %
 %\begin{figure*}
 %  \centering
-%    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_3.0E+06_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_200.png}
+%    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_3.0E+06_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_100.png}
 %  \caption{$3\cdot10^6$ counts, TV, $\beta = 0.03$}
 %\end{figure*}
 
