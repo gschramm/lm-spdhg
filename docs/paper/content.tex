@@ -156,7 +156,7 @@ setting $T = \min_{k=1,\ldots,n+1} T_i$ pointwise, and choosing $\rho<1$ and $\g
 Whilst SPDHG is a big step forward for an efficient solution of \eqref{eq:saddle}
 in terms of computational speed, SPDHG also comes with two main limitations.
 Firsts, as discussed in Remark 2 of \cite{Ehrhardt2019}, 
-a potential drawback of SPDHG is that it requires to keep at least one more complete 
+a potential drawback of SPDHG is that it requires keeping at least one more complete 
 (TOF) sinogram in memory (the dual variable $y$). 
 Moreover, if the proposed preconditioning is used, a second complete (TOF) sinogram
 (the sequence of step sizes $(S_k)_{k=1}^n$) needs to be stored in memory.
@@ -212,7 +212,7 @@ variance \cite{Tomitani1981}.
 \begin{figure}
   \centering
     \includegraphics[width=1.0\columnwidth]{./figs/sparsity.png}
-  \caption{Representative slices through a single view of an emission sinogram of an 
+  \caption{Representative slices through a single view of an emission sinogram of a 
   80s [\textsuperscript{18}F]FDG acquisition of a liver bed position. 
   The scan was acquired 1\,h post injection with an injected dose of 323\,MBq on
   a GE DMI PET/CT with a TOF resolution of 400\,ps (29 TOF bins). 
@@ -333,7 +333,7 @@ algorithm~\ref{alg:lmspdhg}.
 \State \textbf{Split} lists $N$, $s_N$ and $y_N$ into $n$ sublists $N_i$, $y_{N_i}$ and $s_{N_i}$
 \Repeat
 	\State $x = \proj_{\geq 0} (x - T \overline{z})$
-	\State Select $i \in \{1,\ldots,n+1\}$ randomly accord. to $(p_i)_i$
+	\State Select $i \in \{1,\ldots,n+1\}$ randomly according to $(p_i)_i$
   \If{$i \leq n$}
 	  \State $y_{N_i}^+ \gets \prox_{D^*}^{S_i} \left( y_{N_i} + S_i \left(P^{LM}_{N_i} x + s_{N_i} \right) \right)$
 	  \State $\delta z \gets {P^{LM}_{N_i}}^T \left(\frac{y_{N_i}^+ - y_{N_i}}{\mu_{N_i}}\right)$
@@ -482,7 +482,7 @@ c_\text{rel}(x) = (c(x) - c(x^*)) / (c(x^0) - c(x^*)) \ ,
 \end{equation}
 where $c(x)$ is the cost function to be optimized in \eqref{eq:primal} and $x^0$ is the initial value
 used for $x$.
-Moreover, convergence was also montiored in image space by tracking the peak signal to noise ratio
+Moreover, convergence was also montiored in image space by tracking the peak signal-to-noise ratio
 with respect to $x^*$
 \begin{equation}
 \text{PSNR}(x) = 20\,\log_{10} \left( \|x^*\|_\infty/\sqrt{\text{MSE}(x,x^*)} \right) \ ,
