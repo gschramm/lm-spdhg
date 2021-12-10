@@ -65,7 +65,7 @@ and $R^{**}(x) = \sup_w \langle Kx, w \rangle - R^*(w)$, respectively, and that
 $(\beta R(x))^* = \beta R^*(w / \beta)$, we can rewrite \eqref{eq:primal} as the saddle point problem
 %
 \begin{equation}
-\argmin _{x\geq 0} \, \sup_{y,w} \,  \langle Px + s, y \rangle + \langle Kx, w \rangle - \sum_{i=1}^{m} D_i^*(y_i) - \beta R^*(w/\beta) ,
+\argmin_{x\geq 0} \, \sup_{y,w} \,  \langle Px + s, y \rangle + \langle Kx, w \rangle - \sum_{i=1}^{m} D_i^*(y_i) - \beta R^*(w/\beta) ,
 \label{eq:saddle}
 \end{equation}
 %
@@ -500,6 +500,36 @@ SPDHG    & event + 1 uint + 3 float lists &  12.0\,GB  &   1.7\,GB   &   0.3\,GB
 
 \begin{figure*}
   \centering
+  \begin{subfigure}[]{1.0\textwidth}
+    \centering
+    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_3.0E+05_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_100_emtv.png}
+    \caption{3e5 true (5e5 prompt) counts, TV prior, $\beta = 0.03$}
+  \end{subfigure}
+  \vfill
+  \begin{subfigure}[]{1.0\textwidth}
+    \centering
+    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_3.0E+06_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_100_emtv.png}
+    \caption{3e6 true (5e6 prompt) counts, TV prior, $\beta = 0.03$}
+  \end{subfigure}
+  \vfill
+  \begin{subfigure}[]{1.0\textwidth}
+    \centering
+    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_3.0E+05_seed_1_beta_1.0E-01_prior_DTV_niter_ref_20000_fwhm_4.5_4.5_niter_100_emtv.png}
+    \caption{3e5 true (5e5 prompt) counts, DTV prior, $\beta = 0.1$}
+  \end{subfigure}
+  \caption{Same as Fig.~\ref{fig:lm-spdhg-var} but comparing the convergence of LM-SPDHG using
+           224 subsets and listmode EM-TV using 1, 7 and 28 subsets.
+           The top row of images shows the reconstruction after 100 iterations and the bottom
+           row shows the difference to the reference reconstruction which is shown in
+           Fig.~\ref{fig:lm-spdhg-var}.
+           Note that the width of the color window in the difference plots is five times wider
+           compared to Fig.~\ref{fig:lm-spdhg-var}.}
+  \label{fig:emtv}
+\end{figure*}
+
+
+\begin{figure*}
+  \centering
   \begin{subfigure}[b]{0.23\textwidth}
     \centering
     \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_3.0E+05_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_100_ss.pdf}
@@ -577,10 +607,33 @@ and a 400\,ps TOF resolution
 (sinogram dimension: 357 radial bins, 224 projection angles, 27 TOF bins).
 Noisy simulated prompt emission TOF sinograms and corresponding listmode data were generated
 for two different count levels (5e5 and 5e6 prompt counts).
-Unless stated otherwise, we always used the EM-TV algorithm using 1 iteration and 28 subsets
-to initialize $x^0$ and $y^0$ according to \eqref{eq:yinit}.
-In all experiments, the step size ratio $\gamma$ was set to $3 / \|x^0\|_\infty$ and $\rho$ was
-set to 0.999.
+
+\begin{algorithm}[t]
+\begin{algorithmic}[1]
+\small
+\State \textbf{Input} event list $N$, contamination list $s_N$
+\State \textbf{Split} lists $N$ and $s_N$ into $n$ sublists $N_i$, and $s_{N_i}$
+\State \textbf{Precompute} sensitivity image $g = P^T 1$
+\Repeat
+	\State Select subset $i$
+	\State $z \gets \dfrac{x\,n}{g} {P_{N_i}^{LM}}^T \dfrac{1}{P_{N_i}^{LM} + s_{N_i}}$ (subset EM step)
+  \State $w \gets g / (\beta x)$
+  \State $x^+ \gets \argmin_{u\geq 0} \sum_j \dfrac{w_j}{2} \left(u_j -z_j \right)^2 + R(Ku)$
+\Until{stopping criterion fulfilled}
+\State \Return{$x$}
+%\EndFunction
+\end{algorithmic}
+\caption{listmode EM-TV for PET reconstruction \cite{Sawatzky2008, Burger2008}}
+\label{alg:emtv}
+\end{algorithm}
+
+Unless stated otherwise, we always applied the EM-TV algorithm, summarized in algorithm~\ref{alg:emtv}, 
+using 1 iteration and 28 subsets to initialize $x^0$ and $y^0$ according to \eqref{eq:yinit}.
+To solve the weighted denoising problem in step 8 of the EM-TV algorithm, we applied the
+accelerate PDHG algorithm \cite{Chambolle2011}.
+
+In all SPDHG and LM-SPDHG reconstructios, the step size ratio $\gamma$ was set 
+to $3 / \|x^0\|_\infty$ and $\rho$ was set to 0.999.
 When splitting the data into $n$ subsets, the vector of probabilities determining 
 whether an update with respect to a subset of the data of with respect to the prior is 
 done was set to 
@@ -629,7 +682,7 @@ However, we do not expect that this fact strongly affects the convergence proper
 SPDHG and LM-SPDHG. 
 
 To demonstrate that LM-SPDHG also works for realistic 3D TOF listmode data,
-we finally simulated and reconstructed 3D TOF PET data based on the 3D XCAT [XXX] phantom 
+we finally simulated and reconstructed 3D TOF PET data based on the 3D XCAT \cite{Segars2010} phantom 
 and a state-of-the-art
 TOF PET scanner with 20\,cm axial field of view, a ring diameter of 650\,mm and a 400\,ps TOF 
 resolution (sinogram dimension: 357 radial bins, 224 projection angles, 1296 planes, 27 TOF bins).
@@ -665,6 +718,18 @@ in supplementary Figs.~1 and 2.
 For the example with the DTV prior shown in subfigure (c), the convergence in terms of
 PSNR seems to be even slightly faster with LM-SPDHG which can be also
 seen in the difference images with respect to the reference reconstruction.
+
+\subsection*{Convergence of LM-SPDHG compared to listmode EM-TV}
+
+A comparison between the convergence of LM-SPDHG using 224 subsets and listmode 
+EM-TV using 1, 7 and 28 subsets is shown in Fig.~\ref{fig:emtv}.
+In all sub figures, LM-SPDHG converges much faster than EM-TV.
+Interestingly, when using listmode EM-TV with more than one subset, the convergence
+metrics saturate meaning that the algorithm probably is stuck
+on a limited cycle and the optimal solution is not reached.
+When using one subset, the convergence of EM-TV is much slower but does not seem
+to saturate after 100 iterations.
+
 
 \subsection*{Convergence vs number of subsets}
 
@@ -726,14 +791,16 @@ as proximal operator of the convex dual of the prior can be efficiently calculat
 e.g. the case for prior penalizing the squared L2 norm or Huber TV.
 However, for smooth priors the speed of convergence of (LM)-SPDHG should be benchmarked against
 other stochastic gradient-based optimization techniques such as the stochastic variance reduced gradient (SVRG) \cite{Johnson2013} or SAGA \cite{Defazio2014} which is beyond the scope of this work.
+We also note that in this work we used scalar spatially-invarient prior strength $\beta$ which
+leads to a spatially-variant local pertubation response (LPR). 
+For pratical applications where a spatially-invariant is desirable, a spatially-varient prior 
+strength should be used as described in \cite{Ahn2008,Tsai2020}.
 
-%%%% Discussion on local beta (how to include) + cite Ahn + Tsai
-
-Last but not least, we would like to mention that at a first glance, the  EM-TV algorithms
-seems to be an attractive algorithm to solve the TOF PET reconstruction problem with
-non-smooth priors.
-Note, however, that according to our experience, EM-TV does not converge when the EM step
-is performed using conventional ordered subsets which is demonstrated in supplementary Fig.~XXX.
-Nevertheless, EM-TV shows fast convergence in the early iterations, especially when using
-a moderate amount of subsets which makes EM-TV a very usefule algorithm to calculate the warm
-start for (LM)-SPDHG.
+Last but not least, we would like to emphasize that the listmode EM-TV algorithm
+is still a very practical and useful algorithm to approximate the solution 
+of the optimization problem \eqref{eq:primal} for listmode data and non-smooth priors.
+However, as shown in Fig.~\ref{fig:emtv}, it seems that when using ordered subsets for acceleration,
+EM-TV does not reach the optimal solution but rather remains on a limit cycle similar to the
+behaviour of OSEM.
+Whether the difference between the limit cycle and the true optimal solution is of importance
+for a given count level and clinical task, should be investigated in the future.
