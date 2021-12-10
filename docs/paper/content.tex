@@ -613,7 +613,7 @@ for two different count levels (5e5 and 5e6 prompt counts).
 \small
 \State \textbf{Input} event list $N$, contamination list $s_N$
 \State \textbf{Split} lists $N$ and $s_N$ into $n$ sublists $N_i$, and $s_{N_i}$
-\State \textbf{Precompute} sensitivity image $g = P^T 1$
+\State \textbf{Pre-compute} sensitivity image $g = P^T 1$
 \Repeat
 	\State Select subset $i$
 	\State $z \gets \dfrac{x\,n}{g} {P_{N_i}^{LM}}^T \dfrac{1}{P_{N_i}^{LM} + s_{N_i}}$ (subset EM step)
@@ -630,7 +630,7 @@ for two different count levels (5e5 and 5e6 prompt counts).
 Unless stated otherwise, we always applied the EM-TV algorithm, summarized in algorithm~\ref{alg:emtv}, 
 using 1 iteration and 28 subsets to initialize $x^0$ and $y^0$ according to \eqref{eq:yinit}.
 To solve the weighted denoising problem in step 8 of the EM-TV algorithm, we applied the
-accelerate PDHG algorithm \cite{Chambolle2011}.
+accelerated PDHG algorithm \cite{Chambolle2011}.
 
 In all SPDHG and LM-SPDHG reconstructios, the step size ratio $\gamma$ was set 
 to $3 / \|x^0\|_\infty$ and $\rho$ was set to 0.999.
