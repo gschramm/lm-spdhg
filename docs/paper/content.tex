@@ -630,7 +630,7 @@ for two different count levels (5e5 and 5e6 prompt counts).
 Unless stated otherwise, we always applied the EM-TV algorithm, summarized in algorithm~\ref{alg:emtv}, 
 using 1 iteration and 28 subsets to initialize $x^0$ and $y^0$ according to \eqref{eq:yinit}.
 To solve the weighted denoising problem in step 8 of the EM-TV algorithm, we applied the
-accelerated PDHG algorithm \cite{Chambolle2011}.
+accelerated PDHG algorithm \cite{Chambolle2011} using 20 iterations.
 
 In all SPDHG and LM-SPDHG reconstructios, the step size ratio $\gamma$ was set 
 to $3 / \|x^0\|_\infty$ and $\rho$ was set to 0.999.
