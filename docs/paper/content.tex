@@ -86,8 +86,8 @@ in every update.
 The usage of the original PDHG algorithm to solve \eqref{eq:saddle} for real-world state-of-the-art
 TOF PET systems usually results in extremely long computation times, 
 because the evaluation of $P$ and $P^T$
-for state-of-the-art TOF PET systems is slow and because several hundreds to thousands of 
-updates are needed to obtain reasonable convergence.
+for state-of-the-art TOF PET systems is computationally very demanding and 
+because several hundreds to thousands of updates are needed to obtain reasonable convergence.
 
 To overcome this limitation, Chambolle et al. published a stochastic extension of PDHG called SPDHG 
 for saddle point problems that are separable in the dual variable in 2018 \cite{Chambolle2018}.
@@ -300,9 +300,6 @@ and a reasonable amount of subsets of the EM-TV algorithm \cite{Sawatzky2008, Bu
 Since in EM-TV every update is split into a classical EM step followed by a weighted denoising
 optimization problem in image space, EM-TV can be used in listmode as well by simply
 modifying the EM step.
-At a first glance, EM-TV thus seems to be an appealing algorithm to solve our optimization
-problem \eqref{eq:primal} for data in listmode format.
-However, in contrast to SPDHG, EM-TV does not have guaranteed converge when using subsets.
 
 \subsection*{Listmode SPDHG}
 
@@ -704,35 +701,39 @@ the time needed to calculate the actual TOF projections.
 
 \section{Discussion}
 
-% - can be also used for smooth priors, mention SAG, SAGA
-% - guaranteed convergence vs EM-TV
-%
-%
-%
-%
-%
-%
-%
-%
-%
-%
-%
-%
-%
-%
-%
-%
-%
-%
-%
-%
-%
-%
-%
-%
-%
-%
-%
-%
-%
-%
+The results of our numerical experiments presented in this work demonstrate the speed of 
+convergence of LM-SPDHG is essentially the same as the one of the original SPDHG using
+sinograms.
+For almost all clinical acquisitions with state-of-the-art TOF PET scanners resulting in extremely
+sparse data, LM-SPDHG has two distinct advantages compared to SPDHG.
+First, during the iterations all forward and back projections can be performed in listmode
+which is faster compared to sinogram projectors for sparse TOF data.
+
+Second, as shown in Table~\ref{tab:mem}, the memory requirements are substantially reduced such
+that even for an aquisition with 5e8 prompt coincidences only 12.5\,GB of memory are needed.
+This actually enables a pure GPU-implementation on of LM-SPDHG avoiding intermediate memory
+transfer between the host and a state-of-the-art GPU with a memory of approximately 16\,GB.
+Note that in our proof of concept implementation of LM-SPDHG we used a hybrid computing
+approach where only the TOF PET forward and back projections where computed using a GPU.
+We expect that once properly implemented purely on a GPU, the computation time required
+for LM-SPDHG will further decrease since memory transfter between host and GPU is a bottleneck 
+in our implementation.
+Note that a pure GPU implementation of the conventional SPDHG algorithm for modern TOF PET
+data is more complicated since more than 50\,GB of GPU is required.
+
+In this proof of concept work, we only used two non-smooth TV-like priors
+to benchmark LM-SPDHG. 
+Note that in general, SPDHG and LM-SPDHG can be also used for smooth priors as long
+as proximal operator of the convex dual of the prior can be efficiently calculated which is
+e.g. the case for prior penalizing the squared L2 norm or Huber TV.
+However, for smooth priors the speed of convergence of (LM)-SPDHG should be benchmarked against
+other stochastic gradient-based optimization techniques such as the stochastic variance reduced gradient (SVRG) \cite{Johnson2013} or SAGA \cite{Defazio2014} which is beyond the scope of this work.
+
+Last but not least, we would like to mention that at a first glance, the  EM-TV algorithms
+seems to be an attractive algorithm to solve the TOF PET reconstruction problem with
+non-smooth priors.
+Note, however, that according to our experience, EM-TV does not converge when the EM step
+is performed using conventional ordered subsets which is demonstrated in supplementary Fig.~XXX.
+Nevertheless, EM-TV shows fast convergence in the early iterations, especially when using
+a moderate amount of subsets which makes EM-TV a very usefule algorithm to calculate the warm
+start for (LM)-SPDHG.
