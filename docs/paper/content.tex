@@ -465,6 +465,84 @@ SPDHG    & event + 1 uint + 3 float lists &  12.0\,GB  &   1.7\,GB   &   0.3\,GB
   \label{fig:warm_start}
 \end{figure}
 
+%include all figures already here to distribute them better over the text
+\begin{figure*}
+  \centering
+  \begin{subfigure}[]{1.0\textwidth}
+    \centering
+    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_3.0E+05_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_100.png}
+    \caption{3e5 true (5e5 prompt) counts, TV prior, $\beta = 0.03$}
+  \end{subfigure}
+  \vfill
+  \begin{subfigure}[]{1.0\textwidth}
+    \centering
+    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_3.0E+06_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_100.png}
+    \caption{3e6 true (5e6 prompt) counts, TV prior, $\beta = 0.03$}
+  \end{subfigure}
+  \vfill
+  \begin{subfigure}[]{1.0\textwidth}
+    \centering
+    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_3.0E+05_seed_1_beta_1.0E-01_prior_DTV_niter_ref_20000_fwhm_4.5_4.5_niter_100.png}
+    \caption{3e5 true (5e5 prompt) counts, DTV prior, $\beta = 0.1$}
+  \end{subfigure}
+  \caption{Comparison of convergence of sinogram SPDHG and LM-SPDHG
+           for using 244 subsets.
+           All three subfigures (a) - (c) show the same quantities but for
+           different count levels and priors.
+           Left column: relative cost and PSNR to with respect to the reference solution as
+           a function of the iterations for sinogram SPDHG (blue) and LM-SPDHG (orange).
+           Second column: SPDHG (top) and LM-SPDHG (bottom) reconstruction after 100 iterations.
+           Third column: absolute difference between SPDHG/LM-SPDHG and reference PDHG reconstruction.
+           Forth column: reference PDHG reconstruction using 20000 iterations (top) and ground truth
+           used to generate the data (bottom).}
+  \label{fig:lm-spdhg-var}
+\end{figure*}
+
+\begin{figure*}
+  \centering
+  \begin{subfigure}[b]{0.23\textwidth}
+    \centering
+    \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_3.0E+05_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_100_ss.pdf}
+    \caption{3e5 true (5e5 prompt) counts, TV prior, $\beta = 0.03$}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[b]{0.23\textwidth}
+    \centering
+    \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_3.0E+05_seed_1_beta_1.0E-01_prior_DTV_niter_ref_20000_fwhm_4.5_4.5_niter_100_ss.pdf}
+    \caption{3e5 true (5e5 prompt) counts, DTV prior, $\beta = 0.1$}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[b]{0.23\textwidth}
+    \centering
+    \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_3.0E+06_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_100_ss.pdf}
+    \caption{3e6 true (5e5 prompt) counts, TV prior, $\beta = 0.03$}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[b]{0.23\textwidth}
+    \centering
+    \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_3.0E+06_seed_1_beta_1.0E-01_prior_DTV_niter_ref_20000_fwhm_4.5_4.5_niter_100_ss.pdf}
+    \caption{3e6 true (5e5 prompt) counts, DTV prior, $\beta = 0.1$}
+  \end{subfigure}
+
+  \caption{Converge of LM-SPDHG for different number of subsets at two count levels for the TV and 
+           DTV prior. Note that when increasing the number of data subsets, the number of gradient
+           updates per iteration increases as well.}
+  \label{fig:num_subsets}
+\end{figure*}
+
+\begin{figure*}
+  \centering
+    \includegraphics[width=1.0\textwidth]{./figs/xcat_TV_3e-2_4e7.png}
+  \caption{Convergence of LM-SPDHG for reconstruction of 3D TOF data generated from the XCAT phantom
+           using 4e7 true (7e7) prompt counts and a TV prior with $\beta = 0.03$.
+           Left column: evolution of cost function. 
+           Columns 2-3: transversal, sagittal and coronal
+           slice of LM-SPDHG reconstruction after 20 iterations and 224 subsets.
+           Columns 4-5: LM-SPDHG reconstruction after 100 iterations and 224 subsets.
+           Columns 6-7: Ground truth image.}
+  \label{fig:xcat}
+\end{figure*}
+
 
 Recalling the fact that for most common TOF PET acquisitions, LM-SPDHG requires less memory and 
 is also faster, one would probably prefer LM-SPDHG over SPDHG if the speed of convergence is the same.
@@ -588,41 +666,6 @@ For the example with the DTV prior shown in subfigure (c), the convergence in te
 PSNR seems to be even slightly faster with LM-SPDHG which can be also
 seen in the difference images with respect to the reference reconstruction.
 
-\begin{figure*}
-  \centering
-  \begin{subfigure}[]{1.0\textwidth}
-    \centering
-    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_3.0E+05_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_100.png}
-    \caption{3e5 true (5e5 prompt) counts, TV prior, $\beta = 0.03$}
-  \end{subfigure}
-  \vfill
-  \begin{subfigure}[]{1.0\textwidth}
-    \centering
-    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_3.0E+06_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_100.png}
-    \caption{3e6 true (5e6 prompt) counts, TV prior, $\beta = 0.03$}
-  \end{subfigure}
-  \vfill
-  \begin{subfigure}[]{1.0\textwidth}
-    \centering
-    \includegraphics[width=0.8\textwidth]{./figs/brain2d_counts_3.0E+05_seed_1_beta_1.0E-01_prior_DTV_niter_ref_20000_fwhm_4.5_4.5_niter_100.png}
-    \caption{3e5 true (5e5 prompt) counts, DTV prior, $\beta = 0.1$}
-  \end{subfigure}
-  \caption{Comparison of convergence of sinogram SPDHG and LM-SPDHG
-           for using 244 subsets.
-           All three subfigures (a) - (c) show the same quantities but for
-           different count levels and priors.
-           Left column: relative cost and PSNR to with respect to the reference solution as
-           a function of the iterations for sinogram SPDHG (blue) and LM-SPDHG (orange).
-           Second column: SPDHG (top) and LM-SPDHG (bottom) reconstruction after 100 iterations.
-           Third column: absolute difference between SPDHG/LM-SPDHG and reference PDHG reconstruction.
-           Forth column: reference PDHG reconstruction using 20000 iterations (top) and ground truth
-           used to generate the data (bottom).}
-  \label{fig:lm-spdhg-var}
-\end{figure*}
-
-
-
-
 \subsection*{Convergence vs number of subsets}
 
 Figure~\ref{fig:num_subsets} shows the convergence of LM-SPDHG as a function of the number of data
@@ -633,38 +676,6 @@ However, for the TV prior, especially at low counts, there is almost no differen
 In contrast, for the DTV prior, the difference between using 56, 112, and 224 subsets is more
 pronounced.
 For a fixed number of subsets, convergence is faster for high count compared to low count data sets.
-
-\begin{figure*}
-  \centering
-  \begin{subfigure}[b]{0.23\textwidth}
-    \centering
-    \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_3.0E+05_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_100_ss.pdf}
-    \caption{3e5 true (5e5 prompt) counts, TV prior, $\beta = 0.03$}
-  \end{subfigure}
-  \hfill
-  \begin{subfigure}[b]{0.23\textwidth}
-    \centering
-    \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_3.0E+05_seed_1_beta_1.0E-01_prior_DTV_niter_ref_20000_fwhm_4.5_4.5_niter_100_ss.pdf}
-    \caption{3e5 true (5e5 prompt) counts, DTV prior, $\beta = 0.1$}
-  \end{subfigure}
-  \hfill
-  \begin{subfigure}[b]{0.23\textwidth}
-    \centering
-    \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_3.0E+06_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_100_ss.pdf}
-    \caption{3e6 true (5e5 prompt) counts, TV prior, $\beta = 0.03$}
-  \end{subfigure}
-  \hfill
-  \begin{subfigure}[b]{0.23\textwidth}
-    \centering
-    \includegraphics[width=1.0\textwidth]{./figs/brain2d_counts_3.0E+06_seed_1_beta_1.0E-01_prior_DTV_niter_ref_20000_fwhm_4.5_4.5_niter_100_ss.pdf}
-    \caption{3e6 true (5e5 prompt) counts, DTV prior, $\beta = 0.1$}
-  \end{subfigure}
-
-  \caption{Converge of LM-SPDHG for different number of subsets at two count levels for the TV and 
-           DTV prior. Note that when increasing the number of data subsets, the number of gradient
-           updates per iteration increases as well.}
-  \label{fig:num_subsets}
-\end{figure*}
 
 
 \subsection*{Reconstrution of 3D XCAT data}
@@ -682,19 +693,6 @@ factor of 3 since we did not implement the gradient operators and proximal mappi
 which leads to overhead due to gradient-based updates.
 However, we expect once properly implemented on GPUs this overhead will be small compared to
 the time needed to calculate the actual TOF projections.
-
-\begin{figure*}
-  \centering
-    \includegraphics[width=1.0\textwidth]{./figs/xcat_TV_3e-2_4e7.png}
-  \caption{Convergence of LM-SPDHG for reconstruction of 3D TOF data generated from the XCAT phantom
-           using 4e7 true (7e7) prompt counts and a TV prior with $\beta = 0.03$.
-           Left column: evolution of cost function. 
-           Columns 2-3: transversal, sagittal and coronal
-           slice of LM-SPDHG reconstruction after 20 iterations and 224 subsets.
-           Columns 4-5: LM-SPDHG reconstruction after 100 iterations and 224 subsets.
-           Columns 6-7: Ground truth image.}
-  \label{fig:xcat}
-\end{figure*}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -728,6 +726,8 @@ as proximal operator of the convex dual of the prior can be efficiently calculat
 e.g. the case for prior penalizing the squared L2 norm or Huber TV.
 However, for smooth priors the speed of convergence of (LM)-SPDHG should be benchmarked against
 other stochastic gradient-based optimization techniques such as the stochastic variance reduced gradient (SVRG) \cite{Johnson2013} or SAGA \cite{Defazio2014} which is beyond the scope of this work.
+
+%%%% Discussion on local beta (how to include) + cite Ahn + Tsai
 
 Last but not least, we would like to mention that at a first glance, the  EM-TV algorithms
 seems to be an attractive algorithm to solve the TOF PET reconstruction problem with
