@@ -229,7 +229,7 @@ grad_norm = GradientNorm(name = 'l2_l1')
 
 xinit = osem_lm_emtv(events, attn_list, sens_list, contam_list, proj, sens_img, 1, 28, 
                      grad_operator = grad_operator, grad_norm = grad_norm,
-                     fwhm = fwhm, verbose = True)
+                     fwhm = fwhm, verbose = True, beta = beta)
 
 #yinit = 1 - (em_sino / (ppp.pet_fwd_model(xinit, proj, attn_sino, sens_sino, fwhm = fwhm) + contam_sino))
 
@@ -243,7 +243,7 @@ def calc_cost(x):
     exp = ppp.pet_fwd_model(x, proj, attn_sino[ss], sens_sino[ss], i, fwhm = fwhm) + contam_sino[ss]
     cost += (exp - em_sino[ss]*np.log(exp)).sum()
 
-  if grad_norm.beta > 0:
+  if beta > 0:
     cost += beta*grad_norm.eval(grad_operator.fwd(x))
 
   return cost
@@ -271,7 +271,7 @@ norm = gaussian_filter(xinit.squeeze(),3).max()
 ##               fwhm = fwhm, gamma = gamma / norm, verbose = True, 
 ##               callback = _cb, callback_kwargs = cbs_sino,
 ##               xstart = xinit, ystart = yinit,
-##               grad_operator = grad_operator, grad_norm = grad_norm)
+##               grad_operator = grad_operator, grad_norm = grad_norm, beta = beta)
 ##
 #del yinit
 
@@ -280,7 +280,7 @@ norm = gaussian_filter(xinit.squeeze(),3).max()
 #x_sino2 = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
 #               fwhm = fwhm, gamma = gamma / norm, verbose = True, 
 #               callback = _cb, callback_kwargs = cbs_sino2,
-#               grad_operator = grad_operator, grad_norm = grad_norm)
+#               grad_operator = grad_operator, grad_norm = grad_norm, beta = beta)
 
 cost_lm = np.zeros(niter)
 cbs_lm = {'x_early':[], 't':[], 'it_early':[], 'cost' : cost_lm}
@@ -288,14 +288,14 @@ x_lm = spdhg_lm(events, attn_list, sens_list, contam_list, sens_img,
                 proj, niter, nsubsets, x0 = xinit,
                 fwhm = fwhm, gamma = gamma / norm, verbose = True, 
                 callback = _cb, callback_kwargs = cbs_lm,
-                grad_operator = grad_operator, grad_norm = grad_norm)
+                grad_operator = grad_operator, grad_norm = grad_norm, beta = beta)
 
 cost_emtv = np.zeros(niter)
 cbs_emtv  = {'x_early':[], 't':[], 'it_early':[], 'cost' : cost_emtv}
 x_emtv = osem_lm_emtv(events, attn_list, sens_list, contam_list, proj, sens_img, niter, 1, 
                       grad_operator = grad_operator, grad_norm = grad_norm, xstart = xinit,
                       callback = _cb, callback_kwargs = cbs_emtv,
-                      fwhm = fwhm, verbose = True)
+                      fwhm = fwhm, verbose = True, beta = beta)
 
 
 #np.savez('debug.npz', x = x_lm, x_early = np.array(cbs_lm['x_early']), it = cbs_lm['it_early'], 

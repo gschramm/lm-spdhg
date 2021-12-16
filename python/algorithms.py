@@ -8,7 +8,7 @@ def spdhg_lm(events, attn_list, sens_list, contam_list, sens_img,
              x0 = None, fwhm = 0, gamma = 1., rho = 0.999, verbose = False, 
              callback = None, subset_callback = None,
              callback_kwargs = None, subset_callback_kwargs = None,
-             grad_norm = None, grad_operator = None):
+             grad_norm = None, grad_operator = None, beta = 0):
 
   if not isinstance(gamma, (list,tuple,np.ndarray)):
     gamma = np.full(niter, gamma, dtype = np.float32)
@@ -29,7 +29,7 @@ def spdhg_lm(events, attn_list, sens_list, contam_list, sens_img,
   # p_g is the probablility for doing a gradient update
   # p_p is the probablility for doing a PET data subset update
  
-  if grad_norm.beta == 0:
+  if beta == 0:
     p_g = 0
   else: 
     p_g = 0.5

@@ -135,7 +135,7 @@ def calc_cost(x):
   exp  = ppp.pet_fwd_model(x, proj, attn_sino, sens_sino, fwhm = fwhm) + contam_sino
   cost = (exp - em_sino*np.log(exp)).sum()
 
-  if grad_norm.beta > 0:
+  if beta > 0:
     cost += beta*grad_norm.eval(grad_operator.fwd(x))
 
   return cost
@@ -182,7 +182,7 @@ sens_img  = ppp.pet_back_model(np.ones(proj.sino_params.shape, dtype = np.float3
 
 xinit = osem_lm_emtv(events, attn_list, sens_list, contam_list, proj, sens_img, 1, 28, 
                      grad_operator = grad_operator, grad_norm = grad_norm,
-                     fwhm = fwhm, verbose = True)
+                     fwhm = fwhm, verbose = True, beta = beta)
 
 yinit = 1 - (em_sino / (ppp.pet_fwd_model(xinit, proj, attn_sino, sens_sino, fwhm = fwhm) + contam_sino))
 
@@ -210,7 +210,7 @@ else:
                     gamma = 3./img.max(), fwhm = fwhm, verbose = True, 
                     xstart = xinit, ystart = yinit,
                     callback = _cb, callback_kwargs = {'cost': cost_ref},
-                    grad_operator = grad_operator, grad_norm = grad_norm)
+                    grad_operator = grad_operator, grad_norm = grad_norm, beta = beta)
 
 
   proj.init_subsets(ns)
@@ -234,13 +234,13 @@ cbs2 = {'cost':cost_spdhg_sino[1,:],'psnr':psnr_spdhg_sino[1,:],'xref':ref_recon
 x1 = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
            fwhm = fwhm, gamma = gamma, verbose = True, 
            callback = _cb, callback_kwargs = cbs1,
-           grad_operator = grad_operator, grad_norm = grad_norm)
+           grad_operator = grad_operator, grad_norm = grad_norm, beta = beta)
 
 x2 = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
            fwhm = fwhm, gamma = gamma, verbose = True, 
            xstart = xinit, ystart = yinit,
            callback = _cb, callback_kwargs = cbs2,
-           grad_operator = grad_operator, grad_norm = grad_norm)
+           grad_operator = grad_operator, grad_norm = grad_norm, beta = beta)
 
 #----------------------------------------------------------------------------------------
 

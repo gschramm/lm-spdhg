@@ -135,7 +135,7 @@ def calc_cost(x):
   exp  = ppp.pet_fwd_model(x, proj, attn_sino, sens_sino, fwhm = fwhm) + contam_sino
   cost = (exp - em_sino*np.log(exp)).sum()
 
-  if grad_norm.beta > 0:
+  if beta > 0:
     cost += beta*grad_norm.eval(grad_operator.fwd(x))
 
   return cost
@@ -190,7 +190,7 @@ sens_img  = ppp.pet_back_model(np.ones(proj.sino_params.shape, dtype = np.float3
 
 xinit = osem_lm_emtv(events, attn_list, sens_list, contam_list, proj, sens_img, 1, 28, 
                      grad_operator = grad_operator, grad_norm = grad_norm,
-                     fwhm = fwhm, verbose = True)
+                     fwhm = fwhm, verbose = True, beta = beta)
 
 yinit = 1 - (em_sino / (ppp.pet_fwd_model(xinit, proj, attn_sino, sens_sino, fwhm = fwhm) + contam_sino))
 
@@ -218,7 +218,7 @@ else:
                     gamma = 3./img.max(), fwhm = fwhm, verbose = True, 
                     xstart = xinit, ystart = yinit,
                     callback = _cb, callback_kwargs = {'cost': cost_ref},
-                    grad_operator = grad_operator, grad_norm = grad_norm)
+                    grad_operator = grad_operator, grad_norm = grad_norm, beta = beta)
 
 
   proj.init_subsets(ns)
@@ -251,7 +251,7 @@ for iss, nss in enumerate(nsubsets):
                           fwhm = fwhm, gamma = gamma, verbose = True, 
                           xstart = xinit, ystart = yinit,
                           callback = _cb, callback_kwargs = cbs,
-                          grad_operator = grad_operator, grad_norm = grad_norm)
+                          grad_operator = grad_operator, grad_norm = grad_norm, beta = beta)
 
   # LM SPDHG
   cblm = {'cost':cost_spdhg_lm[iss,:],'psnr':psnr_spdhg_lm[iss,:],'xref':ref_recon,
@@ -260,7 +260,7 @@ for iss, nss in enumerate(nsubsets):
                            proj, niter, nss, x0 = xinit,
                            fwhm = fwhm, gamma = gamma, verbose = True, 
                            callback = _cb, callback_kwargs = cblm,
-                           grad_operator = grad_operator, grad_norm = grad_norm)
+                           grad_operator = grad_operator, grad_norm = grad_norm, beta = beta)
 
 #-----------------------------------------------------------------------------------------------------
 # run EM-TV with 1, 7 and nsubsets subsets for comparison
@@ -278,7 +278,7 @@ for ie, nsemtv in enumerate(nsubsets_emtv):
   x_emtv[ie,...] = osem_lm_emtv(events, attn_list, sens_list, contam_list, proj, sens_img, niter, nsemtv, 
                                 grad_operator = grad_operator, grad_norm = grad_norm,
                                 callback = _cb, callback_kwargs = cbemtv, xstart = xinit,
-                                fwhm = fwhm, verbose = True)
+                                fwhm = fwhm, verbose = True, beta = beta)
 
 #-----------------------------------------------------------------------------------------------------
 # calculate cost of initial recon (image full or zeros)
