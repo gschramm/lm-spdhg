@@ -224,7 +224,7 @@ if prior == 'DTV':
 else:
   grad_operator  = GradientOperator()
 
-grad_norm = GradientNorm(name = 'l2_l1', beta = beta)
+grad_norm = GradientNorm(name = 'l2_l1')
 
 
 xinit = osem_lm_emtv(events, attn_list, sens_list, contam_list, proj, sens_img, 1, 28, 
@@ -244,7 +244,7 @@ def calc_cost(x):
     cost += (exp - em_sino[ss]*np.log(exp)).sum()
 
   if grad_norm.beta > 0:
-    cost += grad_norm.eval(grad_operator.fwd(x))
+    cost += beta*grad_norm.eval(grad_operator.fwd(x))
 
   return cost
 

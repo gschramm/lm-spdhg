@@ -128,7 +128,7 @@ if prior == 'DTV':
 else:
   grad_operator  = GradientOperator()
 
-grad_norm = GradientNorm(name = 'l2_l1', beta = beta)
+grad_norm = GradientNorm(name = 'l2_l1')
 
 #-----------------------------------------------------------------------------------------------------
 def calc_cost(x):
@@ -136,7 +136,7 @@ def calc_cost(x):
   cost = (exp - em_sino*np.log(exp)).sum()
 
   if grad_norm.beta > 0:
-    cost += grad_norm.eval(grad_operator.fwd(x))
+    cost += beta*grad_norm.eval(grad_operator.fwd(x))
 
   return cost
 
