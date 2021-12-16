@@ -1,4 +1,4 @@
-\usepackage[a4paper, top=2cm,bottom=1.5cm,left=1.0cm,right=1.0cm]{geometry}
+\usepackage[a4paper, top=2cm,bottom=1.5cm,left=1.5cm,right=1.5cm]{geometry}
 \usepackage[english]{babel}
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
@@ -51,6 +51,23 @@
     \end{tabular} 
     \vspace{-0.3cm}
     }
+
+
+
+\renewcommand{\topfraction}{0.9}	% max fraction of floats at top
+\renewcommand{\bottomfraction}{0.8}	% max fraction of floats at bottom
+%   Parameters for TEXT pages (not float pages):
+\setcounter{topnumber}{2}
+\setcounter{bottomnumber}{2}
+\setcounter{totalnumber}{4}     % 2 may work better
+\setcounter{dbltopnumber}{2}    % for 2-column pages
+\renewcommand{\dbltopfraction}{0.9}	% fit big float above 2-col. text
+\renewcommand{\textfraction}{0.07}	% allow minimal text w. figs
+%   Parameters for FLOAT pages (not text pages):
+\renewcommand{\floatpagefraction}{0.7}	% require fuller float pages
+\renewcommand{\dblfloatpagefraction}{0.7}	% require fuller float pages
+
+
 
 %\usepackage[backend=bibtex,minnames=3,maxnames=3,isbn=false,url=false,eprint=false,giveninits=true,sorting=none,citestyle=numeric-comp]{biblatex}
 % use smaller font size for references
