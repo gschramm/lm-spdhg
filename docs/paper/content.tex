@@ -15,7 +15,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+\newcommand{\todo}[1]{\textcolor{red}{ #1}}
 \section{Introduction}
 
 % add importance of fast recons
@@ -41,7 +41,7 @@ acquired prompt TOF coincidences (the emission sinogram),
 and $s$ are additive contaminations including random and scattered coincidences. 
 $\sum_{i=1}^m D_i(x)$ is the negative Poisson log-likelihood, $i$ is the index of the data (TOF sinogram)
 bin and $m$ is the total number of data bins.
-$R(Kx)$ is the ``smoothing prior'' consisting of a generic linear operator $K$ that calculates 
+$R(K\cdot)$ is the ``smoothing prior'' consisting of a generic linear operator $K$ that calculates 
 local differences and a proper, convex, lower-semicontinous function $R$.
 The level of regularization is controlled by the non-negative scalar factor $\beta$.
 A specific example for $K$ would be the gradient operator $\nabla$, e.g. approximated by finite forward 
@@ -49,27 +49,38 @@ differences in the discretized setting.
 Combining the gradient operator for $K$ with the mixed L2-L1 norm for $R$ leads to the well-known 
 Total Variation (TV) prior \cite{Rudin1992}.
 
-Unfortunately, many advanced smoothing priors aiming for edge-preservation 
-such as e.g. TV \cite{Rudin1992}, Total Generalized Variation (TGV) 
+The TV prior, as well as many other advanced smoothing priors aiming for edge-preservation 
+such as e.g. Total Generalized Variation (TGV) 
 \cite{Bredies2010}, Joint T(G)V \cite{Rigie2015,Knoll2016}
 Parallel Level Sets \cite{Ehrhardt2016a,Schramm2017} or directional Total Variation (DTV)
-\cite{Ehrhardt2016} use non-smooth functions for $R$ which permits the use of simple and efficient 
+\cite{Ehrhardt2016}, require the use of non-smooth functions for $R$ as instrumental building block.
+This prevents the use of simple and efficient 
 purely gradient-based optimization algorithms to solve \eqref{eq:primal}.
+
+
+%Unfortunately, many advanced smoothing priors aiming for edge-preservation 
+%such as e.g. TV \cite{Rudin1992}, Total Generalized Variation (TGV) 
+%\cite{Bredies2010}, Joint T(G)V \cite{Rigie2015,Knoll2016}
+%Parallel Level Sets \cite{Ehrhardt2016a,Schramm2017} or directional Total Variation (DTV)
+%\cite{Ehrhardt2016} use non-smooth functions for $R$ which permits the use of simple and efficient 
+%purely gradient-based optimization algorithms to solve \eqref{eq:primal}.
 
 \subsection*{PDHG and SPDHG for PET reconstruction with non-smooth priors}
 
-Using the fact that $D(x) = \sum_i D_i(x)$ and $R(x)$ are convex functions and thus 
+Using the fact that $D(x) = \sum_i D_i(x)$ and $\beta R(x)$ are convex functions and thus are
 equal to their convex biconjugates 
-$D^{**}(x) = \sup_y \langle Px + s, y \rangle - \sum_{i=1}^{m} D_i^*(y_i)$ 
-and $R^{**}(x) = \sup_w \langle Kx, w \rangle - R^*(w)$, respectively, and that 
-$(\beta R(x))^* = \beta R^*(w / \beta)$, we can rewrite \eqref{eq:primal} as the saddle point problem
+$D^{**}(Px + s) = \sup_y \langle Px + s, y \rangle - \sum_{i=1}^{m} D_i^*(y_i)$ 
+and $(\beta R)^{**}(Kx) = \sup_w \langle Kx, w \rangle - (\beta R)^*(w)$, respectively, 
+where $D_i^*$ and $(\beta R)^*$ are the convex conjugates,
+and that $(\beta R)^*(w) = \beta R^*(w / \beta)$, 
+we can rewrite \eqref{eq:primal} as the saddle point problem
 %
 \begin{equation}
 \argmin_{x\geq 0} \, \sup_{y,w} \,  \langle Px + s, y \rangle + \langle Kx, w \rangle - \sum_{i=1}^{m} D_i^*(y_i) - \beta R^*(w/\beta) ,
 \label{eq:saddle}
 \end{equation}
 %
-introducing the dual variables $y$ and $w$ and the convex dual of the Poisson log-likelihood given by
+introducing the dual variables $y$ and $w$, and the convex dual of the Poisson log-likelihood given as
 %
 \begin{equation}
 D_i^*(y_i) =
@@ -79,20 +90,22 @@ D_i^*(y_i) =
 \end{cases}
 \end{equation}
 %
-Problem \eqref{eq:saddle}, can be solved using the generic primal-dual hybrid gradient (PDHG) 
-algorithm by Chambolle and Pock \cite{Chambolle2011} even for non-smooth priors.
+Under mild assumptions on $R$, which hold for all of above-mentioned smoothing priors, Problem \eqref{eq:saddle} is equivalent to \eqref{eq:primal} and
+%Problem \eqref{eq:saddle}, 
+can be solved even for non-smooth priors using the generic primal-dual hybrid gradient (PDHG) 
+algorithm by Chambolle and Pock \cite{Chambolle2011}.
 PDHG is in iterative algorithm that requires the evaluation of the complete forward and adjoint operator
 in every update.
 The usage of the original PDHG algorithm to solve \eqref{eq:saddle} for real-world state-of-the-art
-TOF PET systems usually results in extremely long computation times, 
+TOF PET systems, however, usually results in extremely long computation times, 
 because the evaluation of $P$ and $P^T$
-for state-of-the-art TOF PET systems is computationally very demanding and 
+for state-of-the-art TOF PET systems is computationally very demanding, and 
 because several hundreds to thousands of updates are needed to obtain reasonable convergence.
 
 To overcome this limitation, Chambolle et al. published a stochastic extension of PDHG called SPDHG 
 for saddle point problems that are separable in the dual variable in 2018 \cite{Chambolle2018}.
 In contrast to PDHG, SPDHG has the advantage that the complete forward and adjoint operator are
-split into $n$ subsets and that in every update only a random subset of the forward
+split into $n$ subsets, and that, in every update, only a random subset of the forward
 and adjoint operator chosen according to a probability $p_k$ have to be evaluated.
 In \cite{Ehrhardt2019}, Ehrhardt et al. applied SPDHG to 3D non-TOF PET reconstruction with TV-like
 priors and showed that around 10 complete projections and back projections are sufficient 
@@ -129,7 +142,7 @@ setting $T = \min_{k=1,\ldots,n+1} T_i$ pointwise, and choosing $\rho<1$ and $\g
 \State \textbf{Initialize} $x(=0),y(=0),(w=0)$, $(S_i)_i,T,(p_i)_i$,
 \State $\overline{z} = z = P^T y + K^T w$
 \Repeat
-	\State $x = \proj_{\geq 0} (x - T \overline{z})$
+	\State $x \gets \proj_{\geq 0} (x - T \overline{z})$
 	\State Select $i \in \{ 1,\ldots,n+1\} $ randomly according to $(p_i)_i$
   \If{$i \leq n$}
 	\State $y_i^+ \gets \prox_{D_i^*}^{S_i} ( y_i + S_i  ( P_i x + s_i))$
@@ -200,7 +213,7 @@ As an example, for a typical 80\,s acquisition of a liver bed position in an FDG
 an injected dose of around 323\,MBq acquired 60\,min p.i. on a state-of-the-art TOF PET/CT scanner with
 20\,cm axial FOV, more than 94\% of the data (TOF sinogram) bins are empty.
 An example that demonstrates this extreme sparsity of TOF sinograms is shown in Fig.~\ref{fig:sparsity}.
-For shorter frames, as present e.g. in the early phase of dynamic scans or when respiratory
+For shorter frames, as present, e.g., in the early phase of dynamic scans or when respiratory
 or cardiac gating is used, the fraction of empty bins can even higher.
 
 Note that we expect that the sparsity of the TOF emission data of future PET systems will increase 
@@ -269,33 +282,45 @@ in line 2.
 However, this single back projection can be split into smaller chunks to also reduce
 the required memory of this step.
 
-At a first glance, the initialization of $y$ proposed above seems very artificial.
-But, if we construct a better initialization $y^0$ in a way such that it is the solution of our
-saddle point problem \eqref{eq:saddle} for a fixed initial $x^0$, it has to satisfy
-%
+While at a first glance, the initialization of $y$ proposed above might seem artificial, in fact it corresponds directly choosing the optimal value for those $y_i$ where $d_i=0$. To see this, note that an optimal solution $(\hat{x},\hat{y},\hat{w})$ of \eqref{eq:saddle}  in particular needs to satisfy the optimality condition
 \begin{equation}
-\langle P x^0, y^0 \rangle - D^*(y^0) = D(Px^0 + s) \ ,
+P \hat{x} \in  \partial D^*(\hat{y}),
 \end{equation}
-%
-which is the case when
-%
-\begin{equation}
-y^0 \in \partial D(Px + s) |_{x^0} \ .
-\end{equation}
-%
-Since $D$ (the negative Poisson log likelihood) is differentiable, this leads
+where $\partial D^*$ is the subdifferential of $D^*$. Since this is equivalent to $\hat{y} \in  \partial D(P \hat{x})$, and since $D$ (the negative Poisson log likelihood) is differentiable and $P\hat{x}$, this leads
 to the condition
 \begin{equation}
-y^0 = 1 - \frac{d}{Px^0 + s} \ ,
+\hat{y} = 1 - \frac{d}{P\hat{x} + s} \ ,
 \label{eq:yinit}
 \end{equation}
-where the division is to be understood point-wise.
-We see that under this condition, $y^0$ is indeed one in bins where $d$ is zero,
-irrespective of the choice of $x^0$.
+where the division is to be understood point-wise. With this we see that the proposed initialization corresponds to right away choosing the optimal value for $y_i $ where $d_i=0$, which is known explicitly in this case.
+
+%At a first glance, the initialization of $y$ proposed above seems very artificial.
+%But, if we construct a better initialization $y^0$ in a way such that it is the solution of our
+%saddle point problem \eqref{eq:saddle} for a fixed initial $x^0$, it has to satisfy
+%%
+%\begin{equation}
+%\langle P x^0, y^0 \rangle - D^*(y^0) = D(Px^0 + s) \ ,
+%\end{equation}
+%%
+%which is the case when
+%%
+%\begin{equation}
+%y^0 \in \partial D(Px + s) |_{x^0} \ .
+%\end{equation}
+%%
+%Since $D$ (the negative Poisson log likelihood) is differentiable, this leads
+%to the condition
+%\begin{equation}
+%y^0 = 1 - \frac{d}{Px^0 + s} \ ,
+%\label{eq:yinit}
+%\end{equation}
+%where the division is to be understood point-wise.
+%We see that under this condition, $y^0$ is indeed one in bins where $d$ is zero,
+%irrespective of the choice of $x^0$.
 As argued above, this improved initialization of $y$ naturally reduces the 
 memory requirements of SPDHG and also improves the speed of convergence when a
 ``warm start'' for $x^0$ is chosen. 
-The latter can be e.g. achieved by applying one iteration
+The latter can, e.g., be achieved by applying one iteration
 and a reasonable amount of subsets of the EM-TV algorithm \cite{Sawatzky2008, Burger2008}.
 Since in EM-TV every update is split into a classical EM step followed by a weighted denoising
 optimization problem in image space, EM-TV can be used in listmode as well by simply
@@ -307,17 +332,22 @@ As indicated by the name, emission data in listmode format are a chronological l
 events $e \in N$, where each event is characterized by a small set of (integer) numbers 
 (e.g. the number of the two detectors, the discretized TOF difference, and a time stamp).
 To process the listmode data during reconstruction without binning it into a sinogram,
-we introduce the listmode forward operator $P_N$ mapping the image data $x$ to a 
+we introduce the listmode forward operator $P^{LM}_N$\todo{without $N$?} mapping the image data $x$ to a 
 data-vector of dimension $|N|$ via \[ (P^{LM}_N x)_e  = (Px)_{i_e} , \text{ for each }e \in N,\]
 where $i_e$ is the sinogram bin in which event $e$ was detected.
 
-Re-writing the gradient of the negative Poisson log likihood using listmode data and the
-listmode operators is straight forward such that any gradient-based
+Re-writing the gradient of the negative Poisson log likelihood using listmode data and the
+listmode operators is straight forward, such that any gradient-based
 PET reconstruction algorithm can be easily adapted to listmode data.
-However, for SPDHG - which has the advantage of being able to handle non-smooth priors and
-has guaranteed convergence, an adaptation to listmode data is more complicated.
-Our proposed listmode SPDHG algorithm (LM-SPDHG) solves those complications and is shown in 
-algorithm~\ref{alg:lmspdhg}.
+
+For a Bayesian approach with prior $R(K \cdot)$ as in \eqref{eq:primal} this is less immediate, but we can
+show that indeed \eqref{eq:primal} can be equivalently re-written to a minimization problem involving only the listmode forward operator that is of the same form as \eqref{eq:primal}. This allows us to extend the SPDHG algorithm for listmode data and yields the algorithm as shown in algorithm~\ref{alg:lmspdhg}.\todo{großschreibung bei referenzen?}
+
+
+%However, for SPDHG - which has the advantage of being able to handle non-smooth priors and
+%has guaranteed convergence, an adaptation to listmode data is more complicated.
+%Our proposed listmode SPDHG algorithm (LM-SPDHG) solves those complications and is shown in 
+%algorithm~\ref{alg:lmspdhg}.
 
 \begin{algorithm}[t]
 \begin{algorithmic}[1]
@@ -329,7 +359,7 @@ algorithm~\ref{alg:lmspdhg}.
 \State \textbf{Preprocessing} $\overline{z} = z = {P^T} 1 - {P^{LM}}^T (y_N-1)/\mu_N + K^T w$ %(see \eqref{eq:zinit_lm} and text)
 \State \textbf{Split} lists $N$, $s_N$ and $y_N$ into $n$ sublists $N_i$, $y_{N_i}$ and $s_{N_i}$
 \Repeat
-	\State $x = \proj_{\geq 0} (x - T \overline{z})$
+	\State $x \gets \proj_{\geq 0} (x - T \overline{z})$
 	\State Select $i \in \{1,\ldots,n+1\}$ randomly according to $(p_i)_i$
   \If{$i \leq n$}
 	  \State $y_{N_i}^+ \gets \prox_{D^*}^{S_i} \left( y_{N_i} + S_i \left(P^{LM}_{N_i} x + s_{N_i} \right) \right)$
@@ -352,12 +382,12 @@ algorithm~\ref{alg:lmspdhg}.
 
 
 In contrast to the original SPDHG using binned data (sinograms), the forward and adjoint
-PET operators have been replaced by their listmode equivalants as defined above (lines 11 and 12).
-Moreover, the dual variable for the data fidelity is replaced by the list $y_N$ which has the
+PET operators have been replaced by their listmode equivalents as defined above (lines 11 and 12).
+Moreover, the dual variable for the data fidelity is replaced by the list $y_N$, which has the
 same length as the measured event list $N$.
 If an event with a fixed sinogram bin $i_e$ occurs more than once in the event list
 $N$, it is also forward and back-projected multiple times in steps 11 and 12.
-To compensate for this fact, we have to divide by the event count $\mu_e$ before back projection
+To compensate for this fact, the algorithm divides by the event count $\mu_e$ before back projection
 in line 12.
 Note that (i) as shown in Fig.~\ref{fig:sparsity} in most standard acquisitions the event count
 of most events is 1 and that (ii) calculating the event count $\mu_e$ which is a prerequisit
@@ -593,10 +623,10 @@ with respect to $x^*$
 \text{PSNR}(x) = 20\,\log_{10} \left( \|x^*\|_\infty/\sqrt{\text{MSE}(x,x^*)} \right) \ ,
 \end{equation}
 where MSE is the mean squared error.
-The reference solution obtained by running the deterministic PDHG (SPDHG without subsets)
+The reference solution was obtained by running the deterministic PDHG (SPDHG without subsets)
 for 20000 iterations.
 Since running PDHG with 20000 iterations using realistic 3D TOF PET data takes a very long 
-time (ca. 250\,h), all numerical convergence experiments were performed using simulated 2D TOF PET data.
+time (approx. 250\,h), all numerical convergence experiments were performed using simulated 2D TOF PET data.
 A 2D software brain phantom with a gray to white matter contrast of 4:1 was created
 based on the brainweb phantom \cite{Collins1998} and used to generate simulated 2D TOF data 
 including the effects of limited spatial resolution, attenuation and a flat contamination mimicking 
@@ -635,7 +665,7 @@ accelerated PDHG algorithm \cite{Chambolle2011} using 20 iterations.
 In all SPDHG and LM-SPDHG reconstructios, the step size ratio $\gamma$ was set 
 to $3 / \|x^0\|_\infty$ and $\rho$ was set to 0.999.
 When splitting the data into $n$ subsets, the vector of probabilities determining 
-whether an update with respect to a subset of the data of with respect to the prior is 
+whether an update with respect to a subset of the data or with respect to the prior is 
 done was set to 
 %
 \begin{equation}
@@ -716,7 +746,7 @@ This also holds for different count levels and for the structural DTV priors
 as shown in subfigures (b) and (c) and for different levels of regularization as shown
 in supplementary Figs.~1 and 2.
 For the example with the DTV prior shown in subfigure (c), the convergence in terms of
-PSNR seems to be even slightly faster with LM-SPDHG which can be also
+PSNR seems to be even slightly faster with LM-SPDHG, which can be also
 seen in the difference images with respect to the reference reconstruction.
 
 \subsection*{Convergence of LM-SPDHG compared to listmode EM-TV}
@@ -756,7 +786,7 @@ of 3 faster compared to sinogram-based processing which substantially speeds up 
 Note that in our proof-of-concept implementation, the effective speed up is less than a 
 factor of 3 since we did not implement the gradient operators and proximal mappings on a GPU yet
 which leads to overhead due to gradient-based updates.
-However, we expect once properly implemented on GPUs this overhead will be small compared to
+However, we expect that, once properly implemented on GPUs, this overhead will be small compared to
 the time needed to calculate the actual TOF projections.
 
 
@@ -764,7 +794,7 @@ the time needed to calculate the actual TOF projections.
 
 \section{Discussion}
 
-The results of our numerical experiments presented in this work demonstrate the speed of 
+The results of our numerical experiments presented in this work demonstrate that the speed of 
 convergence of LM-SPDHG is essentially the same as the one of the original SPDHG using
 sinograms.
 For almost all clinical acquisitions with state-of-the-art TOF PET scanners resulting in extremely
@@ -791,7 +821,7 @@ as proximal operator of the convex dual of the prior can be efficiently calculat
 e.g. the case for prior penalizing the squared L2 norm or Huber TV.
 However, for smooth priors the speed of convergence of (LM)-SPDHG should be benchmarked against
 other stochastic gradient-based optimization techniques such as the stochastic variance reduced gradient (SVRG) \cite{Johnson2013} or SAGA \cite{Defazio2014} which is beyond the scope of this work.
-We also note that in this work we used scalar spatially-invarient prior strength $\beta$ which
+We also note that in this work we a used scalar spatially-invariant prior strength $\beta$ which
 leads to a spatially-variant local pertubation response (LPR). 
 For pratical applications where a spatially-invariant is desirable, a spatially-varient prior 
 strength should be used as described in \cite{Ahn2008,Tsai2020}.
