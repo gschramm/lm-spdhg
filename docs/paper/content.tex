@@ -275,7 +275,7 @@ Consequently, if we initialize all bins of $y$ where the data sinogram $d$ equal
 these bins of $y$ remain $1$ during all iterations. 
 This in turn means that these bins do not contribute to the update of $\delta z$, $z$, $\bar{z}$, 
 and $x$, since only the difference between
-$y$ and $y^+$ is backprojected in line 8 of algorithm~\ref{alg:spdhg} meaning that all
+$y$ and $y^+$ is backprojected in line 8 of Algorithm~\ref{alg:spdhg} meaning that all
 bins without data do not have to be kept in memory during the iteration loop (lines 3 until 17). 
 The only place where the empty data bins contribute is the initialization of $z$ and $\bar{z}$
 in line 2.
@@ -332,22 +332,25 @@ As indicated by the name, emission data in listmode format are a chronological l
 events $e \in N$, where each event is characterized by a small set of (integer) numbers 
 (e.g. the number of the two detectors, the discretized TOF difference, and a time stamp).
 To process the listmode data during reconstruction without binning it into a sinogram,
-we introduce the listmode forward operator $P^{LM}_N$\todo{without $N$?} mapping the image data $x$ to a 
+we introduce the listmode forward operator $P^{LM}_N$ mapping the image data $x$ to a 
 data-vector of dimension $|N|$ via \[ (P^{LM}_N x)_e  = (Px)_{i_e} , \text{ for each }e \in N,\]
 where $i_e$ is the sinogram bin in which event $e$ was detected.
 
 Re-writing the gradient of the negative Poisson log likelihood using listmode data and the
-listmode operators is straight forward, such that any gradient-based
-PET reconstruction algorithm can be easily adapted to listmode data.
+listmode operators is straight forward, such that any gradient-based PET reconstruction algorithm 
+can be easily adapted to listmode data.
 
-For a Bayesian approach with prior $R(K \cdot)$ as in \eqref{eq:primal} this is less immediate, but we can
-show that indeed \eqref{eq:primal} can be equivalently re-written to a minimization problem involving only the listmode forward operator that is of the same form as \eqref{eq:primal}. This allows us to extend the SPDHG algorithm for listmode data and yields the algorithm as shown in algorithm~\ref{alg:lmspdhg}.\todo{großschreibung bei referenzen?}
+For a Bayesian approach with prior $R(K \cdot)$ as in \eqref{eq:primal} this is less immediate, 
+but we can show that indeed \eqref{eq:primal} can be equivalently re-written to a minimization 
+problem involving only the listmode forward operator that is of the same form as \eqref{eq:primal}. 
+This allows us to extend the SPDHG algorithm for listmode data and yields the algorithm as shown 
+in Algorithm~\ref{alg:lmspdhg}.
 
 
 %However, for SPDHG - which has the advantage of being able to handle non-smooth priors and
 %has guaranteed convergence, an adaptation to listmode data is more complicated.
 %Our proposed listmode SPDHG algorithm (LM-SPDHG) solves those complications and is shown in 
-%algorithm~\ref{alg:lmspdhg}.
+%Algorithm~\ref{alg:lmspdhg}.
 
 \begin{algorithm}[t]
 \begin{algorithmic}[1]
@@ -409,7 +412,7 @@ S_k = \gamma \, \text{diag}(\frac{\rho}{P^{LM}_{N_k} 1} )\qquad  T_k = n\,\gamma
 \label{eq:lm_stepsizes}
 \end{equation}
 % 
-At a first glance, the initialization of $z$ and $\bar{z}$ in step 5 of algorithm~\ref{alg:lmspdhg} 
+At a first glance, the initialization of $z$ and $\bar{z}$ in step 5 of Algorithm~\ref{alg:lmspdhg} 
 might look odd.
 However, the first part of the expression is equivalent to 
 applying the adjoint sinogram operator $P^T$ to a sinogram initialized according to \eqref{eq:yinit}.
@@ -420,7 +423,7 @@ However, note that this ``sensitivity image`` is also needed in the calculation 
 $T_k$ and also in the listmode EM-TV algorithm that we use to initialize $x$.
 Hence, we recommend pre-computing the sensitivity image ($P^T 1$) and storing it in memory.
 
-In summary, compared to SPDHG, LM-SPDHG as shown in algorithm~\ref{alg:lmspdhg} has the advantage
+In summary, compared to SPDHG, LM-SPDHG as shown in Algorithm~\ref{alg:lmspdhg} has the advantage
 that (i) only lists ($N$, $y_{N}$, $s_N$, $\mu_N$) instead of complete sinograms 
 ($y$ and $d$) have to be 
 stored in memory and (ii) all projections and back projection can be performed using listmode
@@ -657,7 +660,7 @@ for two different count levels (5e5 and 5e6 prompt counts).
 \label{alg:emtv}
 \end{algorithm}
 
-Unless stated otherwise, we always applied the EM-TV algorithm, summarized in algorithm~\ref{alg:emtv}, 
+Unless stated otherwise, we always applied the EM-TV algorithm, summarized in Algorithm~\ref{alg:emtv}, 
 using 1 iteration and 28 subsets to initialize $x^0$ and $y^0$ according to \eqref{eq:yinit}.
 To solve the weighted denoising problem in step 8 of the EM-TV algorithm, we applied the
 accelerated PDHG algorithm \cite{Chambolle2011} using 20 iterations.
