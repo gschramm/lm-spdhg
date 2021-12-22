@@ -30,7 +30,7 @@ function that is being optimized.
 In general, we can formulate the resulting optimization problem for PET image reconstruction as
 %
 \begin{equation}
-\argmin _{x\geq 0} \sum_{i=1}^{m} \underbrace{(Px + s)_i -  d_i \log \left( (Px + s)_i \right)}_{D_i(x)} + \, \beta R(Kx),
+\argmin _{x\geq 0} \sum_{i=1}^{m} \underbrace{(Px + s)_i -  d_i \log \left( (Px + s)_i \right)}_{D_i((Px+s)_i)} + \, \beta R(Kx),
 \label{eq:primal}
 \end{equation}
 %
@@ -89,6 +89,7 @@ D_i^*(y_i) =
 \infty & \text{else} \ .
 \end{cases}
 \end{equation}
+for $d_i >0$ and $D_i^*(y_i) = 0$ if $y_i \leq 1$ and $D_i^*(y_i) = \infty$ if $y_i >1$ in the other case.
 %
 Under mild assumptions on $R$, which hold for all of above-mentioned smoothing priors, Problem \eqref{eq:saddle} is equivalent to \eqref{eq:primal} and
 %Problem \eqref{eq:saddle}, 
