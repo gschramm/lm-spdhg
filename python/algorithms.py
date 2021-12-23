@@ -5,13 +5,10 @@ from utils import count_event_multiplicity
 
 def spdhg_lm(events, attn_list, sens_list, contam_list, sens_img,
              proj, niter, nsubsets, 
-             x0 = None, fwhm = 0, gamma = 1., rho = 0.999, verbose = False, 
+             x0 = None, fwhm = 0, gamma = 1., rho = 0.999, rho_grad = 0.999, verbose = False, 
              callback = None, subset_callback = None,
              callback_kwargs = None, subset_callback_kwargs = None,
              grad_norm = None, grad_operator = None, beta = 0):
-
-  if not isinstance(gamma, (list,tuple,np.ndarray)):
-    gamma = np.full(niter, gamma, dtype = np.float32)
 
   # count the "multiplicity" of every event in the list
   # if an event occurs n times in the list of events, the multiplicity is n
@@ -57,8 +54,8 @@ def spdhg_lm(events, attn_list, sens_list, contam_list, sens_img,
 
   # calculate S for the gradient operator
   if p_g > 0:
-    S_g = rho/grad_op_norm
-    T_g = p_g*rho/grad_op_norm
+    S_g = gamma*rho_grad/grad_op_norm
+    T_g = p_g*rho_grad/(gamma*grad_op_norm)
 
   # calculate the "step sizes" S_i for the PET fwd operator
   S_i = []
@@ -70,40 +67,45 @@ def spdhg_lm(events, attn_list, sens_list, contam_list, sens_img,
     # clip inf values
     tmp = pet_fwd_model_lm(ones_img, proj, events[ss,:], attn_list[ss], sens_list[ss], fwhm = fwhm)
     tmp = np.clip(tmp, tmp[tmp > 0].min(), None)
-    S_i.append(rho/tmp)
+    S_i.append(gamma*rho/tmp)
 
   # calculate the step size T
   # sens img is back_model(1)
   tmp = sens_img / nsubsets
-  T = p_p*rho/tmp
+  T = np.divide(p_p*rho, gamma*tmp, out = np.zeros_like(tmp), where = (tmp > 0))
 
   if p_g > 0:
     T = np.clip(T, None, T_g)
 
   #--------------------------------------------------------------------------------------------
   # SPDHG iterations
+
+  zero_sens_inds = np.where(sens_img == 0)
   
   for it in range(niter):
     subset_sequence = np.random.permutation(np.arange(int(nsubsets/(1-p_g))))
   
     for iss in range(subset_sequence.shape[0]):
-      
+      x = np.clip(x - T*zbar, 0, None)
+
       # select a random subset
       i = subset_sequence[iss]
-  
+
+      x[zero_sens_inds] = 0
+      zbar[zero_sens_inds] = 0
+      z[zero_sens_inds] = 0
+
       if i < nsubsets:
         # PET subset update
         print(f'iteration {it + 1} step {iss} subset {i+1}')
   
         ss = slice(i,None,nsubsets)
   
-        x = np.clip(x - T*zbar/gamma[it], 0, None)
-  
-        y_plus = y[ss] + gamma[it]*S_i[i]*(pet_fwd_model_lm(x, proj, events[ss,:], attn_list[ss], sens_list[ss], 
+        y_plus = y[ss] + S_i[i]*(pet_fwd_model_lm(x, proj, events[ss,:], attn_list[ss], sens_list[ss], 
                                                   fwhm = fwhm) + contam_list[ss])
   
         # apply the prox for the dual of the poisson logL
-        y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*gamma[it]*S_i[i]*mu[ss]))
+        y_plus = 0.5*(y_plus + 1 - np.sqrt((y_plus - 1)**2 + 4*S_i[i]*mu[ss]))
   
         dz = pet_back_model_lm((y_plus - y[ss])/mu[ss], proj, events[ss,:], 
                                attn_list[ss], sens_list[ss], fwhm = fwhm)
@@ -114,12 +116,13 @@ def spdhg_lm(events, attn_list, sens_list, contam_list, sens_img,
         zbar = z + dz/p_p
       else:
         print(f'iteration {it + 1} step {iss} gradient update')
-        y_grad_plus = (y_grad + gamma[it]*S_g*grad_operator.fwd(x))
+        y_grad_plus = (y_grad + S_g*grad_operator.fwd(x))
 
         # apply the prox for the gradient norm
-        y_grad_plus = beta*grad_norm.prox_convex_dual(y_grad_plus/beta, sigma = gamma[it]*S_g/beta)
+        y_grad_plus = beta*grad_norm.prox_convex_dual(y_grad_plus/beta, sigma = S_g/beta)
 
         dz = grad_operator.adjoint(y_grad_plus - y_grad)
+        dz[zero_sens_inds] = 0
   
         # update variables
         z = z + dz
