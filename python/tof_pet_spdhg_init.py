@@ -1,5 +1,3 @@
-#TODO: - prox for dual of L1 and L2 form
-
 import os
 import matplotlib.pyplot as plt
 import pyparallelproj as ppp
@@ -24,9 +22,10 @@ parser.add_argument('--nsubsets',     help = 'number of subsets',         defaul
 parser.add_argument('--fwhm_mm',      help = 'psf modeling FWHM mm',      default = 4.5, type = float)
 parser.add_argument('--fwhm_data_mm', help = 'psf for data FWHM mm',      default = 4.5, type = float)
 parser.add_argument('--phantom',      help = 'phantom to use',            default = 'brain2d')
-parser.add_argument('--seed',         help = 'seed for random generator', default = 1, type = int)
+parser.add_argument('--seed',         help = 'seed for random generator', default = 1,    type = int)
 parser.add_argument('--beta',         help = 'TV weight',                 default = 3e-2, type = float)
 parser.add_argument('--prior',        help = 'prior',                     default = 'TV', choices = ['TV','DTV'])
+parser.add_argument('--rel_gamma',    help = 'relative step size ratio',  default = 3,    type = float)
 args = parser.parse_args()
 
 #---------------------------------------------------------------------------------
@@ -40,6 +39,7 @@ phantom       = args.phantom
 seed          = args.seed
 beta          = args.beta
 prior         = args.prior
+rel_gamma     = args.rel_gamma
 
 #---------------------------------------------------------------------------------
 
@@ -219,28 +219,39 @@ else:
 
 #-----------------------------------------------------------------------------------------------------
 
-y_init_grad = grad_norm.beta*np.sign(grad_operator.fwd(xinit))
+gamma = rel_gamma / gaussian_filter(xinit.squeeze(),3).max()
 
-gamma = 3 / gaussian_filter(xinit.squeeze(),3).max()
-
-cost_spdhg_sino = np.zeros((2,niter))
-psnr_spdhg_sino = np.zeros((2,niter))
+cost_spdhg_sino = np.zeros((4,niter))
+psnr_spdhg_sino = np.zeros((4,niter))
 
 # sinogram SPDHG
 proj.init_subsets(nsubsets)
 cbs1 = {'cost':cost_spdhg_sino[0,:],'psnr':psnr_spdhg_sino[0,:],'xref':ref_recon, 'x_early':np.zeros(img.shape)}
 cbs2 = {'cost':cost_spdhg_sino[1,:],'psnr':psnr_spdhg_sino[1,:],'xref':ref_recon, 'x_early':np.zeros(img.shape)}
+cbs3 = {'cost':cost_spdhg_sino[2,:],'psnr':psnr_spdhg_sino[2,:],'xref':ref_recon, 'x_early':np.zeros(img.shape)}
+cbs4 = {'cost':cost_spdhg_sino[3,:],'psnr':psnr_spdhg_sino[3,:],'xref':ref_recon, 'x_early':np.zeros(img.shape)}
 
 x1 = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
            fwhm = fwhm, gamma = gamma, verbose = True, 
            callback = _cb, callback_kwargs = cbs1,
-           grad_operator = grad_operator, grad_norm = grad_norm, beta = beta)
+           grad_operator = grad_operator, grad_norm = grad_norm, beta = beta, precond = False)
 
 x2 = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
-           fwhm = fwhm, gamma = gamma, verbose = True, 
+           fwhm = fwhm, gamma = gamma, verbose = True,
            xstart = xinit, ystart = yinit,
            callback = _cb, callback_kwargs = cbs2,
-           grad_operator = grad_operator, grad_norm = grad_norm, beta = beta)
+           grad_operator = grad_operator, grad_norm = grad_norm, beta = beta, precond = False)
+
+x3 = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
+           fwhm = fwhm, gamma = gamma, verbose = True, 
+           callback = _cb, callback_kwargs = cbs3,
+           grad_operator = grad_operator, grad_norm = grad_norm, beta = beta, precond = True)
+
+x4 = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
+           fwhm = fwhm, gamma = gamma, verbose = True,
+           xstart = xinit, ystart = yinit,
+           callback = _cb, callback_kwargs = cbs4,
+           grad_operator = grad_operator, grad_norm = grad_norm, beta = beta, precond = True)
 
 #----------------------------------------------------------------------------------------
 
@@ -255,14 +266,18 @@ title_kwargs = {'fontweight':'bold', 'fontsize':'medium'}
 
 fig, ax = plt.subplots(2,4, figsize = (7,5))
 
-ax[0,0].semilogy(n, (cost_spdhg_sino[0,...] - c_ref)/(c0 - c_ref), label = 'cold start')
-ax[0,0].semilogy(n, (cost_spdhg_sino[1,...] - c_ref)/(c0 - c_ref), label = 'warm start')
+ax[0,0].semilogy(n, (cost_spdhg_sino[0,...] - c_ref)/(c0 - c_ref), label = 'cold start', color = 'tab:blue')
+ax[0,0].semilogy(n, (cost_spdhg_sino[1,...] - c_ref)/(c0 - c_ref), label = 'warm start', color = 'tab:orange')
+ax[0,0].semilogy(n, (cost_spdhg_sino[2,...] - c_ref)/(c0 - c_ref), label = 'cold start, pc', color = 'tab:blue', ls = ':')
+ax[0,0].semilogy(n, (cost_spdhg_sino[3,...] - c_ref)/(c0 - c_ref), label = 'warm start, pc', color = 'tab:orange', ls = ':')
 ax[0,0].set_xlabel('iteration')
 ax[0,0].set_ylabel('relative cost')
 ax[0,0].grid(ls = ':')
       
-ax[1,0].plot(n, psnr_spdhg_sino[0,...], label = 'cold start')
-ax[1,0].plot(n, psnr_spdhg_sino[1,...], label = 'warm start')
+ax[1,0].plot(n, psnr_spdhg_sino[0,...], label = 'cold start', color = 'tab:blue')
+ax[1,0].plot(n, psnr_spdhg_sino[1,...], label = 'warm start', color = 'tab:orange')
+ax[1,0].plot(n, psnr_spdhg_sino[2,...], label = 'cold start, pc', color = 'tab:blue', ls = ':')
+ax[1,0].plot(n, psnr_spdhg_sino[3,...], label = 'warm start, pc', color = 'tab:orange', ls = ':')
 ax[1,0].set_xlabel('iteration')
 ax[1,0].set_ylabel('PSNR to reference')
 ax[0,0].legend(loc = 0)
@@ -290,5 +305,6 @@ for axx in ax[:,1:].ravel():
   axx.set_axis_off()
 
 fig.tight_layout()
+fig.savefig(f'SPDHG_init_{counts:.1E}_{nsubsets}_{beta:.1E}_{rel_gamma:.1E}.png')
 #fig.savefig('SPDHG_cold_vs_warm_start.png')
 fig.show()
