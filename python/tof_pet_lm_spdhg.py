@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import pyparallelproj as ppp
 from pyparallelproj.phantoms import ellipse2d_phantom, brain2d_phantom
 from pyparallelproj.utils import GradientOperator, GradientNorm
-from pyparallelproj.algorithms import spdhg, osem_lm_emtv
+from pyparallelproj.algorithms import spdhg, pdhg, osem_lm_emtv
 
 from algorithms import spdhg_lm
 from utils import  plot_lm_spdhg_results
@@ -18,8 +18,8 @@ import argparse
 # parse the command line
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--counts',       help = 'counts to simulate',        default = 1e6, type = float)
-parser.add_argument('--niter',        help = 'number of iterations',      default = 100, type = int)
+parser.add_argument('--counts',       help = 'counts to simulate',        default = 3e5, type = float)
+parser.add_argument('--niter',        help = 'number of iterations',      default = 200, type = int)
 parser.add_argument('--fwhm_mm',      help = 'psf modeling FWHM mm',      default = 4.5, type = float)
 parser.add_argument('--fwhm_data_mm', help = 'psf for data FWHM mm',      default = 4.5, type = float)
 parser.add_argument('--phantom',      help = 'phantom to use',            default = 'brain2d')
@@ -214,11 +214,11 @@ else:
 
   # do long PDHG recon
   cost_ref  = np.zeros(niter_ref)
-  ref_recon = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter_ref,
-                    gamma = 3./img.max(), fwhm = fwhm, verbose = True, 
-                    xstart = xinit, ystart = yinit,
-                    callback = _cb, callback_kwargs = {'cost': cost_ref},
-                    grad_operator = grad_operator, grad_norm = grad_norm, beta = beta)
+  ref_recon = pdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter_ref,
+                   gamma = 3./img.max(), fwhm = fwhm, verbose = True, 
+                   xstart = xinit, ystart = yinit,
+                   callback = _cb, callback_kwargs = {'cost': cost_ref},
+                   grad_operator = grad_operator, grad_norm = grad_norm, beta = beta)
 
 
   proj.init_subsets(ns)
