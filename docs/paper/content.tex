@@ -113,7 +113,15 @@ priors and showed that around 10 complete projections and back projections are s
 to obtain reasonable convergence using SPDHG with 252 subsets.
 Moreover, the authors also demonstrated that preconditioning further accelerates convergence.
 The resulting SPDHG algorithm to solve \eqref{eq:saddle} is summarized in Algorithm \ref{alg:spdhg},
-where the proximal operator of the convex conjugate of the negative Poisson log-likehood $D_i^*$ 
+where the proximal operator for a convex function $f$ using the weighted norm 
+$\| \cdot \|_M^2 = \langle M^{-1} \cdot, \cdot \rangle$ induced by a symmetric and positive matrix $M$ 
+is defined as
+%
+\begin{equation}
+\prox_{f}^{M}(y) = \argmin_v \left( \frac{1}{2} \| v - y  \|_M^2 + f(v) \right) \ .
+\end{equation}
+%
+For the convex conjugate of the negative Poisson log-likehood $D_i^*$, this proximal operator
 can be calculated point-wise and is given by
 %
 \begin{equation}
