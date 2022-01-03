@@ -27,6 +27,7 @@ parser.add_argument('--seed',         help = 'seed for random generator', defaul
 parser.add_argument('--beta',         help = 'TV weight',                 default = 3e-2, type = float)
 parser.add_argument('--prior',        help = 'prior',                     default = 'TV', choices = ['TV','DTV'])
 parser.add_argument('--gam',          help = 'step size ratio',           default = 3., type = float)
+parser.add_argument('--rho',          help = 'step size',                 default = 0.999, type = float)
 args = parser.parse_args()
 
 #---------------------------------------------------------------------------------
@@ -40,6 +41,7 @@ seed          = args.seed
 beta          = args.beta
 prior         = args.prior
 gam           = args.gam
+rho           = args.rho
 
 #---------------------------------------------------------------------------------
 
@@ -224,10 +226,11 @@ else:
   proj.init_subsets(ns)
   np.savez(ref_fname, ref_recon = ref_recon, cost_ref = cost_ref)
 
+base_str = f'{base_str}_rho_{rho:.1f}'
 
 #-----------------------------------------------------------------------------------------------------
 
-nsubsets = [56,112,224]
+nsubsets = [28,56,112,224]
 gamma    = gam / gaussian_filter(xinit.squeeze(),2).max()
 
 cost_spdhg_sino = np.zeros((len(nsubsets),niter))
@@ -249,7 +252,7 @@ for iss, nss in enumerate(nsubsets):
          'x_early':x_sino_early[iss,...]}
   x_sino[iss,...] = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
                           fwhm = fwhm, gamma = gamma, verbose = True, 
-                          xstart = xinit, ystart = yinit,
+                          xstart = xinit, ystart = yinit, rho = rho,
                           callback = _cb, callback_kwargs = cbs,
                           grad_operator = grad_operator, grad_norm = grad_norm, beta = beta)
 
@@ -257,7 +260,7 @@ for iss, nss in enumerate(nsubsets):
   cblm = {'cost':cost_spdhg_lm[iss,:],'psnr':psnr_spdhg_lm[iss,:],'xref':ref_recon,
           'x_early':x_lm_early[iss,...]}
   x_lm[iss,...] = spdhg_lm(events, attn_list, sens_list, contam_list, sens_img,
-                           proj, niter, nss, x0 = xinit,
+                           proj, niter, nss, x0 = xinit, rho = rho,
                            fwhm = fwhm, gamma = gamma, verbose = True, 
                            callback = _cb, callback_kwargs = cblm,
                            grad_operator = grad_operator, grad_norm = grad_norm, beta = beta)

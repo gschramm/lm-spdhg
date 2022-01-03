@@ -19,15 +19,16 @@ from time import time
 # parse the command line
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--counts',   help = 'counts to simulate',    default = 4e7, type = float)
-parser.add_argument('--niter',    help = 'number of iterations',  default = 100, type = int)
-parser.add_argument('--nsubsets', help = 'number of subsets',     default = 112, type = int)
-parser.add_argument('--fwhm_mm',  help = 'psf modeling FWHM mm',  default = 4.5, type = float)
+parser.add_argument('--counts',    help = 'counts to simulate',    default = 4e7, type = float)
+parser.add_argument('--niter',     help = 'number of iterations',  default = 100, type = int)
+parser.add_argument('--nsubsets',  help = 'number of subsets',     default = 112, type = int)
+parser.add_argument('--fwhm_mm',   help = 'psf modeling FWHM mm',  default = 4.5, type = float)
 parser.add_argument('--fwhm_data_mm',  help = 'psf for data FWHM mm',  default = 4.5, type = float)
-parser.add_argument('--seed',    help = 'seed for random generator', default = 1, type = int)
-parser.add_argument('--beta',  help = 'TV weight',  default = 3e-2, type = float)
-parser.add_argument('--prior',  help = 'prior',  default = 'TV', choices = ['TV','DTV'])
-parser.add_argument('--rel_gamma',  help = 'step size ratio',  default = 3, type = float)
+parser.add_argument('--seed',      help = 'seed for random generator', default = 1, type = int)
+parser.add_argument('--beta',      help = 'TV weight',  default = 3e-2, type = float)
+parser.add_argument('--prior',     help = 'prior',      default = 'TV', choices = ['TV','DTV'])
+parser.add_argument('--rel_gamma', help = 'step size ratio',  default = 3, type = float)
+parser.add_argument('--rho',       help = 'step size',        default = 0.999, type = float)
 args = parser.parse_args()
 
 #---------------------------------------------------------------------------------
@@ -41,6 +42,7 @@ seed          = args.seed
 beta          = args.beta
 prior         = args.prior
 rel_gamma     = args.rel_gamma
+rho           = args.rho
 
 #---------------------------------------------------------------------------------
 
@@ -48,7 +50,7 @@ np.random.seed(seed)
 
 # setup a scanner with one ring
 scanner = ppp.RegularPolygonPETScanner(ncrystals_per_module = np.array([16,9]),
-                                       nmodules             = np.array([28,3]))
+                                       nmodules             = np.array([28,4]))
 
 #-----------------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------
@@ -269,7 +271,7 @@ norm = gaussian_filter(xinit.squeeze(),3).max()
 #
 ##cbs_sino = {'x_early':[], 't':[]}
 ##x_sino = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
-##               fwhm = fwhm, gamma = rel_gamma / norm, verbose = True, 
+##               fwhm = fwhm, gamma = rel_gamma / norm, verbose = True, rho = rho, 
 ##               callback = _cb, callback_kwargs = cbs_sino,
 ##               xstart = xinit, ystart = yinit,
 ##               grad_operator = grad_operator, grad_norm = grad_norm, beta = beta)
@@ -279,7 +281,7 @@ norm = gaussian_filter(xinit.squeeze(),3).max()
 #cost_sino2 = np.zeros(niter)
 #cbs_sino2 = {'x_early':[], 't':[], 'it_early':[], 'cost' : cost_sino2}
 #x_sino2 = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
-#               fwhm = fwhm, gamma = rel_gamma / norm, verbose = True, 
+#               fwhm = fwhm, gamma = rel_gamma / norm, verbose = True, rho = rho,
 #               callback = _cb, callback_kwargs = cbs_sino2,
 #               grad_operator = grad_operator, grad_norm = grad_norm, beta = beta)
 
@@ -287,9 +289,10 @@ cost_lm = np.zeros(niter)
 cbs_lm = {'x_early':[], 't':[], 'it_early':[], 'cost' : cost_lm}
 x_lm = spdhg_lm(events, attn_list, sens_list, contam_list, sens_img,
                 proj, niter, nsubsets, x0 = xinit,
-                fwhm = fwhm, gamma = rel_gamma / norm, verbose = True, rho = 10,
+                fwhm = fwhm, gamma = rel_gamma / norm, verbose = True, rho = rho,
                 callback = _cb, callback_kwargs = cbs_lm,
                 grad_operator = grad_operator, grad_norm = grad_norm, beta = beta)
+
 
 cost_emtv = np.zeros(niter)
 cbs_emtv  = {'x_early':[], 't':[], 'it_early':[], 'cost' : cost_emtv}
@@ -299,10 +302,10 @@ x_emtv = osem_lm_emtv(events, attn_list, sens_list, contam_list, proj, sens_img,
                       fwhm = fwhm, verbose = True, beta = beta)
 
 
-#np.savez('debug.npz', x = x_lm, x_early = np.array(cbs_lm['x_early']), it = cbs_lm['it_early'], 
-#                      img = img, xinit = xinit, cost = cost_lm)
+np.savez('debug.npz', x = x_lm, x_early = np.array(cbs_lm['x_early']), it = cbs_lm['it_early'], 
+                      img = img, xinit = xinit, cost = cost_lm)
 
 #-----------------------------------------------------------------------------------------------------
-#
-#import pymirc.viewer as pv
-#vi = pv.ThreeAxisViewer(np.array(cbs_lm['x_early']), imshow_kwargs = {'vmax':15*counts/7e7,'vmin':0})
+
+import pymirc.viewer as pv
+vi = pv.ThreeAxisViewer(np.array(cbs_lm['x_early']), imshow_kwargs = {'vmax':15*counts/7e7,'vmin':0})
