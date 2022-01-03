@@ -4,10 +4,9 @@ import math
 
 from pathlib import Path
 
-mdir = Path('data/20211206_paper')
+mdir = Path('data/20220103_paper')
 
-#for ofile in list(mdir.glob('brain2d_counts_3.0E+05*_TV_*.npz')):
-for ofile in list(mdir.glob('brain2d_*.npz')):
+for ofile in list(mdir.glob('brain2d_*niter_100.npz')):
   print(ofile.name)
 
   data = np.load(ofile)
@@ -54,7 +53,10 @@ for ofile in list(mdir.glob('brain2d_*.npz')):
   fig, ax = plt.subplots(2,1, figsize = (2.5,4), sharex = True)
 
   for i, nss in enumerate(nsubsets):
-    print(f'{nss:3} {np.where(psnr_spdhg_lm[i,:] >= 40)[0].min():3}')
+    nth = -1
+    if psnr_spdhg_lm[i,:].max() >= 40:
+      nth = np.where(psnr_spdhg_lm[i,:] >= 40)[0].min()
+    print(f'{nss:3} {nth:3}')
 
     ax[0].semilogy(ni, (cost_spdhg_lm[i,:] - c_ref)/n, label = f'{nss:3} ss')
     ax[1].plot(ni, psnr_spdhg_lm[i,:]) 
@@ -65,8 +67,8 @@ for ofile in list(mdir.glob('brain2d_*.npz')):
   ax[1].set_xlabel('iteration')
   ax[1].set_ylabel('PSNR to reference')
   
-  ax[0].set_ylim(1e-4,0.5)
-  ax[1].set_ylim(28, 85)
+  ax[0].set_ylim(1e-5,0.5)
+  ax[1].set_ylim(28, 90)
   ax[0].legend(ncol = 1, fontsize = 'small', loc = 0)
   
   fig.tight_layout()

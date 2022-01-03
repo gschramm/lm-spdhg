@@ -4,10 +4,10 @@ import math
 
 from pathlib import Path
 
-mdir = Path('data/20211206_paper')
+mdir = Path('data/20220103_paper')
 nss = 224
 
-for ofile in mdir.glob('brain2d_*.npz'):
+for ofile in mdir.glob('brain2d_*niter_100.npz'):
   data = np.load(ofile)
   
   ref_recon       = data['ref_recon']

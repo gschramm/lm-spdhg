@@ -4,10 +4,10 @@ import math
 
 from pathlib import Path
 
-mdir = Path('data/20211206_paper')
+mdir = Path('data/20220103_paper')
 nss = 224
 
-for ofile in mdir.glob('brain2d_*.npz'):
+for ofile in mdir.glob('brain2d_*niter_100.npz'):
   data = np.load(ofile)
   
   ref_recon       = data['ref_recon']
@@ -65,8 +65,8 @@ for ofile in mdir.glob('brain2d_*.npz'):
   ax[1,0].set_xlabel('iteration')
   ax[1,0].set_ylabel('PSNR to reference')
   
-  ax[0,0].set_ylim(1e-4,0.5)
-  ax[1,0].set_ylim(28, 85)
+  ax[0,0].set_ylim(1e-5,0.5)
+  ax[1,0].set_ylim(28, 90)
   ax[1,0].legend()
   
   bfrac = 0.01
