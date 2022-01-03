@@ -16,16 +16,17 @@ import argparse
 # parse the command line
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--counts',       help = 'counts to simulate',        default = 1e6, type = float)
+parser.add_argument('--counts',       help = 'counts to simulate',        default = 3e5, type = float)
 parser.add_argument('--niter',        help = 'number of iterations',      default = 20,  type = int)
-parser.add_argument('--nsubsets',     help = 'number of subsets',         default = 112, type = int)
+parser.add_argument('--nsubsets',     help = 'number of subsets',         default = 224, type = int)
 parser.add_argument('--fwhm_mm',      help = 'psf modeling FWHM mm',      default = 4.5, type = float)
 parser.add_argument('--fwhm_data_mm', help = 'psf for data FWHM mm',      default = 4.5, type = float)
 parser.add_argument('--phantom',      help = 'phantom to use',            default = 'brain2d')
 parser.add_argument('--seed',         help = 'seed for random generator', default = 1,    type = int)
 parser.add_argument('--beta',         help = 'TV weight',                 default = 3e-2, type = float)
 parser.add_argument('--prior',        help = 'prior',                     default = 'TV', choices = ['TV','DTV'])
-parser.add_argument('--rel_gamma',    help = 'relative step size ratio',  default = 3,    type = float)
+parser.add_argument('--rel_gamma',    help = 'relative step size ratio',  default = 3,     type = float)
+parser.add_argument('--rho',          help = 'step size',                 default = 0.999, type = float)
 args = parser.parse_args()
 
 #---------------------------------------------------------------------------------
@@ -40,6 +41,7 @@ seed          = args.seed
 beta          = args.beta
 prior         = args.prior
 rel_gamma     = args.rel_gamma
+rho           = args.rho
 
 #---------------------------------------------------------------------------------
 
@@ -231,24 +233,24 @@ cbs2 = {'cost':cost_spdhg_sino[1,:],'psnr':psnr_spdhg_sino[1,:],'xref':ref_recon
 cbs3 = {'cost':cost_spdhg_sino[2,:],'psnr':psnr_spdhg_sino[2,:],'xref':ref_recon, 'x_early':np.zeros(img.shape)}
 cbs4 = {'cost':cost_spdhg_sino[3,:],'psnr':psnr_spdhg_sino[3,:],'xref':ref_recon, 'x_early':np.zeros(img.shape)}
 
-x1 = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
-           fwhm = fwhm, gamma = gamma, verbose = True, 
-           callback = _cb, callback_kwargs = cbs1,
-           grad_operator = grad_operator, grad_norm = grad_norm, beta = beta, precond = False)
-
-x2 = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
-           fwhm = fwhm, gamma = gamma, verbose = True,
-           xstart = xinit, ystart = yinit,
-           callback = _cb, callback_kwargs = cbs2,
-           grad_operator = grad_operator, grad_norm = grad_norm, beta = beta, precond = False)
+#x1 = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
+#           fwhm = fwhm, gamma = gamma, verbose = True, 
+#           callback = _cb, callback_kwargs = cbs1,
+#           grad_operator = grad_operator, grad_norm = grad_norm, beta = beta, precond = False)
+#
+#x2 = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
+#           fwhm = fwhm, gamma = gamma, verbose = True,
+#           xstart = xinit, ystart = yinit,
+#           callback = _cb, callback_kwargs = cbs2,
+#           grad_operator = grad_operator, grad_norm = grad_norm, beta = beta, precond = False)
 
 x3 = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
-           fwhm = fwhm, gamma = gamma, verbose = True, 
+           fwhm = fwhm, gamma = gamma, verbose = True, rho = rho,
            callback = _cb, callback_kwargs = cbs3,
            grad_operator = grad_operator, grad_norm = grad_norm, beta = beta, precond = True)
 
 x4 = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
-           fwhm = fwhm, gamma = gamma, verbose = True,
+           fwhm = fwhm, gamma = gamma, verbose = True, rho = rho,
            xstart = xinit, ystart = yinit,
            callback = _cb, callback_kwargs = cbs4,
            grad_operator = grad_operator, grad_norm = grad_norm, beta = beta, precond = True)
@@ -266,18 +268,18 @@ title_kwargs = {'fontweight':'bold', 'fontsize':'medium'}
 
 fig, ax = plt.subplots(2,4, figsize = (7,5))
 
-ax[0,0].semilogy(n, (cost_spdhg_sino[0,...] - c_ref)/(c0 - c_ref), label = 'cold start', color = 'tab:blue')
-ax[0,0].semilogy(n, (cost_spdhg_sino[1,...] - c_ref)/(c0 - c_ref), label = 'warm start', color = 'tab:orange')
-ax[0,0].semilogy(n, (cost_spdhg_sino[2,...] - c_ref)/(c0 - c_ref), label = 'cold start, pc', color = 'tab:blue', ls = ':')
-ax[0,0].semilogy(n, (cost_spdhg_sino[3,...] - c_ref)/(c0 - c_ref), label = 'warm start, pc', color = 'tab:orange', ls = ':')
+#ax[0,0].semilogy(n, (cost_spdhg_sino[0,...] - c_ref)/(c0 - c_ref), label = 'cold start', color = 'tab:blue')
+#ax[0,0].semilogy(n, (cost_spdhg_sino[1,...] - c_ref)/(c0 - c_ref), label = 'warm start', color = 'tab:orange')
+ax[0,0].semilogy(n, (cost_spdhg_sino[2,...] - c_ref)/(c0 - c_ref), label = 'cold start', color = 'tab:blue')
+ax[0,0].semilogy(n, (cost_spdhg_sino[3,...] - c_ref)/(c0 - c_ref), label = 'warm start', color = 'tab:orange')
 ax[0,0].set_xlabel('iteration')
 ax[0,0].set_ylabel('relative cost')
 ax[0,0].grid(ls = ':')
       
-ax[1,0].plot(n, psnr_spdhg_sino[0,...], label = 'cold start', color = 'tab:blue')
-ax[1,0].plot(n, psnr_spdhg_sino[1,...], label = 'warm start', color = 'tab:orange')
-ax[1,0].plot(n, psnr_spdhg_sino[2,...], label = 'cold start, pc', color = 'tab:blue', ls = ':')
-ax[1,0].plot(n, psnr_spdhg_sino[3,...], label = 'warm start, pc', color = 'tab:orange', ls = ':')
+#ax[1,0].plot(n, psnr_spdhg_sino[0,...], label = 'cold start', color = 'tab:blue')
+#ax[1,0].plot(n, psnr_spdhg_sino[1,...], label = 'warm start', color = 'tab:orange')
+ax[1,0].plot(n, psnr_spdhg_sino[2,...], label = 'cold start', color = 'tab:blue')
+ax[1,0].plot(n, psnr_spdhg_sino[3,...], label = 'warm start', color = 'tab:orange')
 ax[1,0].set_xlabel('iteration')
 ax[1,0].set_ylabel('PSNR to reference')
 ax[0,0].legend(loc = 0)
@@ -289,15 +291,15 @@ ax[0,1].set_title('reference\nPDHG', **title_kwargs)
 ax[1,1].imshow(xinit.squeeze()[:,19:-19], vmax = 1.2*img.max(), cmap = plt.cm.Greys)
 ax[1,1].set_title('initializer\nwarm start', **title_kwargs)
 
-ax[0,2].imshow(cbs1['x_early'].squeeze()[:,19:-19], vmax = 1.2*img.max(), cmap = plt.cm.Greys)
+ax[0,2].imshow(cbs3['x_early'].squeeze()[:,19:-19], vmax = 1.2*img.max(), cmap = plt.cm.Greys)
 ax[0,2].set_title('SPDHG cold start\n3 iterations', **title_kwargs)
-ax[1,2].imshow(cbs2['x_early'].squeeze()[:,19:-19], vmax = 1.2*img.max(), cmap = plt.cm.Greys)
+ax[1,2].imshow(cbs4['x_early'].squeeze()[:,19:-19], vmax = 1.2*img.max(), cmap = plt.cm.Greys)
 ax[1,2].set_title('SPDHG warm start\n3 itertations', **title_kwargs)
 
 
-ax[0,3].imshow(x1.squeeze()[:,19:-19], vmax = 1.2*img.max(), cmap = plt.cm.Greys)
+ax[0,3].imshow(x3.squeeze()[:,19:-19], vmax = 1.2*img.max(), cmap = plt.cm.Greys)
 ax[0,3].set_title(f'SPDHG cold start\n{niter} iterations', **title_kwargs)
-ax[1,3].imshow(x2.squeeze()[:,19:-19], vmax = 1.2*img.max(), cmap = plt.cm.Greys)
+ax[1,3].imshow(x4.squeeze()[:,19:-19], vmax = 1.2*img.max(), cmap = plt.cm.Greys)
 ax[1,3].set_title(f'SPDHG warm start\n{niter} iterations', **title_kwargs)
 
 
@@ -305,6 +307,6 @@ for axx in ax[:,1:].ravel():
   axx.set_axis_off()
 
 fig.tight_layout()
-fig.savefig(f'SPDHG_init_{counts:.1E}_{nsubsets}_{beta:.1E}_{rel_gamma:.1E}.png')
+fig.savefig(f'SPDHG_init_{counts:.1E}_{nsubsets}_{beta:.1E}_{rel_gamma:.1E}_{rho:.1E}.png')
 #fig.savefig('SPDHG_cold_vs_warm_start.png')
 fig.show()
