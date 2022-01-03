@@ -283,17 +283,22 @@ in line 2.
 However, this single back projection can be split into smaller chunks to also reduce
 the required memory of this step.
 
-While at a first glance, the initialization of $y$ proposed above might seem artificial, in fact it corresponds directly choosing the optimal value for those $y_i$ where $d_i=0$. To see this, note that an optimal solution $(\hat{x},\hat{y},\hat{w})$ of \eqref{eq:saddle}  in particular needs to satisfy the optimality condition
+While at a first glance, the initialization of $y$ proposed above might seem artificial, in fact it 
+directly corresponds to choosing the optimal value for those $y_i$ where $d_i=0$. 
+To see this, note that an optimal solution $(\hat{x},\hat{y},\hat{w})$ of \eqref{eq:saddle} in 
+particular needs to satisfy the optimality condition
 \begin{equation}
 P \hat{x} \in  \partial D^*(\hat{y}),
 \end{equation}
-where $\partial D^*$ is the subdifferential of $D^*$. Since this is equivalent to $\hat{y} \in  \partial D(P \hat{x})$, and since $D$ (the negative Poisson log likelihood) is differentiable and $P\hat{x}$, this leads
+where $\partial D^*$ is the subdifferential of $D^*$. Since this is equivalent to $\hat{y} \in  \partial D(P \hat{x})$, and since $D$ (the negative Poisson log likelihood) is differentiable this leads 
 to the condition
 \begin{equation}
 \hat{y} = 1 - \frac{d}{P\hat{x} + s} \ ,
 \label{eq:yinit}
 \end{equation}
-where the division is to be understood point-wise. With this we see that the proposed initialization corresponds to right away choosing the optimal value for $y_i $ where $d_i=0$, which is known explicitly in this case.
+where the division is to be understood point-wise. 
+With this we see that the proposed initialization directly corresponds to choosing the optimal value 
+for $y_i $ where $d_i=0$, which is known explicitly in this case.
 
 %At a first glance, the initialization of $y$ proposed above seems very artificial.
 %But, if we construct a better initialization $y^0$ in a way such that it is the solution of our
@@ -481,9 +486,9 @@ SPDHG    & event + 1 uint + 3 float lists &  12.0\,GB  &   1.7\,GB   &   0.3\,GB
 
 \begin{figure}
   \centering
-    \includegraphics[width=1.0\columnwidth]{figs/SPDHG_cold_vs_warm_start.png}
+    \includegraphics[width=1.0\columnwidth]{figs/SPDHG_init_3.0E+05_224_3.0E-02_3.0E+00.png}
   \caption{Comparison of convergence of sinogram SPDHG using a cold and warm start
-           for 3e5 counts and a TV prior with $\beta = 0.03$ using 112 subsets.
+           for 3e5 counts and a TV prior with $\beta = 0.03$ using 224 subsets.
            For the warm start, $x^0$ was taken from 1 EM-TV iteration with 28 subsets
            and $y^0$ was calculated according to \eqref{eq:yinit}.
            Left column: relative cost and PSNR to with respect to the reference solution as
