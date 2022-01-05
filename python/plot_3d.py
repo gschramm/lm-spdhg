@@ -4,7 +4,7 @@ import matplotlib.gridspec as gridspec
 
 from pathlib import Path
 
-fname = Path('data/20211206_paper/TV_3e-2_4e7.npz')
+fname = Path('data/20220103_paper/counts_4e7_beta_0.03_rho_1.npz')
 data = np.load(fname)
 xm = data['x_early']
 

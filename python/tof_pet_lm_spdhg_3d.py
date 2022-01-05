@@ -263,6 +263,7 @@ def _cb(x, **kwargs):
 
   if 'cost' in kwargs:
     kwargs['cost'][it-1] = calc_cost(x)
+    np.savetxt('cost.txt', kwargs['cost'])
 
 
 #-----------------------------------------------------------------------------------------------------
@@ -294,12 +295,12 @@ x_lm = spdhg_lm(events, attn_list, sens_list, contam_list, sens_img,
                 grad_operator = grad_operator, grad_norm = grad_norm, beta = beta)
 
 
-cost_emtv = np.zeros(niter)
-cbs_emtv  = {'x_early':[], 't':[], 'it_early':[], 'cost' : cost_emtv}
-x_emtv = osem_lm_emtv(events, attn_list, sens_list, contam_list, proj, sens_img, niter, 1, 
-                      grad_operator = grad_operator, grad_norm = grad_norm, xstart = xinit,
-                      callback = _cb, callback_kwargs = cbs_emtv,
-                      fwhm = fwhm, verbose = True, beta = beta)
+#cost_emtv = np.zeros(niter)
+#cbs_emtv  = {'x_early':[], 't':[], 'it_early':[], 'cost' : cost_emtv}
+#x_emtv = osem_lm_emtv(events, attn_list, sens_list, contam_list, proj, sens_img, niter, 1, 
+#                      grad_operator = grad_operator, grad_norm = grad_norm, xstart = xinit,
+#                      callback = _cb, callback_kwargs = cbs_emtv,
+#                      fwhm = fwhm, verbose = True, beta = beta)
 
 
 np.savez('debug.npz', x = x_lm, x_early = np.array(cbs_lm['x_early']), it = cbs_lm['it_early'], 
