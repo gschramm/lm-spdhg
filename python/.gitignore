@@ -3,3 +3,4 @@ figs/*
 run.sh
 *.npy
 *.npz
+test*.py

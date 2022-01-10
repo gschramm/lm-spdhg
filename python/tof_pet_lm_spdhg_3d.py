@@ -1,4 +1,4 @@
-#TODO: - prox for dual of L1 and L2 form
+# notes: - for 4e7 counts, faster convergence even for rho = 8, rel_gamma = 30
 
 import matplotlib.pyplot as plt
 import pyparallelproj as ppp
