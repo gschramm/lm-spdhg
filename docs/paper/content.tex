@@ -169,7 +169,7 @@ setting $T = \min_{k=1,\ldots,n+1} T_k$ pointwise, and choosing $0<\rho<1$ and $
 
 Whilst SPDHG is a big step forward for an efficient solution of \eqref{eq:saddle}
 in terms of computational speed, SPDHG also comes with two main limitations.
-Firsts, as discussed in Remark 2 of \cite{Ehrhardt2019}, 
+First, as discussed in Remark 2 of \cite{Ehrhardt2019}, 
 a potential drawback of SPDHG is that it requires keeping at least one more complete 
 (TOF) sinogram in memory (the dual variable $y$). 
 Moreover, if the proposed preconditioning is used, a second complete (TOF) sinogram
@@ -191,11 +191,11 @@ PET scanners), the memory required to store a complete TOF sinogram will continu
 substantially increase in the future.
 
 Second, PDHG and SPDHG only work with ``binned'' data.
-In the case of TOF PET reconstruction, that means that the acquired raw listmode data first needs to be
+In the case of TOF PET reconstruction, that means that the acquired raw listmode data first need to be
 binned into TOF sinograms and that $P$ and $P^T$ need to be evaluated using
 sinogram projectors.
 For most acquisitions with modern TOF PET scanners, this is inefficient both in terms of memory and
-computational time since the TOF emission data is extremely sparse.
+computational time since the TOF emission data are extremely sparse.
 In contrast, storage and processing of the data in listmode format (event by event) is usually 
 more efficient.
 
@@ -211,7 +211,7 @@ Consequently, for a fixed number of acquired prompt coincidences, the sparsity o
 sinogram is proportional to the TOF resolution.
 
 As an example, for a typical 80\,s acquisition of a liver bed position in an FDG scan with 
-an injected dose of around 323\,MBq acquired 60\,min p.i. on a state-of-the-art TOF PET/CT scanner with
+an injected dose of 323\,MBq acquired 60\,min p.i. on a state-of-the-art TOF PET/CT scanner with
 20\,cm axial FOV, more than 94\% of the data (TOF sinogram) bins are empty.
 An example that demonstrates this extreme sparsity of TOF sinograms is shown in Fig.~\ref{fig:sparsity}.
 For shorter frames, as present, e.g., in the early phase of dynamic scans or when respiratory
@@ -342,11 +342,17 @@ events $e \in N$, where each event is characterized by a small set of (integer) 
 (e.g. the number of the two detectors, the discretized TOF difference, and a time stamp).
 To process the listmode data during reconstruction without binning it into a sinogram,
 we introduce the listmode forward operator $P^{LM}_N$ mapping the image data $x$ to a 
-data-vector of dimension $|N|$ via \[ (P^{LM}_N x)_e  = (Px)_{i_e} , \text{ for each }e \in N,\]
+data-vector of dimension $|N|$ via 
+%
+\begin{equation}
+(P^{LM}_N x)_e  = (Px)_{i_e} , \text{ for each }e \in N,
+\label{eq:lmop}
+\end{equation}
+%
 where $i_e$ is the sinogram bin in which event $e$ was detected.
 
 Re-writing the gradient of the negative Poisson log likelihood using listmode data and the
-listmode operators is straight forward, such that any gradient-based PET reconstruction algorithm 
+listmode operators is straightforward, such that any gradient-based PET reconstruction algorithm 
 can be easily adapted to listmode data.
 
 For a Bayesian approach with prior $R(K \cdot)$ as in \eqref{eq:primal} this is less immediate, 
@@ -354,12 +360,6 @@ but we can show that indeed \eqref{eq:primal} can be equivalently re-written to 
 problem involving only the listmode forward operator that is of the same form as \eqref{eq:primal}. 
 This allows us to extend the SPDHG algorithm for listmode data and yields the algorithm as shown 
 in Algorithm~\ref{alg:lmspdhg}.
-
-
-%However, for SPDHG - which has the advantage of being able to handle non-smooth priors and
-%has guaranteed convergence, an adaptation to listmode data is more complicated.
-%Our proposed listmode SPDHG algorithm (LM-SPDHG) solves those complications and is shown in 
-%Algorithm~\ref{alg:lmspdhg}.
 
 \begin{algorithm}[t]
 \begin{algorithmic}[1]
@@ -394,7 +394,7 @@ in Algorithm~\ref{alg:lmspdhg}.
 
 
 In contrast to the original SPDHG using binned data (sinograms), the forward and adjoint
-PET operators have been replaced by their listmode equivalents as defined above (lines 11 and 12).
+PET operators (lines 11 and 12) have been replaced by their listmode equivalents as in \eqref{eq:lmop}.
 Moreover, the dual variable for the data fidelity is replaced by the list $y_N$, which has the
 same length as the measured event list $N$.
 If an event with a fixed sinogram bin $i_e$ occurs more than once in the event list
@@ -410,14 +410,14 @@ Moreover, it is in the similar order of the time needed to unlist the native lis
 a sinogram which is a prerequisit and pre-processing overhead for SPDHG.
 
 Another difference of LM-SPDHG compared to SPDHG is the fact that we split the data into $n$ subsets by
-assigning every $n$-th event of the complete event list $N$ into the $n$-th sub list - 
+assigning every $n$-th event of the complete event list $N$ to the $n$-th sub list - 
 as commonly done when defining subsets in listmode OSEM.
 In that way, we can think of the subset listmode forward operator $P^{LM}_{N_i}$
 as the full forward operator $P$ with a sensitivity reduced by a factor of $n$.
 Accordingly, we set the step sizes associated with the subset listmode PET operators to
 %
 \begin{equation}
-S_k = \gamma \, \text{diag}(\frac{\rho}{P^{LM}_{N_k} 1} )\qquad  T_k = n\,\gamma^{-1} \text{diag}(\frac{\rho p_k}{P^T 1}) \ . 
+S_k = \gamma \, \text{diag}(\frac{\rho}{P^{LM}_{N_k} 1} )\qquad  T_k = \gamma^{-1} \text{diag}(\frac{\rho p_k}{P^T 1/n}) \ . 
 \label{eq:lm_stepsizes}
 \end{equation}
 % 
@@ -441,8 +441,8 @@ This means that for all acquisitions where the number of detected events is subs
 the number of data bins, the required memory and computation time is reduced.
 The latter depends on the actual implementation of the sinogram and listmode projectors
 and on the computational hardware.
-According to our experience using a state-of-the art GPU implementation of a Joseph TOF projectors
-for a TOF PET scanner with 400\,ps TOF resolution and 25\,cm axial field of view,
+According to our experience using a state-of-the art GPU implementation of Joseph projectors 
+\cite{Joseph1982} for a TOF PET scanner with 400\,ps TOF resolution and 25\,cm axial field of view,
 a forward and back projection is faster in listmode if approximately less than 3e8 events 
 have to be processed.
 For 7e7 and 1e7 counts, the projections are approximately faster by a factor of 3 and 5,
@@ -462,15 +462,14 @@ acquisitions is listed in Table~\ref{tab:mem}.
          &                       &            & counts      & \\ 
          &                       & 5e8        & 7e7         & 1e7 \\ \hline
          & 8 images              &   0.4\,GB  &   0.4\,GB   &   0.4\,GB \\
-SPDHG    & 1 uint + 3 float sino.&  55.6\,GB  &  55.6\,GB   &  55.6\,GB \\ \hline
+SPDHG    & 1 uint, 3 float sino.&  55.6\,GB  &  55.6\,GB   &  55.6\,GB \\ \hline
 LM-      & 8 images              &   0.4\,GB  &   0.4\,GB   &   0.4\,GB \\
-SPDHG    & event + 1 uint + 3 float lists &  12.0\,GB  &   1.7\,GB   &   0.3\,GB
-%         & $5 \, n_\text{voxels} \cdot 4\,\text{B} + 4\,\text{B} + m(1\,\text{B} + 3\cdot 4\,\text{B})$ &  \\ \hline
-%         & $5 \, n_\text{voxels} \cdot 4\,\text{B} + n_\text{events}(10\,\text{B} + 3\cdot 4\,\text{B})$ &
+SPDHG    & event list, 1 uint, 3 float lists &  12.0\,GB  &   1.7\,GB   &   0.3\,GB
 \end{tabular}
 \end{center}
 \caption{Estimation of required memory for SPDHG and LM-SPDHG assuming an image size of (300,300,125)
-         and a TOF sinogram of (357,224,1981,27) corresponding to a TOF PET scanner with 400\,ps TOF
+         and a TOF sinogram with 357 radial elemnts, 224 views, 1981 direct and oblique planes, 
+         and 27 TOF bins corresponding to a TOF PET scanner with 400\,ps TOF
          resolution and 25\,cm axial FOV for three counts levels. 
          5e8 counts approximately correspond to a high count 20\,min late static FDG brain scan, 
          7e7 counts to an 80\,s static FDG body bed position 1\,h p.i., 
@@ -494,7 +493,7 @@ SPDHG    & event + 1 uint + 3 float lists &  12.0\,GB  &   1.7\,GB   &   0.3\,GB
            for 3e5 counts and a TV prior with $\beta = 0.03$ using 224 subsets.
            For the warm start, $x^0$ was taken from 1 EM-TV iteration with 28 subsets
            and $y^0$ was calculated according to \eqref{eq:yinit}.
-           Left column: relative cost and PSNR to with respect to the reference solution as
+           Left column: relative cost and PSNR with respect to the reference solution as
            a function of the iterations.
            Second column: reference PDHG reconstruction using 20000 iterations (top) and
            initializer $x^0$ used in the warm start.
@@ -503,6 +502,9 @@ SPDHG    & event + 1 uint + 3 float lists &  12.0\,GB  &   1.7\,GB   &   0.3\,GB
            Fourth column: Reconstructions after 20 iterations.
            Note that in the calculation of the relative cost the same $x^0$ was used
            and that in both cases the same step size ratio $\gamma$ was used.
+           Moreover, in the very early iterations the relative cost of SPDHG is greater 1
+           meaning that the cost is worse compared the the initialization.
+           This is due to the fact that (S)PDHG in general is a non-monotonic algorithm.
           }
   \label{fig:warm_start}
 \end{figure}
@@ -627,7 +629,7 @@ Convergence was monitored by tracking the relative cost function
 \begin{equation}
 c_\text{rel}(x) = (c(x) - c(x^*)) / (c(x^0) - c(x^*)) \ ,
 \end{equation}
-where $c(x)$ is the cost function to be optimized in \eqref{eq:primal} and $x^0$ is the initial value
+where $c(x)$ is the cost function to be optimized in \eqref{eq:primal} and $x^0$ is the initialization
 used for $x$.
 Moreover, convergence was also montiored in image space by tracking the peak signal-to-noise ratio
 with respect to $x^*$
@@ -691,7 +693,7 @@ p_k =
 such that on average an update with respect to the prior was done on every second update
 as suggested in \cite{Ehrhardt2019}. 
 In this work, we use the term iteration for $2n$ updates such that on average in every iteration
-the complete data is forward and backprojected once and $n$ updates with respect to the
+the complete data are forward and backprojected once and $n$ updates with respect to the
 prior are performed.
 
 As benchmark examples for non-smooth priors, we consider two ``Total Variation like'' priors
@@ -699,7 +701,7 @@ in this work.
 These priors have the form
 %
 \begin{equation}
-  R(Kx) = \|K x\|_{2,1} \ ,
+  R(Kx) = \|K x\|_{2,1} = \sum_i \sqrt{\sum_j (Kx)_{ij}^2} \ ,
 \end{equation}
 %
 where $\|K x \|_{2,1}$ is the sum over all entries of the pointwise Euclidean norm of $K x$
@@ -713,11 +715,10 @@ The proximal operator for the convex dual of this prior is given by
 For the linear operator $K$, we first used the finite forward difference operator resulting
 in the classical Total Variation (TV) prior \cite{Rudin1992}.
 Moreover, we also implemented the Directional Total Variation (DTV) prior incorporating
-structural information by only considering the component of the finite difference vector 
-that is perpendicular to a joint gradient field in every point \cite{Ehrhardt2016}.
+structural information by only considering the component of the finite difference vector in every voxel
+that is perpendicular to the spatial gradient of a prior image in that voxel \cite{Ehrhardt2016}.
 In our convergence experiments using DTV, we assumed perfect structural prior information
-meaning that the joint gradient field used for DTV, was calculated on the ground truth image
-itself.
+meaning that the prior image used for DTV, was the image itself with a flipped contrast.
 Note that in real acquisitions the quality of the available structural prior information is
 of course inferior. 
 However, we do not expect that this fact strongly affects the convergence properties of 
@@ -727,7 +728,8 @@ To demonstrate that LM-SPDHG also works for realistic 3D TOF PET listmode data,
 we finally simulated and reconstructed 3D TOF PET data based on the 3D XCAT \cite{Segars2010} phantom 
 and a state-of-the-art
 TOF PET scanner with 20\,cm axial field of view, a ring diameter of 650\,mm and a 400\,ps TOF 
-resolution (sinogram dimension: 357 radial bins, 224 projection angles, 1296 planes, 27 TOF bins).
+resolution (sinogram dimension: 357 radial bins, 224 projection angles, 1296 direct and  
+oblique planes, 27 TOF bins).
 As before, the data simulation included the effects of attenuation, finite resolution and a
 flat contamination with a contamination fraction of 42\%.
 In total, 7e7 prompt counts were simulated corresponding approximately to a standard 
@@ -791,8 +793,7 @@ Figure~\ref{fig:xcat} shows the results of the reconstruction of the listmode da
 from the 3D XCAT phantom using a TV prior with $\beta = 0.03$. 
 From the plot of the cost function and the reconstructions shown in the middle, we can see
 that reasonable convergence is reached after approximately 25 iterations with 224 subsets.
-Note that in contrast to our 2D experiments, the cost function in the first 3 iterations after
-the warm start slightly increases before it decreases and stabilizes after around 25 iterations.
+Note that in contrast to our 2D experiments, the cost function initially increases until the 3rd iteration before it decreases and stabilizes after around 25 iterations.
 As mentioned above, calculating the projections in listmode for 7e7 counts is roughly a factor
 of 3 faster compared to sinogram-based processing which substantially speeds up every iteration.
 Note that in our proof-of-concept implementation, the effective speed up is less than a 
@@ -809,14 +810,14 @@ the time needed to calculate the actual TOF projections.
 The results of our numerical experiments presented in this work demonstrate that the speed of 
 convergence of LM-SPDHG is essentially the same as the one of the original SPDHG using
 sinograms.
-For almost all clinical acquisitions with state-of-the-art TOF PET scanners resulting in extremely
+For clinical acquisitions with state-of-the-art TOF PET scanners resulting in extremely
 sparse data, LM-SPDHG has two distinct advantages compared to SPDHG.
 First, during the iterations all forward and back projections can be performed in listmode
 which is faster compared to sinogram projectors for sparse TOF data.
 
 Second, as shown in Table~\ref{tab:mem}, the memory requirements are substantially reduced such
 that even for an aquisition with 5e8 prompt coincidences only 12.5\,GB of memory are needed.
-This actually enables a pure GPU-implementation on of LM-SPDHG avoiding intermediate memory
+This actually enables a pure GPU-implementation of LM-SPDHG avoiding intermediate memory
 transfer between the host and a state-of-the-art GPU with a memory of approximately 16\,GB.
 Note that in our proof of concept implementation of LM-SPDHG we used a hybrid computing
 approach where only the TOF PET forward and back projections where computed using a GPU.
@@ -835,7 +836,7 @@ However, for smooth priors the speed of convergence of (LM)-SPDHG should be benc
 other stochastic gradient-based optimization techniques such as the stochastic variance reduced gradient (SVRG) \cite{Johnson2013} or SAGA \cite{Defazio2014} which is beyond the scope of this work.
 We also note that in this work we a used scalar spatially-invariant prior strength $\beta$ which
 leads to a spatially-variant local pertubation response (LPR). 
-For pratical applications where a spatially-invariant is desirable, a spatially-varient prior 
+For pratical applications where a spatially-invariant reponse is desirable, a spatially-varient prior 
 strength should be used as described in \cite{Ahn2008,Tsai2020}.
 
 Last but not least, we would like to emphasize that the listmode EM-TV algorithm
@@ -847,4 +848,4 @@ behaviour of OSEM.
 Whether the difference between the limit cycle and the true optimal solution is of importance
 for a given count level and clinical task, should be investigated in the future.
 
-XXX TODO: $\rho > 1$ discussion XXX
+XXX TODO: $\rho > 1$ discussion, non-monotonicity XXX
