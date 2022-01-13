@@ -27,21 +27,24 @@ To limit the transfer of the data noise into the image during model-based iterat
 reconstruction (MBIR), different strategies exist. 
 One possibility is to add a ``smoothing'' prior to the data fidelity term in the cost
 function that is being optimized.
-In general, we can formulate the resulting optimization problem for PET image reconstruction as
+In general, we can formulate the resulting optimization problem for any imaging system where the
+acquired data follow a Poisson distribution as
 %
 \begin{equation}
 \argmin _{x\geq 0} \sum_{i=1}^{m} \underbrace{(Px + s)_i -  d_i \log \left( (Px + s)_i \right)}_{D_i((Px+s)_i)} + \, \beta R(Kx),
-\label{eq:primal}
+\label{eq:primal} 
 \end{equation}
 %
-where $x$ is the PET image to be reconstructed, $P$ is the time of flight (TOF) PET
-forward model including the effects
-of attenuation, normalization and limited spatial resolution, $d$ are the 
-acquired prompt TOF PET coincidences (the emission sinogram), 
-and $s$ are additive contaminations including random and scattered coincidences. 
-$\sum_{i=1}^m D_i(x)$ is the negative Poisson log-likelihood, $i$ is the index of the data (TOF sinogram)
-bin and $m$ is the total number of data bins.
-$R(K\cdot)$ is the ``smoothing prior'' consisting of a generic linear operator $K$ that calculates 
+where $x$ is the image to be reconstructed, $P$ is the linear forward model, $d$ are the acquired
+data and $s$ are additive contaminations.
+$\sum_{i=1}^m D_i((Px + s)_i)$ is the negative Poisson log-likelihood, 
+$i$ is the index of the data bin and $m$ is the total number of data bins.
+In the specific case of time of flight (TOF) PET, $P$ is the time of flight (TOF) PET
+forward model including the effects of attenuation, normalization and limited spatial resolution, 
+$d$ are the acquired prompt TOF PET coincidences (the emission sinogram), 
+and $s$ are the estimated random and scattered coincidences. 
+
+$R(K\cdot)$ is a ``smoothing prior'' consisting of a generic linear operator $K$ that calculates 
 local differences and a proper, convex, lower-semicontinous function $R$.
 The level of regularization is controlled by the non-negative scalar factor $\beta$.
 A specific example for $K$ would be the gradient operator $\nabla$, e.g. approximated by finite forward 
@@ -77,11 +80,13 @@ introducing the dual variables $y$ and $w$, and the convex dual of the Poisson l
 \begin{equation}
 D_i^*(y_i) =
 \begin{cases}
--d_i + d_i \log \left( \frac{d_i}{1-y_i} \right) & \text{if } y_i < 1 \\
+-d_i + d_i \log \left( \frac{d_i}{1-y_i} \right) & \text{if } y_i < 1 \text{ and } d_i > 0 \\
+0 & \text{if } y_i \leq 1 \text{ and } d_i = 0 \\
 \infty & \text{else} \ .
 \end{cases}
 \end{equation}
-for $d_i >0$ and $D_i^*(y_i) = 0$ if $y_i \leq 1$ and $D_i^*(y_i) = \infty$ if $y_i >1$ in the other case.
+%for $d_i >0$ and $D_i^*(y_i) = 0$ if $y_i \leq 1$ and $D_i^*(y_i) = \infty$ if $y_i >1$ 
+% in the other case.
 %
 Under mild assumptions on $R$, which hold for all of above-mentioned smoothing priors, Problem \eqref{eq:saddle} is equivalent to \eqref{eq:primal} and
 %Problem \eqref{eq:saddle}, 
