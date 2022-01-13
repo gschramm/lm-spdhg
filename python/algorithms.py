@@ -8,7 +8,7 @@ def spdhg_lm(events, attn_list, sens_list, contam_list, sens_img,
              x0 = None, fwhm = 0, gamma = 1., rho = 0.999, rho_grad = 0.999, verbose = False, 
              callback = None, subset_callback = None,
              callback_kwargs = None, subset_callback_kwargs = None,
-             grad_norm = None, grad_operator = None, beta = 0):
+             grad_norm = None, grad_operator = None, beta = 0, Tmode = 0):
 
   # count the "multiplicity" of every event in the list
   # if an event occurs n times in the list of events, the multiplicity is n
@@ -71,8 +71,24 @@ def spdhg_lm(events, attn_list, sens_list, contam_list, sens_img,
 
   # calculate the step size T
   # sens img is back_model(1)
-  tmp = sens_img / nsubsets
-  T = np.divide(p_p*rho, gamma*tmp, out = np.zeros_like(tmp), where = (tmp > 0))
+
+  if Tmode == 0:
+    tmp = sens_img / nsubsets
+    T = np.divide(p_p*rho, gamma*tmp, out = np.zeros_like(tmp), where = (tmp > 0))
+  else:
+    Tk = np.zeros((nsubsets,) + img_shape)
+
+    # back projection of ones along all LORs where we have data
+    tmp_data = pet_back_model_lm(1/mu, proj, events, attn_list, sens_list, fwhm = fwhm)
+
+    # back projection of ones along all LORS where we don't have data
+    tmp_empty = sens_img - tmp_data
+
+    for i in range(nsubsets):
+      ss = slice(i,None,nsubsets)
+      tmp = pet_back_model_lm(1/mu[ss], proj, events[ss,:], attn_list[ss], sens_list[ss], fwhm = fwhm) + (tmp_empty/nsubsets)
+      Tk[i,...] = p_p*rho / (gamma*tmp)
+    T = Tk.min(axis = 0)
 
   if p_g > 0:
     T = np.clip(T, None, T_g)
