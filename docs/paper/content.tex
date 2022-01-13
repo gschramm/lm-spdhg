@@ -843,8 +843,7 @@ We also note that in this work we a used scalar spatially-invariant prior streng
 leads to a spatially-variant local pertubation response (LPR). 
 For pratical applications where a spatially-invariant reponse is desirable, a spatially-varient prior 
 strength should be used as described in \cite{Ahn2008,Tsai2020}.
-
-Last but not least, we would like to emphasize that the listmode EM-TV algorithm
+We emphasize that the listmode EM-TV algorithm
 is still a very practical and useful algorithm to approximate the solution 
 of the optimization problem \eqref{eq:primal} for listmode data and non-smooth priors.
 However, as shown in Fig.~\ref{fig:emtv}, it seems that when using ordered subsets for acceleration,
@@ -853,7 +852,14 @@ behaviour of OSEM.
 Whether the difference between the limit cycle and the true optimal solution is of importance
 for a given count level and clinical task, should be investigated in the future.
 
-XXX TODO: $\rho > 1$ discussion, non-monotonicity XXX
+Last but not least, we would like to note that according to our experience, SPDHG and LM-SPDHG
+for TOF PET reconstruction also converge for $\rho$ slightly greater than one which might
+be of interest for practical applications where stopping as early as possible can be important.
+Suppl. Fig.~XXX shows that in our 3D XCAT example, convergence can be further accelerated by
+using $\rho = 8$ and $\gamma = 30/ \|x^0\|_\infty$.
+A detailed investigation of the convergence speed as function of $\rho$ and $\gamma$ potentially
+including an iteration-dependent choice of $\rho$ is, however, beyond the scope of this manuscript
+and left for future research.
 
 \section*{Acknowledgements}
 
