@@ -34,10 +34,10 @@ In general, we can formulate the resulting optimization problem for PET image re
 \label{eq:primal}
 \end{equation}
 %
-where $x$ is the PET image to be reconstructed, $P$ is the time of flight (TOF) 
+where $x$ is the PET image to be reconstructed, $P$ is the time of flight (TOF) PET
 forward model including the effects
 of attenuation, normalization and limited spatial resolution, $d$ are the 
-acquired prompt TOF coincidences (the emission sinogram), 
+acquired prompt TOF PET coincidences (the emission sinogram), 
 and $s$ are additive contaminations including random and scattered coincidences. 
 $\sum_{i=1}^m D_i(x)$ is the negative Poisson log-likelihood, $i$ is the index of the data (TOF sinogram)
 bin and $m$ is the total number of data bins.
@@ -57,17 +57,9 @@ Parallel Level Sets \cite{Ehrhardt2016a,Schramm2017} or directional Total Variat
 This prevents the use of simple and efficient 
 purely gradient-based optimization algorithms to solve \eqref{eq:primal}.
 
-
-%Unfortunately, many advanced smoothing priors aiming for edge-preservation 
-%such as e.g. TV \cite{Rudin1992}, Total Generalized Variation (TGV) 
-%\cite{Bredies2010}, Joint T(G)V \cite{Rigie2015,Knoll2016}
-%Parallel Level Sets \cite{Ehrhardt2016a,Schramm2017} or directional Total Variation (DTV)
-%\cite{Ehrhardt2016} use non-smooth functions for $R$ which permits the use of simple and efficient 
-%purely gradient-based optimization algorithms to solve \eqref{eq:primal}.
-
 \subsection*{PDHG and SPDHG for PET reconstruction with non-smooth priors}
 
-Using the fact that $D(x) = \sum_i D_i(x)$ and $\beta R(x)$ are convex functions and thus are
+Using the fact that $D(Px + s) = \sum_i D_i((Px + s)_i)$ and $\beta R(Kx)$ are convex functions and thus are
 equal to their convex biconjugates 
 $D^{**}(Px + s) = \sup_y \langle Px + s, y \rangle - \sum_{i=1}^{m} D_i^*(y_i)$ 
 and $(\beta R)^{**}(Kx) = \sup_w \langle Kx, w \rangle - (\beta R)^*(w)$, respectively, 
@@ -95,7 +87,7 @@ Under mild assumptions on $R$, which hold for all of above-mentioned smoothing p
 %Problem \eqref{eq:saddle}, 
 can be solved even for non-smooth priors using the generic primal-dual hybrid gradient (PDHG) 
 algorithm by Chambolle and Pock \cite{Chambolle2011}.
-PDHG is in iterative algorithm that requires the evaluation of the complete forward and adjoint operator
+PDHG is an iterative algorithm that requires the evaluation of the complete forward and adjoint operator
 in every update.
 The usage of the original PDHG algorithm to solve \eqref{eq:saddle} for real-world state-of-the-art
 TOF PET systems, however, usually results in extremely long computation times, 
@@ -107,7 +99,7 @@ To overcome this limitation, Chambolle et al. published a stochastic extension o
 for saddle point problems that are separable in the dual variable in 2018 \cite{Chambolle2018}.
 In contrast to PDHG, SPDHG has the advantage that the complete forward and adjoint operator are
 split into $n$ subsets, and that, in every update, only a random subset of the forward
-and adjoint operator chosen according to a probability $p_k$ have to be evaluated.
+and adjoint operator chosen according to a probability $p_k$ has to be evaluated.
 In \cite{Ehrhardt2019}, Ehrhardt et al. applied SPDHG to 3D non-TOF PET reconstruction with TV-like
 priors and showed that around 10 complete projections and back projections are sufficient 
 to obtain reasonable convergence using SPDHG with 252 subsets.
@@ -132,7 +124,7 @@ can be calculated point-wise and is given by
 \label{eq:proxD}
 \end{equation} 
 %
-The proximal operator for $R^*$, obviously depends on the choice of $R$ but can be also efficiently 
+The proximal operator for $R^*$ obviously depends on the choice of $R$ but can be also efficiently 
 computed using point-wise operations for many popular choices of $R$.
 As mentioned in \cite{Ehrhardt2019}, Algorithm \ref{alg:spdhg} converges if we use the preconditioned
 step sizes
@@ -143,7 +135,7 @@ and
 %
 \[ S_{n+1} = \gamma \, \frac{\rho}{\|K\|} \qquad T_{n+1} = \gamma^{-1} \frac{p_i\rho}{\|K\|} \ , \]
 %
-setting $T = \min_{k=1,\ldots,n+1} T_k$ pointwise, and choosing $\rho<1$ and $\gamma>0$.
+setting $T = \min_{k=1,\ldots,n+1} T_k$ pointwise, and choosing $0<\rho<1$ and $\gamma>0$.
 %
 \begin{algorithm}[t]
 \begin{algorithmic}[1]
@@ -225,11 +217,14 @@ An example that demonstrates this extreme sparsity of TOF sinograms is shown in 
 For shorter frames, as present, e.g., in the early phase of dynamic scans or when respiratory
 or cardiac gating is used, the fraction of empty bins can even higher.
 
-Note that we expect that the sparsity of the TOF emission data of future PET systems will increase 
+Note that we expect that the sparsity of the TOF PET emission data of future PET systems will increase 
 faster than linear compared to the improvement of the TOF resolution.
 This is because with better TOF resolution, every detected event carries more information such
 that fewer detected events are needed to reconstruct images with the similar 
 variance \cite{Tomitani1981}.
+Moreover, the method presented in this work is applicable not only to TOF PET image reconstruction,
+but to all imaging reconstrution problems with sparse data following a Poisson distribution
+such as (low count) SPECT or photon counting CT.
 
 \begin{figure}
   \centering
@@ -255,7 +250,7 @@ LM-SPDHG that allows event-by-event processing using dedicated listmode forward 
 We first derive LM-SPDHG from SPDHG and show that the convergence of LM-SPDHG is as 
 fast as the convergence of SPDHG based on dedicated numeric examples in 2D.
 Moreover, we analyze the memory requirements for LM-SPDHG compared to SPDHG for typical scans 
-acquired on state-of-the-art TOF scanners.
+acquired on state-of-the-art TOF PET scanners.
 
 We emphasize that the focus of this work is not on finding the
 optimal (non-smooth) prior or prior strength for a given clinical task in PET imaging.
@@ -728,7 +723,7 @@ of course inferior.
 However, we do not expect that this fact strongly affects the convergence properties of 
 SPDHG and LM-SPDHG. 
 
-To demonstrate that LM-SPDHG also works for realistic 3D TOF listmode data,
+To demonstrate that LM-SPDHG also works for realistic 3D TOF PET listmode data,
 we finally simulated and reconstructed 3D TOF PET data based on the 3D XCAT \cite{Segars2010} phantom 
 and a state-of-the-art
 TOF PET scanner with 20\,cm axial field of view, a ring diameter of 650\,mm and a 400\,ps TOF 
@@ -851,3 +846,5 @@ EM-TV does not reach the optimal solution but rather remains on a limit cycle si
 behaviour of OSEM.
 Whether the difference between the limit cycle and the true optimal solution is of importance
 for a given count level and clinical task, should be investigated in the future.
+
+XXX TODO: $\rho > 1$ discussion XXX
