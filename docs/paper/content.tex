@@ -1,21 +1,3 @@
-%\section*{Summary}
-%
-%\begin{itemize}
-%\item SPDHG excellent alg for non-smooth priors, but only sinogram
-%\item modern TOF PET data is extremly sparse (Figure) -> SPDHG inefficient
-%      in terms of memory and speed
-%\item LM projections are much faster than sino projections for usual count levels
-%      (Table)
-%\item propose LM-SPDHG that solves both issues
-%\item 1st step: better init
-%\item 2nd step: rewrite SPDHG in terms of LM updates
-%\end{itemize}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\newcommand{\todo}[1]{\textcolor{red}{ #1}}
 \section{Introduction}
 
 A major challenge of image reconstruction in positron emission tomography (PET)
@@ -830,11 +812,11 @@ for a given count level and clinical task, should be investigated in the future.
 Last but not least, we would like to note that according to our experience, SPDHG and LM-SPDHG
 for TOF PET reconstruction also converge for $\rho$ slightly greater than one which might
 be of interest for practical applications where stopping as early as possible can be important.
-Suppl. Fig.~XXX shows that in our 3D XCAT example, convergence can be further accelerated by
+Suppl. Fig.~3 shows that in our 3D XCAT example, convergence can be further accelerated by
 using $\rho = 8$ and $\gamma = 30/ \|x^0\|_\infty$.
-A detailed investigation of the convergence speed as function of $\rho$ and $\gamma$ potentially
-including an iteration-dependent choice of $\rho$ is, however, beyond the scope of this manuscript
-and left for future research.
+A detailed investigation of the convergence speed as a function of $\rho$ and $\gamma$ potentially
+involving an iteration-dependent choice of $\rho$ \cite{Goldstein2015} is, however, 
+beyond the scope of this manuscript and left for future research.
 
 \section*{Acknowledgements}
 
