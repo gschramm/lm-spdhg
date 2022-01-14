@@ -1,6 +1,7 @@
 #!/bin/bash
 
 TMPDIR=`mktemp -d -p .`
+COMMIT=`git rev-parse --short HEAD`
 
 cp ms.tex $TMPDIR
 cp abstract.tex $TMPDIR
@@ -26,7 +27,7 @@ rm supplement.bbl
 rm supplement-blx.bib
 rm supplement.run.xml
 
-zip ../arxiv.zip *
+zip "../arxiv_${COMMIT}.zip" *
 
 cd ..
 
