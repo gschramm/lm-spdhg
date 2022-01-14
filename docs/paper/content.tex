@@ -18,8 +18,6 @@
 \newcommand{\todo}[1]{\textcolor{red}{ #1}}
 \section{Introduction}
 
-% add importance of fast recons
-
 A major challenge of image reconstruction in positron emission tomography (PET)
 is noise suppression since the acquired emission data suffer from high levels of Poisson
 noise due to limitations in acquisition time, injectable dose and scanner sensitivity.
@@ -308,29 +306,6 @@ where the division is to be understood point-wise.
 With this we see that the proposed initialization directly corresponds to choosing the optimal value 
 for $y_i $ where $d_i=0$, which is known explicitly in this case.
 
-%At a first glance, the initialization of $y$ proposed above seems very artificial.
-%But, if we construct a better initialization $y^0$ in a way such that it is the solution of our
-%saddle point problem \eqref{eq:saddle} for a fixed initial $x^0$, it has to satisfy
-%%
-%\begin{equation}
-%\langle P x^0, y^0 \rangle - D^*(y^0) = D(Px^0 + s) \ ,
-%\end{equation}
-%%
-%which is the case when
-%%
-%\begin{equation}
-%y^0 \in \partial D(Px + s) |_{x^0} \ .
-%\end{equation}
-%%
-%Since $D$ (the negative Poisson log likelihood) is differentiable, this leads
-%to the condition
-%\begin{equation}
-%y^0 = 1 - \frac{d}{Px^0 + s} \ ,
-%\label{eq:yinit}
-%\end{equation}
-%where the division is to be understood point-wise.
-%We see that under this condition, $y^0$ is indeed one in bins where $d$ is zero,
-%irrespective of the choice of $x^0$.
 As argued above, this improved initialization of $y$ naturally reduces the 
 memory requirements of SPDHG and also improves the speed of convergence when a
 ``warm start'' for $x^0$ is chosen. 
