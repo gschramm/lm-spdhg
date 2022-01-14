@@ -20,8 +20,8 @@ from time import time
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--counts',    help = 'counts to simulate',    default = 4e7, type = float)
-parser.add_argument('--niter',     help = 'number of iterations',  default = 100, type = int)
-parser.add_argument('--nsubsets',  help = 'number of subsets',     default = 112, type = int)
+parser.add_argument('--niter',     help = 'number of iterations',  default = 50,  type = int)
+parser.add_argument('--nsubsets',  help = 'number of subsets',     default = 224, type = int)
 parser.add_argument('--fwhm_mm',   help = 'psf modeling FWHM mm',  default = 4.5, type = float)
 parser.add_argument('--fwhm_data_mm',  help = 'psf for data FWHM mm',  default = 4.5, type = float)
 parser.add_argument('--seed',      help = 'seed for random generator', default = 1, type = int)
@@ -268,6 +268,7 @@ def _cb(x, **kwargs):
 
 #-----------------------------------------------------------------------------------------------------
 norm = gaussian_filter(xinit.squeeze(),3).max()
+c0   = calc_cost(xinit)
 
 #
 ##cbs_sino = {'x_early':[], 't':[]}
@@ -279,13 +280,6 @@ norm = gaussian_filter(xinit.squeeze(),3).max()
 ##
 #del yinit
 
-#cost_sino2 = np.zeros(niter)
-#cbs_sino2 = {'x_early':[], 't':[], 'it_early':[], 'cost' : cost_sino2}
-#x_sino2 = spdhg(em_sino, attn_sino, sens_sino, contam_sino, proj, niter,
-#               fwhm = fwhm, gamma = rel_gamma / norm, verbose = True, rho = rho,
-#               callback = _cb, callback_kwargs = cbs_sino2,
-#               grad_operator = grad_operator, grad_norm = grad_norm, beta = beta)
-
 cost_lm = np.zeros(niter)
 cbs_lm = {'x_early':[], 't':[], 'it_early':[], 'cost' : cost_lm}
 x_lm = spdhg_lm(events, attn_list, sens_list, contam_list, sens_img,
@@ -294,17 +288,19 @@ x_lm = spdhg_lm(events, attn_list, sens_list, contam_list, sens_img,
                 callback = _cb, callback_kwargs = cbs_lm,
                 grad_operator = grad_operator, grad_norm = grad_norm, beta = beta)
 
+# do second LM-SPDHG with better values for rho an gamma
+cost_lm2 = np.zeros(niter)
+cbs_lm2  = {'x_early':[], 't':[], 'it_early':[], 'cost' : cost_lm2}
+x_lm2    = spdhg_lm(events, attn_list, sens_list, contam_list, sens_img,
+                    proj, niter, nsubsets, x0 = xinit,
+                    fwhm = fwhm, gamma = 30 / norm, verbose = True, rho = 8,
+                    callback = _cb, callback_kwargs = cbs_lm2,
+                    grad_operator = grad_operator, grad_norm = grad_norm, beta = beta)
 
-#cost_emtv = np.zeros(niter)
-#cbs_emtv  = {'x_early':[], 't':[], 'it_early':[], 'cost' : cost_emtv}
-#x_emtv = osem_lm_emtv(events, attn_list, sens_list, contam_list, proj, sens_img, niter, 1, 
-#                      grad_operator = grad_operator, grad_norm = grad_norm, xstart = xinit,
-#                      callback = _cb, callback_kwargs = cbs_emtv,
-#                      fwhm = fwhm, verbose = True, beta = beta)
 
-
-np.savez('debug.npz', x = x_lm, x_early = np.array(cbs_lm['x_early']), it = cbs_lm['it_early'], 
-                      img = img, xinit = xinit, cost = cost_lm)
+np.savez('debug.npz', x_lm  = x_lm, x_early  = np.array(cbs_lm['x_early']),  cost_lm  = cost_lm, 
+                      x_lm2 = x_lm, x_early2 = np.array(cbs_lm2['x_early']), cost_lm2 = cost_lm2, 
+                      img = img, xinit = xinit, c0 = c0, it = cbs_lm['it_early'])
 
 #-----------------------------------------------------------------------------------------------------
 
