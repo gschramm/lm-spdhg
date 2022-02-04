@@ -719,9 +719,9 @@ LM-SPDHG for the same data set and prior as described in the previous subsection
 same warm start for both algorithms.
 As demonstrated by the convergence metrics and the reconstructed images, the convergence of
 sinogram SPDHG and LM-SPDHG is almost identical.
-This also holds for different count levels and for the structural DTV prior
-as shown in subfigures (b) and (c) and for different levels of regularization.
-%as shown %in supplementary Figs.~1 and 2.
+This also holds for different count levels and for the structural DTV priors 
+as shown in subfigures (b) and (c) and for different levels of regularization as shown
+in supplementary Figs.~1 and 2.
 For the example with the DTV prior shown in subfigure (c), the convergence in terms of
 PSNR seems to be even slightly faster with LM-SPDHG, which can be also
 seen in the difference images with respect to the reference reconstruction.
@@ -813,14 +813,14 @@ for a given count level and clinical task, should be investigated in the future.
 Last but not least, we would like to note that according to our experience, SPDHG and LM-SPDHG
 for TOF PET reconstruction also converge for $\rho$ slightly greater than one which might
 be of interest for practical applications where stopping as early as possible can be important.
-%Suppl. Fig.~3 shows that in our 3D XCAT example, convergence can be further accelerated by
-%using $\rho = 8$ and $\gamma = 30/ \|x^0\|_\infty$.
+Suppl. Fig.~3 shows that in our 3D XCAT example, convergence can be further accelerated by
+using $\rho = 8$ and $\gamma = 30/ \|x^0\|_\infty$.
 A detailed investigation of the convergence speed as a function of $\rho$ and $\gamma$ potentially
 involving an iteration-dependent choice of $\rho$ \cite{Goldstein2015} is, however, 
 beyond the scope of this manuscript and left for future research.
 
 \section*{Acknowledgements}
 
-The authors would like to thank Claire Delplancke for the insightful discussion on the
+The authors wold like to thank Claire Delplancke for the insightful discussion on the
 initialization of (S)PDHG.
 This work was supported in part by the NIH grant 1P41EB017183-01A1.
