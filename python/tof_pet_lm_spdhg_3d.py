@@ -297,9 +297,19 @@ x_lm2    = spdhg_lm(events, attn_list, sens_list, contam_list, sens_img,
                     callback = _cb, callback_kwargs = cbs_lm2,
                     grad_operator = grad_operator, grad_norm = grad_norm, beta = beta)
 
+cost_lm3 = np.zeros(niter)
+cbs_lm3  = {'x_early':[], 't':[], 'it_early':[], 'cost' : cost_lm3}
+x_lm3    = spdhg_lm(events, attn_list, sens_list, contam_list, sens_img,
+                    proj, niter, nsubsets, x0 = xinit,
+                    fwhm = fwhm, gamma = 30 / norm, verbose = True, rho = 0.999,
+                    callback = _cb, callback_kwargs = cbs_lm3,
+                    grad_operator = grad_operator, grad_norm = grad_norm, beta = beta)
 
-np.savez('debug.npz', x_lm  = x_lm, x_early  = np.array(cbs_lm['x_early']),  cost_lm  = cost_lm, 
-                      x_lm2 = x_lm, x_early2 = np.array(cbs_lm2['x_early']), cost_lm2 = cost_lm2, 
+
+
+np.savez('debug.npz', x_lm  = x_lm,  x_early  = np.array(cbs_lm['x_early']),  cost_lm  = cost_lm, 
+                      x_lm2 = x_lm2, x_early2 = np.array(cbs_lm2['x_early']), cost_lm2 = cost_lm2, 
+                      x_lm3 = x_lm3, x_early3 = np.array(cbs_lm3['x_early']), cost_lm3 = cost_lm3, 
                       img = img, xinit = xinit, c0 = c0, it = cbs_lm['it_early'])
 
 #-----------------------------------------------------------------------------------------------------
