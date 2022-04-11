@@ -41,11 +41,11 @@ scanner = ppp.RegularPolygonPETScanner(
 
 
 # the TOF bin width in mm is 13*0.01302ns times the speed of light (300mm/ns) divided by two
-sino_params = ppp.PETSinogramParameters(scanner, ntofbins = 29, tofbin_width = 13*0.01302*speed_of_light/2)
+sino_params = ppp.PETSinogramParameters(scanner, rtrim = 65, ntofbins = 29, 
+                                        tofbin_width = 13*0.01302*speed_of_light/2)
 
 # define the projector
-
-proj = ppp.SinogramProjector(scanner, sino_params, img_shape, 
+proj = ppp.SinogramProjector(scanner, sino_params, img_shape,
                              voxsize = voxsize, tof = True, 
                              sigma_tof = sigma_tof, n_sigmas = 3.)
 
@@ -62,8 +62,7 @@ with h5py.File(LM_file, 'r') as data:
   events = data['MiceList/TofCoinc'][:]
 
 # swap axial and trans-axial crystals IDs
-events[:,[0,1]] = events[:,[1,0]]
-events[:,[2,3]] = events[:,[3,2]]
+events = events[:,[1,0,3,2,4]]
 
 # for the DMI the tof bins in the LM files are already meshed (only every 13th is populated)
 # so we divide the small tof bin number by 13 to get the bigger tof bins
@@ -73,21 +72,21 @@ events[:,-1] = -(events[:,-1]//13)
 
 nevents = events.shape[0]
 
-# shuffle events since events come semi sorted
-if verbose: print('shuffling LM data')
-ie = np.arange(nevents)
-np.random.shuffle(ie)
-events = events[ie,:]
-
-# calculate the events multiplicity
-mu = count_event_multiplicity(events, use_gpu_if_possible = True)
-
-#---------------------------------------------------------------------
-#---------------------------------------------------------------------
-#---------------------------------------------------------------------
-
-# backproject all LM events
-if verbose: print('backprojecting LM data')
-bimg = proj.back_project_lm(np.ones(nevents, dtype = np.float32), events)
-import pymirc.viewer as pv
-vi = pv.ThreeAxisViewer(bimg)
+## shuffle events since events come semi sorted
+#if verbose: print('shuffling LM data')
+#ie = np.arange(nevents)
+#np.random.shuffle(ie)
+#events = events[ie,:]
+#
+## calculate the events multiplicity
+#mu = count_event_multiplicity(events, use_gpu_if_possible = True)
+#
+##---------------------------------------------------------------------
+##---------------------------------------------------------------------
+##---------------------------------------------------------------------
+#
+## backproject all LM events
+#if verbose: print('backprojecting LM data')
+#bimg = proj.back_project_lm(np.ones(nevents, dtype = np.float32), events)
+#import pymirc.viewer as pv
+#vi = pv.ThreeAxisViewer(bimg)
