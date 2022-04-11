@@ -1,5 +1,3 @@
-NIMG-20-308
-
 # PMB-113146: Responses to referee comments
 
 ## General comments
