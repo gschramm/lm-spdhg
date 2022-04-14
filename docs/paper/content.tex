@@ -837,8 +837,38 @@ initialization of (S)PDHG.
 This work was supported in part by the NIH grant 1P41EB017183-01A1.
 
 \begin{appendices}
+
 \section{Listmode formulation}
 \added[id=MH]{
-Foo bar
+Here, as basis for the proposed LM-SPDHG algorithm, we provide details on the listmode re-formulation of the sinogram-based minimization problem \eqref{eq:primal}. To this aim, we denote the dependence of $D_i(\dot)$ on the data $d_i$ explicitly via $D(\cdot; d_i)$. Further, recall that for $N$ the list of detected events, $i_e$ is the sinogram bin in which event $e \in N$ was detected. With $e_0 \notin N$ denoting an additional, artificial event summarizing zero measurements we then obtain
+\begin{align*}
+\sum_{i=1}^m D((Px + s)_i; d_i)
+& = \sum_{i=1}^m \sum_{e \in N: i_e = i} \frac{(Px + s)_{i_e}}{d_{i_e}} - \log \left((Px+ s)_{i_e} \right) + \sum_{ i \,  : \,   d_i = 0 } (Px)_i  \\
+ & =  \sum_{e \in N} \frac{(Px+s)_{i_e}}{d_{i_e}}  - \log \left(\frac{(Px+s)_{i_e}}{d_{i_e}} \right)
+ -  \sum_{e \in N} \log (d_{i_e}) +  \sum_{ i \,  : \,   d_i = 0 } (Px)_i  \\ 
+& =  \sum_{e \in N \cup \{e_0\}} D \left( \frac{(P^{LM}_N x+s^{LM})_{e}}{d_{i_e}};  d^{LM}_e \right) -  \sum_{e \in N} \log (d_{i_e}) \\ 
+& =  \sum_{e \in N \cup \{e_0\}} D \left(\hat P^{LM}_N x+\hat s^{LM})_{e} ; d^{LM}_e \right)  - \sum_{e \in N} \log (d_{i_e}) \\ 
+\end{align*}
+%\begin{align*}
+%\KL_d(Pu + s) 
+%& = \sum_{i \in M} \sum_{e \in N: i_e = i} \frac{(Pu + s)_{i_e}}{d_{i_e}} - 1 - \log \left(\frac{(Pu + s)_{i_e}}{d_{i_e}} \right) + \sum_{i \in M: d_i = 0} (Pu)_i  \\
+%& =  \sum_{e \in N} \frac{(Pu+s)_{i_e}}{d_{i_e}} - 1 - \log \left(\frac{(Pu+s)_{i_e}}{d_{i_e}} \right)
+%+ \sum_{i \in M: d_i = 0} (Pu)_i  \\ % + \sum_{i: \nexists e \in N: i_e =i} (Pu)_i \\ 
+%& =  \sum_{e \in N} \frac{(P^{LM}_N u+s^{LM})_{e}}{d_{i_e}} - d^{LM}_e - d^{LM}_e\log \left(\frac{(Pu+s^{LM})_{e}}{d_{i_e}} \right) \\ 
+%& =  \sum_{e \in N} (\hat P^{LM}_N u+\hat s^{LM})_{e} - d^{LM}_e - d^{LM}_e\log \left((\hat Pu+\hat s^{LM})_{e} \right)  \\
+% & = \KL_{d^{LM}}(\hat P^{LM}_N u + \hat s) \\ 
+%\end{align*}
+where $d^{LM}_e=1$ for $e \in N$, $d_{e_0}^{LM} = 0$, $s^{LM}$ is the list-mode random and scatter estimate and
+\[ (P^{LM} u) _e = \begin{cases}
+ (Pu)_{i_e} & \text{if } e \in N \\
+ \sum_{i \,  : \,   d_i = 0} (Pu)_{i} & \text{if $e = {e_0}$}.
+\end{cases}
+\]
+The last step uses the rescaled operator $ \hat P^{LM} $ and the rescaled estimate  $\hat s^{LM}$ defined as $ (\hat P^{LM} u)_e= (P^{LM} u)_e/d_{i_e}$ and $(\hat s^{LM})_e = s^{LM}/ d_{i_e}$ for $e \in N$, and $ (\hat P^{LM} u)_{e_0} = (P^{LM} u)_{e_0}$ and $(\hat s^{LM})_{e_0} = 0$, respectively.
+}
+
+\added[id=MH]{
+Now the last line of the above reformulation provides an equivalent data term which (after removing the constant $\sum_{e \in N} \log (d_{i_e})$) can be used to obtain an equivalent list-mode-based reformulation of \eqref{eq:primal}.  Applying the SPDHG for this reformulation results in the proposed LM-SPDHG Algorithm \ref{alg:lmspdhg}. Note that there, the non-rescaled operator $P^{LM}$ and estimate $s^{LM}$ appear since i) on line 11 of the algorithm, the rescaling of $P^{LM}$ and $s^{LM}$ cancels out with the rescaling of $P^{LM}$ in the step size $S_k$ of \eqref{eq:lm_stepsizes}, and ii) the rescaling of $P^{LM}$ in line 12 is incorporated explicitly. Furthermore, note that we use the full forward operator $P$ instead of $P^{LM}_{N_k}$ for the stepsize $T_k$, for reasons explained in the paragraph above the respective equation \eqref{eq:lm_stepsizes}.
+%where we chose to use the non-rescaled operator $P^{LM}$ rather that $\hat P^{LM}$ and compensate for that by incorporating the scaling via the factor $\mu_e = d_{i_e}$  explicitly.
 }
 \end{appendices}
