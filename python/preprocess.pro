@@ -1,6 +1,3 @@
-;TODO create dummy event list that contains every geometrical LOR exactly once
-;     and get corresponding sens/attn sino indices + values for sens image calc.
-
 sinofile = '/uz/data/Admin/ngeworkingresearch/mi_patient_data/respmotion/20210930_16918_61360708/raw_idlfiles/rdf.7.1'
 sinodescrip = { scanner:            'dmi',      $
                 emission:           sinofile,   $
@@ -31,8 +28,6 @@ coords_all = nipet3dcoords(projd.petstruct, /allxtals)
 ; we need those to calculate the sensivity image
 sens_all  = nipet3dcoords(projd.petstruct, /samplesinogram, sinogram=sens)
 atten_all = nipet3dcoords(projd.petstruct, /samplesinogram, sinogram=atten)
-
-stop
 
 print, 'sens'
 niwrite_hdf5, sens_all, "data/dmi/lm_data.h5", "all_xtals", "sens"

@@ -6,25 +6,30 @@ from algorithms import spdhg_lm
 import h5py
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.ndimage import gaussian_filter
 
 from pathlib import Path
 from utils import count_event_multiplicity
 
 def _cb(x, **kwargs):
   it = kwargs.get('iteration',0)
-  np.save(f'data/dmi/it_{it:03}.npy',x)
+  prefix = kwargs.get('prefix','')
+  np.save(f'data/dmi/{prefix}_it_{it:03}.npy',x)
 
 #--------------------------------------------------------------------------------------------
 
-voxsize   = np.array([2.78, 2.78, 2.78], dtype = np.float32)
-img_shape = (120,120,71)
+voxsize   = np.array([2., 2., 2.], dtype = np.float32)
+img_shape = (166,166,98)
 verbose   = True
 
 # FHHM for resolution model in voxel
 fwhm  = 4.5 / (2.35*voxsize)
 
 # prior strength
-beta = 3e1
+beta = 12
+
+niter    = 1
+nsubsets = 136
 
 np.random.seed(1)
 
@@ -76,11 +81,20 @@ with h5py.File('data/dmi/lm_data.h5', 'r') as data:
 # TODO: use TOF backprojector for sens_img calculation
 if verbose:
   print('Calculating sensitivity image')
-proj.set_tof(False)
 ones = np.ones(all_possible_events.shape[0], dtype = np.float32)
-sens_img = pet_back_model_lm(ones, proj, all_possible_events, 
-                             all_atten, all_sens, fwhm = fwhm) 
-sens_img = proj.back_project_lm(all_sens*all_atten, all_possible_events)
+
+#sens_img2 = np.zeros(img_shape, dtype = np.float32)
+#for i in range(sino_params.ntofbins):
+#  it = i - sino_params.ntofbins//2
+#  print(it)
+#
+#  events = np.hstack((all_possible_events,np.full((all_possible_events.shape[0],1), it, 
+#                                                   dtype = all_possible_events.dtype)))
+#
+#  sens_img2 += pet_back_model_lm(ones, proj, events, all_atten, all_sens, fwhm = fwhm) 
+
+proj.set_tof(False)
+sens_img = pet_back_model_lm(ones, proj, all_possible_events, all_atten, all_sens, fwhm = fwhm) 
 proj.set_tof(True)
 
 
@@ -118,25 +132,25 @@ events[:,-1] = -(events[:,-1]//13)
 
 nevents = events.shape[0]
 
-### shuffle events since events come semi sorted
-#if verbose: 
-#  print('shuffling LM data')
-#ie = np.arange(nevents)
-#np.random.shuffle(ie)
-#events = events[ie,:]
-#sens_list   = sens_list[ie]
-#atten_list  = atten_list[ie]  
-#contam_list = contam_list[ie]
+## shuffle events since events come semi sorted
+if verbose: 
+  print('shuffling LM data')
+ie = np.arange(nevents)
+np.random.shuffle(ie)
+events = events[ie,:]
+sens_list   = sens_list[ie]
+atten_list  = atten_list[ie]  
+contam_list = contam_list[ie]
 
 # calculate the events multiplicity
 if verbose:
   print('Calculating event count')
 mu = count_event_multiplicity(events, use_gpu_if_possible = True)
 
-# back project ones
-if verbose:
-  print('backprojecting LM data')
-bimg = proj.back_project_lm(np.ones(nevents, dtype = np.float32), events)
+## back project ones
+#if verbose:
+#  print('backprojecting LM data')
+#bimg = proj.back_project_lm(np.ones(nevents, dtype = np.float32), events)
 
 
 #--------------------------------------------------------------------------------------------
@@ -150,10 +164,28 @@ xinit = osem_lm_emtv(events, atten_list, sens_list, contam_list, proj, sens_img,
                      grad_operator = grad_operator, grad_norm = grad_norm,
                      fwhm = fwhm, verbose = True, beta = beta)
 
+np.save(f'data/dmi/init.npy',xinit)
+
 norm = gaussian_filter(xinit.squeeze(),3).max()
 
-xspdhg = spdhg_lm(events, atten_list, sens_list, contam_list, sens_img,
-                  proj, 10, 56, x0 = xinit,
+xspdhg8 = spdhg_lm(events, atten_list, sens_list, contam_list, sens_img,
+                  proj, niter, nsubsets, x0 = xinit,
                   fwhm = fwhm, gamma = 30 / norm, verbose = True, rho = 8,
-                  callback = _cb,
+                  callback = _cb, callback_kwargs = {'prefix':'spdhg_lm_rho_8'},
                   grad_operator = grad_operator, grad_norm = grad_norm, beta = beta)
+
+xspdhg1 = spdhg_lm(events, atten_list, sens_list, contam_list, sens_img,
+                  proj, niter, nsubsets, x0 = xinit,
+                  fwhm = fwhm, gamma = 30 / norm, verbose = True, rho = 1,
+                  callback = _cb, callback_kwargs = {'prefix':'spdhg_lm_rho_1'},
+                  grad_operator = grad_operator, grad_norm = grad_norm, beta = beta)
+
+xemtv8 = osem_lm_emtv(events, atten_list, sens_list, contam_list, proj, sens_img, niter, 8, 
+                      grad_operator = grad_operator, grad_norm = grad_norm, xstart = xinit,
+                      callback = _cb, callback_kwargs = {'prefix':'emtv_8'},
+                      fwhm = fwhm, verbose = True, beta = beta)
+
+xemtv34 = osem_lm_emtv(events, atten_list, sens_list, contam_list, proj, sens_img, niter, 34, 
+                      grad_operator = grad_operator, grad_norm = grad_norm, xstart = xinit,
+                      callback = _cb, callback_kwargs = {'prefix':'emtv_34'},
+                      fwhm = fwhm, verbose = True, beta = beta)
