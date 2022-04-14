@@ -312,7 +312,7 @@ data-vector of dimension $|N|$ via
 \label{eq:lmop}
 \end{equation}
 %
-where $i_e$ is the sinogram bin in which event $e$ was detected.
+where $i_e$ is the sinogram bin in which event $e$ was detected. \added[id=MH]{Also, we denote by $s^{LM}$ with $s^{LM} = s_{i_e}$ the listmode-based scatter and random estimate.}
 
 Re-writing the gradient of the negative Poisson log likelihood using listmode data and the
 listmode operators is straightforward, such that any gradient-based PET reconstruction algorithm 
@@ -337,7 +337,7 @@ in Algorithm~\ref{alg:lmspdhg}.
 	\State $x \gets \proj_{\geq 0} (x - T \overline{z})$
 	\State Select $i \in \{1,\ldots,n+1\}$ randomly according to $(p_i)_i$
   \If{$i \leq n$}
-	  \State $y_{N_i}^+ \gets \prox_{D^*}^{S_i} \left( y_{N_i} + S_i \left(P^{LM}_{N_i} x + s_{N_i} \right) \right)$
+	  \State $y_{N_i}^+ \gets \prox_{D^*}^{S_i} \left( y_{N_i} + S_i \left(P^{LM}_{N_i} x + \added[id=MH]{s^{LM}_{N_i}} \right) \right)$
 	  \State $\delta z \gets {P^{LM}_{N_i}}^T \left(\frac{y_{N_i}^+ - y_{N_i}}{\mu_{N_i}}\right)$
 	  \State $y_{N_i} \gets y_{N_i}^+$
   \Else
@@ -858,7 +858,7 @@ Here, as basis for the proposed LM-SPDHG algorithm, we provide details on the li
 %& =  \sum_{e \in N} (\hat P^{LM}_N u+\hat s^{LM})_{e} - d^{LM}_e - d^{LM}_e\log \left((\hat Pu+\hat s^{LM})_{e} \right)  \\
 % & = \KL_{d^{LM}}(\hat P^{LM}_N u + \hat s) \\ 
 %\end{align*}
-where $d^{LM}_e=1$ for $e \in N$, $d_{e_0}^{LM} = 0$, $s^{LM}$ is the list-mode random and scatter estimate and
+where $d^{LM}_e=1$ for $e \in N$, $d_{e_0}^{LM} = 0$, $s^{LM}$ with $s^{LM}_e = s_{i_e}$ is the list-mode random and scatter estimate and
 \[ (P^{LM} u) _e = \begin{cases}
  (Pu)_{i_e} & \text{if } e \in N \\
  \sum_{i \,  : \,   d_i = 0} (Pu)_{i} & \text{if $e = {e_0}$}.
