@@ -3,6 +3,9 @@
 ## General comments
 <span style="color:dimgray">*We would like to thank all reviewers for the encouraging comments that helped us to improve the manuscript.*</span>
 
+### Highlighting of changes
+<span style="color:dimgray">*Text that was added to the manuscript is in blue.*</span>
+
 ### Clinical data
 <span style="color:dimgray">*Foo bar*</span>
 
@@ -17,13 +20,13 @@
 
 ## Main
 1. On page 5 they argue that they can write down the listmode likelihood and therefore can apply SPDHG (with all its guarantees) out of the box. It would be good to write this down explicitly in the paper and not just mentioning it. This is also necessary for the reader to understand why their stepsize conditions are sufficient for convergence.
-<span style="color:dimgray">*Our reply*</span>
+<span style="color:dimgray">*We added the listmode re-formulation of the sinogram-based optimization problem in appendix A and refer to it on page 5.*</span>
 
 2. Convergence speed of an algorithm is likely affected by the exact data and image content. It would strengthen the paper a lot to have one clinical data set to confirm the same conclusions on real data. 
 <span style="color:dimgray">*Our reply*</span>
 
 3. Figure 5: Why only 224 subsets? Intuitively, there is no upper bound on the subsets to be used within this setting. Why not take 1000s or even more? At some point one may see some diminishing returns as can be observed for TV here but DTV looks like can be made a lot faster.
-<span style="color:dimgray">*Our reply*</span>
+<span style="color:dimgray">*The reason why we applied "only" 224 is that the simulated scanner has 224 views in the sinogram. Since traditionally subsets in sinogram-based reconstructions are based on views and since we always wanted to compare the LM version against sinogram versions, we did not use more than 224 subsets (1 view per subset with the simulated scanner). For the LM approach there is indeed no upper bound on the number of subsets to use and the "optimal" number of subsets will probably depend on the total number of counts that were acquired (e.g. choosing the number of susbets such that a fixed number of counts is in one subset seems a reasonable idea) Since our manuscript is already quite long, we would like to keep the investigation of the ideal of subsets vs the acquired number of counts and the object for future research. We have added sentence in the discussion.*</span>
 
 ## Minor (mainly typos)
 
@@ -31,16 +34,16 @@
 <span style="color:dimgray">*Our reply*</span>
 
 2. P2 l41: "10 complete projections … are sufficient". This sounds to be rather optimistic and perhaps wrong. Better "10 complete projections … can be sufficient"
-<span style="color:dimgray">*Our reply*</span>
+<span style="color:dimgray">*"are" was replaced by "can be"*</span>
 
 3. P2 l45 positive => positive-definite
-<span style="color:dimgray">*Our reply*</span>
+<span style="color:dimgray">*positive-definite is now used*</span>
 
-4. Eq 5: i missing: it should be prox_{D_i*}^{S_i}
-<span style="color:dimgray">*Our reply*</span>
+4. Eq 5: i missing: it should be prox_{D_i\*}^{S_i}
+<span style="color:dimgray">*missing "i"s in "S_i"s were added*</span>
 
 5. P7 l 39: monitored => monitored
-<span style="color:dimgray">*Our reply*</span>
+<span style="color:dimgray">*We were not sure what the typo was (seems to be two times the same word in the issue above).*</span>
 
 ***
 

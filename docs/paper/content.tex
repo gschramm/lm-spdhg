@@ -87,13 +87,14 @@ In contrast to PDHG, SPDHG has the advantage that the complete forward and adjoi
 split into $n$ subsets, and that, in every update, only a random subset of the forward
 and adjoint operator chosen according to a probability $p_k$ has to be evaluated.
 In \cite{Ehrhardt2019}, Ehrhardt et al. applied SPDHG to 3D non-TOF PET reconstruction with TV-like
-priors and showed that around 10 complete projections and back projections are sufficient 
+priors and showed that around 10 complete projections and back projections 
+\replaced[id=GS]{can be}{are} sufficient 
 to obtain reasonable convergence using SPDHG with 252 subsets.
 Moreover, the authors also demonstrated that preconditioning further accelerates convergence.
 The resulting SPDHG algorithm to solve \eqref{eq:saddle} is summarized in Algorithm \ref{alg:spdhg},
 where the proximal operator for a convex function $f$ using the weighted norm 
-$\| \cdot \|_M^2 = \langle M^{-1} \cdot, \cdot \rangle$ induced by a symmetric and positive matrix $M$ 
-is defined as
+$\| \cdot \|_M^2 = \langle M^{-1} \cdot, \cdot \rangle$ induced by a symmetric and 
+positive\added[id=GS]{-definite} matrix $M$ is defined as
 %
 \begin{equation}
 \prox_{f}^{M}(y) = \argmin_v \left( \frac{1}{2} \| v - y  \|_M^2 + f(v) \right) \ .
@@ -104,7 +105,7 @@ can be calculated point-wise and is given by
 %
 \begin{equation}
 \begin{split}
-(\prox_{D_i^*}^{S}(y))_i &= \prox_{D_i^*}^{S}(y_i) \\ 
+(\prox_{D_i^*}^{S_i}(y))_i &= \prox_{D_i^*}^{S_i}(y_i) \\ 
 &= \frac{1}{2} \left(y_i + 1 - \sqrt{ (y_i-1)^2 + 4 S_i d_i} \right) \ .
 \end{split}
 \label{eq:proxD}
@@ -316,7 +317,7 @@ where $i_e$ is the sinogram bin in which event $e$ was detected. \added[id=MH]{A
 
 Re-writing the gradient of the negative Poisson log likelihood using listmode data and the
 listmode operators is straightforward, such that any gradient-based PET reconstruction algorithm 
-can be easily adapted to listmode data.
+can be easily adapted to listmode data \added[id=GS]{as shown in appendix \ref{appendix:lm}}.
 
 For a Bayesian approach with prior $R(K \cdot)$ as in \eqref{eq:primal} this is less immediate, 
 but we can show that indeed \eqref{eq:primal} can be equivalently re-written to a minimization 
@@ -814,6 +815,13 @@ behaviour of OSEM.
 Whether the difference between the limit cycle and the true optimal solution is of importance
 for a given count level and clinical task, should be investigated in the future.
 
+\added[id=GS]{As shown in Fig.~\ref{fig:num_subsets}, choosing the ``optimal'' number of subsets 
+for LM-SPDHG seems to depent on the prior and the number of acquired counts.
+For a reconstruction of a high-count scan with DTV, it is possible that LM-SPDHG with more
+than 224 subsets converges even faster.
+A detailed investigation of the choice of the number of subsets for different acquistion
+and reconstruction scenarios is left for future research.}
+
 Last but not least, we would like to note that according to our experience, SPDHG and LM-SPDHG
 for TOF PET reconstruction also converge for $\rho$ slightly greater than one which might
 be of interest for practical applications where stopping as early as possible can be important.
@@ -838,7 +846,8 @@ This work was supported in part by the NIH grant 1P41EB017183-01A1.
 
 \begin{appendices}
 
-\section{Listmode formulation}
+\section{Listmode re-formulation of the sinogram-based minimization problem}
+\label{appendix:lm}
 \added[id=MH]{
 Here, as basis for the proposed LM-SPDHG algorithm, we provide details on the listmode re-formulation of the sinogram-based minimization problem \eqref{eq:primal}. To this aim, we denote the dependence of $D_i(\dot)$ on the data $d_i$ explicitly via $D(\cdot; d_i)$. Further, recall that for $N$ the list of detected events, $i_e$ is the sinogram bin in which event $e \in N$ was detected. With $e_0 \notin N$ denoting an additional, artificial event summarizing zero measurements we then obtain
 \begin{align*}
