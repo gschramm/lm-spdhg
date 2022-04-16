@@ -363,8 +363,10 @@ Moreover, the dual variable for the data fidelity is replaced by the list $y_N$,
 same length as the measured event list $N$.
 If an event with a fixed sinogram bin $i_e$ occurs more than once in the event list
 $N$, it is also forward and back-projected multiple times in steps 11 and 12.
-To compensate for this fact, the algorithm divides by the event count $\mu_e$ before back projection
-in line 12.
+To compensate for this fact, the algorithm divides by the event count
+\footnote{\added[id=GS]{the event count $\mu_e$ represents the number of times the event $e$ 
+occurs in the event list $N$. For TOF PET, a data bin is characterized by the combination of geometrical LOR and the TOF bin along the LOR (a bin in a TOF sinogram).}}
+$\mu_e$ before back projection in line 12.
 Note that (i) as shown in Fig.~\ref{fig:sparsity} in most standard acquisitions the event count
 of most events is 1 and that (ii) calculating the event count $\mu_e$ which is a prerequisit
 creates a small pre-processing overhead (step 2).
