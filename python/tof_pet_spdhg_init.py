@@ -266,25 +266,20 @@ plt.rcParams['font.size'] = 10
 plt.rcParams['legend.fontsize'] = 'small'
 title_kwargs = {'fontweight':'bold', 'fontsize':'medium'}
 
-fig, ax = plt.subplots(2,4, figsize = (7,5))
+fig, ax = plt.subplots(2,6, figsize = (6*7/4,5))
 
-#ax[0,0].semilogy(n, (cost_spdhg_sino[0,...] - c_ref)/(c0 - c_ref), label = 'cold start', color = 'tab:blue')
-#ax[0,0].semilogy(n, (cost_spdhg_sino[1,...] - c_ref)/(c0 - c_ref), label = 'warm start', color = 'tab:orange')
 ax[0,0].semilogy(n, (cost_spdhg_sino[2,...] - c_ref)/(c0 - c_ref), label = 'cold start', color = 'tab:blue')
 ax[0,0].semilogy(n, (cost_spdhg_sino[3,...] - c_ref)/(c0 - c_ref), label = 'warm start', color = 'tab:orange')
 ax[0,0].set_xlabel('iteration')
 ax[0,0].set_ylabel('relative cost')
 ax[0,0].grid(ls = ':')
       
-#ax[1,0].plot(n, psnr_spdhg_sino[0,...], label = 'cold start', color = 'tab:blue')
-#ax[1,0].plot(n, psnr_spdhg_sino[1,...], label = 'warm start', color = 'tab:orange')
 ax[1,0].plot(n, psnr_spdhg_sino[2,...], label = 'cold start', color = 'tab:blue')
 ax[1,0].plot(n, psnr_spdhg_sino[3,...], label = 'warm start', color = 'tab:orange')
 ax[1,0].set_xlabel('iteration')
 ax[1,0].set_ylabel('PSNR to reference')
 ax[0,0].legend(loc = 0)
 ax[1,0].grid(ls = ':')
-
 
 ax[0,1].imshow(ref_recon.squeeze()[:,19:-19], vmax = 1.2*img.max(), cmap = plt.cm.Greys)
 ax[0,1].set_title('reference\nPDHG', **title_kwargs)
@@ -302,11 +297,24 @@ ax[0,3].set_title(f'SPDHG cold start\n{niter} iterations', **title_kwargs)
 ax[1,3].imshow(x4.squeeze()[:,19:-19], vmax = 1.2*img.max(), cmap = plt.cm.Greys)
 ax[1,3].set_title(f'SPDHG warm start\n{niter} iterations', **title_kwargs)
 
+ax[0,4].imshow(cbs3['x_early'].squeeze()[:,19:-19] - ref_recon.squeeze()[:,19:-19], 
+               vmin = -0.12*img.max(), vmax = 0.12*img.max(), cmap = plt.cm.seismic)
+ax[0,4].set_title('SPDHG cold start\nbias 3 iterations', **title_kwargs)
+ax[1,4].imshow(cbs4['x_early'].squeeze()[:,19:-19] - ref_recon.squeeze()[:,19:-19], 
+               vmin = -0.12*img.max(), vmax = 0.12*img.max(), cmap = plt.cm.seismic)
+ax[1,4].set_title('SPDHG warm start\nbias 3 itertations', **title_kwargs)
+
+
+ax[0,5].imshow(x3.squeeze()[:,19:-19] - ref_recon.squeeze()[:,19:-19], 
+               vmin = -0.12*img.max(), vmax = 0.12*img.max(), cmap = plt.cm.seismic)
+ax[0,5].set_title(f'SPDHG cold start\nbias {niter} iterations', **title_kwargs)
+ax[1,5].imshow(x4.squeeze()[:,19:-19] - ref_recon.squeeze()[:,19:-19], 
+               vmin = -0.12*img.max(), vmax = 0.12*img.max(), cmap = plt.cm.seismic)
+ax[1,5].set_title(f'SPDHG warm start\nbias {niter} itertations', **title_kwargs)
 
 for axx in ax[:,1:].ravel():
   axx.set_axis_off()
 
 fig.tight_layout()
 fig.savefig(f'SPDHG_init_{counts:.1E}_{nsubsets}_{beta:.1E}_{rel_gamma:.1E}_{rho:.1E}.png')
-#fig.savefig('SPDHG_cold_vs_warm_start.png')
 fig.show()
