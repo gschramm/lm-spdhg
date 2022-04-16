@@ -28,7 +28,7 @@ fwhm  = 4.5 / (2.35*voxsize)
 # prior strength
 beta = 12
 
-niter    = 1
+niter    = 50
 nsubsets = 136
 
 np.random.seed(1)
@@ -160,7 +160,7 @@ grad_norm     = GradientNorm(name = 'l2_l1')
 # run EM-TV
 if verbose:
   print('running OSEM')
-xinit = osem_lm_emtv(events, atten_list, sens_list, contam_list, proj, sens_img, 1, 28, 
+xinit = osem_lm_emtv(events, atten_list, sens_list, contam_list, proj, sens_img, 1, 34, 
                      grad_operator = grad_operator, grad_norm = grad_norm,
                      fwhm = fwhm, verbose = True, beta = beta)
 
@@ -168,24 +168,30 @@ np.save(f'data/dmi/init.npy',xinit)
 
 norm = gaussian_filter(xinit.squeeze(),3).max()
 
-xspdhg8 = spdhg_lm(events, atten_list, sens_list, contam_list, sens_img,
-                  proj, niter, nsubsets, x0 = xinit,
-                  fwhm = fwhm, gamma = 30 / norm, verbose = True, rho = 8,
-                  callback = _cb, callback_kwargs = {'prefix':'spdhg_lm_rho_8'},
-                  grad_operator = grad_operator, grad_norm = grad_norm, beta = beta)
+xpdhg = spdhg_lm(events, atten_list, sens_list, contam_list, sens_img,
+                 proj, 5, 1, x0 = xinit,
+                 fwhm = fwhm, gamma = 30 / norm, verbose = True, rho = 1,
+                 callback = _cb, callback_kwargs = {'prefix':'pdhg_lm_rho_1'},
+                 grad_operator = grad_operator, grad_norm = grad_norm, beta = beta)
 
-xspdhg1 = spdhg_lm(events, atten_list, sens_list, contam_list, sens_img,
-                  proj, niter, nsubsets, x0 = xinit,
-                  fwhm = fwhm, gamma = 30 / norm, verbose = True, rho = 1,
-                  callback = _cb, callback_kwargs = {'prefix':'spdhg_lm_rho_1'},
-                  grad_operator = grad_operator, grad_norm = grad_norm, beta = beta)
-
-xemtv8 = osem_lm_emtv(events, atten_list, sens_list, contam_list, proj, sens_img, niter, 8, 
-                      grad_operator = grad_operator, grad_norm = grad_norm, xstart = xinit,
-                      callback = _cb, callback_kwargs = {'prefix':'emtv_8'},
-                      fwhm = fwhm, verbose = True, beta = beta)
-
-xemtv34 = osem_lm_emtv(events, atten_list, sens_list, contam_list, proj, sens_img, niter, 34, 
-                      grad_operator = grad_operator, grad_norm = grad_norm, xstart = xinit,
-                      callback = _cb, callback_kwargs = {'prefix':'emtv_34'},
-                      fwhm = fwhm, verbose = True, beta = beta)
+#xspdhg8 = spdhg_lm(events, atten_list, sens_list, contam_list, sens_img,
+#                  proj, niter, nsubsets, x0 = xinit,
+#                  fwhm = fwhm, gamma = 30 / norm, verbose = True, rho = 8,
+#                  callback = _cb, callback_kwargs = {'prefix':'spdhg_lm_rho_8'},
+#                  grad_operator = grad_operator, grad_norm = grad_norm, beta = beta)
+#
+#xspdhg1 = spdhg_lm(events, atten_list, sens_list, contam_list, sens_img,
+#                  proj, niter, nsubsets, x0 = xinit,
+#                  fwhm = fwhm, gamma = 30 / norm, verbose = True, rho = 1,
+#                  callback = _cb, callback_kwargs = {'prefix':'spdhg_lm_rho_1'},
+#                  grad_operator = grad_operator, grad_norm = grad_norm, beta = beta)
+#
+#xemtv8 = osem_lm_emtv(events, atten_list, sens_list, contam_list, proj, sens_img, niter, 8, 
+#                      grad_operator = grad_operator, grad_norm = grad_norm, xstart = xinit,
+#                      callback = _cb, callback_kwargs = {'prefix':'emtv_8'},
+#                      fwhm = fwhm, verbose = True, beta = beta)
+#
+#xemtv34 = osem_lm_emtv(events, atten_list, sens_list, contam_list, proj, sens_img, niter, 34, 
+#                      grad_operator = grad_operator, grad_norm = grad_norm, xstart = xinit,
+#                      callback = _cb, callback_kwargs = {'prefix':'emtv_34'},
+#                      fwhm = fwhm, verbose = True, beta = beta)
