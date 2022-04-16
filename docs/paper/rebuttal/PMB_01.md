@@ -3,6 +3,9 @@
 ## General comments
 <span style="color:dimgray">*We would like to thank all reviewers for the encouraging comments that helped us to improve the manuscript.*</span>
 
+### Highlighting of changes
+<span style="color:dimgray">*Text that was added to the manuscript is in blue.*</span>
+
 ### Clinical data
 <span style="color:dimgray">*Foo bar*</span>
 
@@ -17,13 +20,13 @@
 
 ## Main
 1. On page 5 they argue that they can write down the listmode likelihood and therefore can apply SPDHG (with all its guarantees) out of the box. It would be good to write this down explicitly in the paper and not just mentioning it. This is also necessary for the reader to understand why their stepsize conditions are sufficient for convergence.
-<span style="color:dimgray">*Our reply*</span>
+<span style="color:dimgray">*We added the listmode re-formulation of the sinogram-based optimization problem in appendix A and refer to it on page 5.*</span>
 
 2. Convergence speed of an algorithm is likely affected by the exact data and image content. It would strengthen the paper a lot to have one clinical data set to confirm the same conclusions on real data. 
 <span style="color:dimgray">*Our reply*</span>
 
 3. Figure 5: Why only 224 subsets? Intuitively, there is no upper bound on the subsets to be used within this setting. Why not take 1000s or even more? At some point one may see some diminishing returns as can be observed for TV here but DTV looks like can be made a lot faster.
-<span style="color:dimgray">*Our reply*</span>
+<span style="color:dimgray">*The reason why we applied "only" 224 is that the simulated scanner has 224 views in the sinogram. Since traditionally subsets in sinogram-based reconstructions are based on views and since we always wanted to compare the LM version against sinogram versions, we did not use more than 224 subsets (1 view per subset with the simulated scanner). For the LM approach there is indeed no upper bound on the number of subsets to use and the "optimal" number of subsets will probably depend on the total number of counts that were acquired (e.g. choosing the number of susbets such that a fixed number of counts is in one subset seems a reasonable idea) Since our manuscript is already quite long, we would like to keep the investigation of the ideal of subsets vs the acquired number of counts and the object for future research. We have added sentence in the discussion.*</span>
 
 ## Minor (mainly typos)
 
@@ -31,16 +34,16 @@
 <span style="color:dimgray">*Our reply*</span>
 
 2. P2 l41: "10 complete projections … are sufficient". This sounds to be rather optimistic and perhaps wrong. Better "10 complete projections … can be sufficient"
-<span style="color:dimgray">*Our reply*</span>
+<span style="color:dimgray">*"are" was replaced by "can be"*</span>
 
 3. P2 l45 positive => positive-definite
-<span style="color:dimgray">*Our reply*</span>
+<span style="color:dimgray">*positive-definite is now used*</span>
 
-4. Eq 5: i missing: it should be prox_{D_i*}^{S_i}
-<span style="color:dimgray">*Our reply*</span>
+4. Eq 5: i missing: it should be prox_{D_i\*}^{S_i}
+<span style="color:dimgray">*missing "i"s in "S_i"s were added*</span>
 
 5. P7 l 39: monitored => monitored
-<span style="color:dimgray">*Our reply*</span>
+<span style="color:dimgray">*We were not sure what the typo was (seems to be two times the same word in the issue above).*</span>
 
 ***
 
@@ -49,16 +52,16 @@
 **Summary: In this manuscript, the authors explored the list-mode extension of the SPDHG algorithm for PET image reconstruction with TOF information. To solve the problem that TOF PET reconstruction from sinogram data is highly memory required and long computation time needed, direct projection from list-mode data was proposed to replace the sinogram projection in the SPDHG algorithm. The memory requirements of the proposed LM-SPDHG were significantly reduced. This reviewer only has a few comments for seeking clarifications:**
 
 1. Some symbols in some equations that were not clearly expressed such as P , x   in Equation(1)  may need to be in bold？
-<span style="color:dimgray">*Our reply*</span>
+<span style="color:dimgray">*In our notation, operators are represented by capital latin charactres (e.g. P, K), vectors are represented by small latin characters (e.g. x, y, s) and scalars are represented by small greek letters. This convention is often used in mathematics as e.g. in the original PDHG paper by Chambolle and Pock.*</span>
 
 2. A little more explanation on line4 and line5 in Algorithm2 is needed. Does “event count” mean the counts of the same LOR?
-<span style="color:dimgray">*Our reply*</span>
+<span style="color:dimgray">*The "event counts" means counts in the same measurement bin. For TOF PET that means counts on the same geometrical LOR in the same TOF bin. We have added a footnote to explain this more clearly. Line 5 is explained in detail after Equation (9). and line 4 corresponds to the initialization of y in Eq. (7) using the LM forward projector.*</span>
 
 3. In Fig.2, although the cost and PSNR show that the warm start performs better, it's hard to tell which is better in pictures, maybe the error image is preferable?
-<span style="color:dimgray">*Our reply*</span>
+<span style="color:dimgray">*It is correct that visually the differences between the cold and ward started sinogram SPDHGs is "small". However, as stated by the reviewer, from the PSNR plot it can be seen that the warm-started SPDHG is "closer" to the reference reconstruction at all iterations. Note, the main advantage of the proposed warm start for x and y is not that is leads to much faster convergence. Instead, the initialization of y according to Eq. (7) (where all bins without data, get initialized with the optimal value 1), allows the neglect those bins during the iterations as explained before Eq. (6). This in the end means that during the iterations of LM-SPDHG the forward and adjoint operator do not have to evaluated for data bins where no counts where measured.*</span>
 
 4. In Fig.4, the subsets for list-mode EM-TV are 1, 7, 28. Is 7 the most appropriate subset number of list-mode EM-TV? It would be helpful to provide an explanation on the choice of subset number of the comparison method.
-<span style="color:dimgray">*Our reply*</span>
+<span style="color:dimgray">*To our experience, the most appropriate number of subsets in EM-TV heavily depends on the number of counts in the measurement. In general, for high count scans more subsets can be used compared to low-count scan. Not that as with OSEM, EM-TV with subsets (OSEM-TV) does not convergence to he optimal solution but instead stays on a limit cycle around the optimal solution as seen in the PSNR plots in Fig. 5a and 5b for 28 subsets (purple curve). The distance of this limit cycle from the optimal point depends on the number of subsets used and the number of acquired counts. Since OSEM-TV with more than 1 subset does not converge and since the convergence EM-TV without subsets is very slow, we just added the cases of 7 and 28 subsets as a reference. For the experiments shown in Fig 5a and 5b that were stopped at 100 iterations, the optimal subset number should be somewhere between 7 and 28. As mentioned about in the 3rd comment we would like to leave the discussion on the "optimal number of listmode subsets" for future research.*</span>
 
 5. Since the paper focus on reducing the memory requirements of optimization-based TOF-PET reconstruction algorithms. It may need to mention the memory requirements of list-mode EM-TV.
 <span style="color:dimgray">*Our reply*</span>
