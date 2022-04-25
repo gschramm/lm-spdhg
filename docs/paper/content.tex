@@ -401,8 +401,8 @@ Hence, we recommend pre-computing the sensitivity image ($P^T 1$) and storing it
 In summary, compared to SPDHG, LM-SPDHG as shown in Algorithm~\ref{alg:lmspdhg} has the advantage
 that (i) only lists ($N$, $y_{N}$, $s_N$, $\mu_N$) instead of complete sinograms 
 ($y$ and $d$) have to be 
-stored in memory and (ii) all projections and back projection can be performed using listmode
-projectors.
+stored in memory and (ii) all projections and back projection\added[id=GS]{s} can be performed 
+using listmode projectors.
 This means that for all acquisitions where the number of detected events is substantially smaller than
 the number of data bins, the required memory and computation time is reduced.
 The latter depends on the actual implementation of the sinogram and listmode projectors
@@ -421,16 +421,27 @@ and the computational hardware.
 A detailed comparison of the required memory for SPDHG and LM-SPDHG for different typical PET
 acquisitions is listed in Table~\ref{tab:mem}.
 
+% mem req of LM OSEM: 
+% - images: x, sens
+% - lists:  event list, ratio list (float)
+%
+% mem req of PDHG denoiser:
+% - images: x, xbar, grad, dual of grad
+%
+% sequential alg, tmp data of LM-OSEM and PDHG denoiser dont need to be there at the same time
+
 \begin{table}
 \begin{center}
 \footnotesize
 \begin{tabular}{ c c r r r}
          &                       &            & counts      & \\ 
          &                       & 5e8        & 7e7         & 1e7 \\ \hline
-         & 8 images              &   0.4\,GB  &   0.4\,GB   &   0.4\,GB \\
+         & 9 images              &   0.45\,GB  &   0.45\,GB   &   0.45\,GB \\
 SPDHG    & 1 uint, 3 float sino.&  55.6\,GB  &  55.6\,GB   &  55.6\,GB \\ \hline
-LM-      & 8 images              &   0.4\,GB  &   0.4\,GB   &   0.4\,GB \\
-SPDHG    & event list, 1 uint, 3 float lists &  12.0\,GB  &   1.7\,GB   &   0.3\,GB
+LM-      & 9 images              &   0.45\,GB  &   0.45\,GB   &   0.45\,GB \\
+SPDHG    & event list, 1 uint, 3 float lists &  12.0\,GB  &   1.7\,GB   &   0.3\,GB \\ \hline
+         & 8 images              &   0.4\,GB  &   0.4\,GB   &   0.4\,GB \\
+EM-TV    & event list, 1 float list &  XX\,GB  &   XX\,GB   &   X\,GB
 \end{tabular}
 \end{center}
 \caption{Estimation of required memory for SPDHG and LM-SPDHG assuming an image size of (300,300,125)
@@ -575,7 +586,7 @@ Simulated listmode data were reconstructed using LM-SPDHG with 100 iterations an
 
 \begin{figure}
   \centering
-    \includegraphics[width=0.7\columnwidth]{./figure2_SPDHG_init_3.0E+05_224_3.0E-02_3.0E+00.png}
+    \includegraphics[width=0.99\columnwidth]{./figure2_SPDHG_init_3.0E+05_224_3.0E-02_3.0E+00.png}
   \caption{Comparison of convergence of sinogram SPDHG using a cold and warm start
            for 3e5 counts and a TV prior with $\beta = 0.03$ using 224 subsets.
            For the warm start, $x^0$ was taken from 1 EM-TV iteration with 28 subsets
@@ -587,6 +598,10 @@ Simulated listmode data were reconstructed using LM-SPDHG with 100 iterations an
            Third column: Reconstructions after 3 iterations with cold start (top) and warm
            start (bottom).
            Fourth column: Reconstructions after 20 iterations.
+           \added[id=GS]{Fifth and sixth column: Absolute differences of the SPDHG reconstructions with
+           respect to the reference PDHG reconstruction.
+           The range of the color map for the difference images is $\pm$10\% of the
+           maximum of the reference reconstruction.}
            Note that in the calculation of the relative cost the same $x^0$ was used
            and that in both cases the same step size ratio $\gamma$ was used.
            Moreover, in the very early iterations the relative cost of SPDHG is greater 1
