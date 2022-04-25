@@ -421,15 +421,6 @@ and the computational hardware.
 A detailed comparison of the required memory for SPDHG and LM-SPDHG for different typical PET
 acquisitions is listed in Table~\ref{tab:mem}.
 
-% mem req of LM OSEM: 
-% - images: x, sens
-% - lists:  event list, ratio list (float)
-%
-% mem req of PDHG denoiser:
-% - images: x, xbar, grad, dual of grad
-%
-% sequential alg, tmp data of LM-OSEM and PDHG denoiser dont need to be there at the same time
-
 \begin{table}
 \begin{center}
 \footnotesize
@@ -438,10 +429,10 @@ acquisitions is listed in Table~\ref{tab:mem}.
          &                       & 5e8        & 7e7         & 1e7 \\ \hline
          & 9 images              &   0.45\,GB  &   0.45\,GB   &   0.45\,GB \\
 SPDHG    & 1 uint, 3 float sino.&  55.6\,GB  &  55.6\,GB   &  55.6\,GB \\ \hline
-LM-      & 9 images              &   0.45\,GB  &   0.45\,GB   &   0.45\,GB \\
+LM-      & 10 images              &   0.5\,GB  &   0.5\,GB   &   0.5\,GB \\
 SPDHG    & event list, 1 uint, 3 float lists &  12.0\,GB  &   1.7\,GB   &   0.3\,GB \\ \hline
-         & 8 images              &   0.4\,GB  &   0.4\,GB   &   0.4\,GB \\
-EM-TV    & event list, 1 float list &  XX\,GB  &   XX\,GB   &   X\,GB
+         & 9 images              &   0.45\,GB  &   0.45\,GB   &   0.45\,GB \\
+EM-TV    & event list, 2 float list &  9.0\,GB  &   1.3\,GB   &   0.2\,GB
 \end{tabular}
 \end{center}
 \caption{Estimation of required memory for SPDHG and LM-SPDHG assuming an image size of (300,300,125)
@@ -571,8 +562,8 @@ However, we do not expect that this fact strongly affects the convergence proper
 SPDHG and LM-SPDHG. 
 
 To demonstrate that LM-SPDHG also works for realistic 3D TOF PET listmode data,
-we finally simulated and reconstructed 3D TOF PET data based on the 3D XCAT \cite{Segars2010} phantom 
-and a state-of-the-art
+we \deleted[id=GS]{finally} simulated and reconstructed 3D TOF PET data based on the 3D 
+XCAT \cite{Segars2010} phantom  and a state-of-the-art
 TOF PET scanner with 20\,cm axial field of view, a ring diameter of 650\,mm and a 400\,ps TOF 
 resolution (sinogram dimension: 357 radial bins, 224 projection angles, 1296 direct and  
 oblique planes, 27 TOF bins).
@@ -580,7 +571,26 @@ As before, the data simulation included the effects of attenuation, finite resol
 flat contamination with a contamination fraction of 42\%.
 In total, 7e7 prompt counts were simulated corresponding approximately to a standard 
 80\,s 1\,h p.i. FDG liver bed position acquisition.
-Simulated listmode data were reconstructed using LM-SPDHG with 100 iterations and 224 subsets. 
+Simulated listmode data were reconstructed using LM-SPDHG with \replaced[id=GS]{50}{100} 
+iterations and 224 subsets. 
+
+\added[id=GS]{Last but least, we also reconstructed a real TOF PET data set of the NEMA image 
+quality phantom acquired on a GE Discovery 4 ring TOF PET/CT (sinogram dimension: 357 radial bins, 
+272 projection angles, 1261 direct and  oblique planes, 29 TOF bins, 400\,ps TOF resolution).
+The activity contrast between the sphere inserts and the background was 10:1 and
+the acquisition contained 4.7e7 prompt (2.2e7 true) coincidences.
+Reconstructions using a TV prior with $\beta = 6$ were performed with EMTV using 100 
+iterations with 1 and 28 subsets, and with LM-SPDHG using 100 iterations and 224 subsets.
+We also performed a reconstruction of the same data set with LM-PDHG using 20000 iterations and 
+1 subset. 
+This reconstruction was used as a reference to calculate the relative cost and PSNR.
+
+All reconstruction algorithms used in the work were implemented in python3 the using the open-source
+``parallelproj'' CUDA projector libraries available at \url{https://github.com/gschramm/parallelproj}.
+Upon publication of this article, an open-source implementation of the LM-SPDHG algorithm will be
+made availalbe in the associated ``pyparallelproj'' python package.
+Preprocessing of the NEMA image quality phantom data set was performed using GE's duetto PET 
+reconstruction toolbox v2.17.}
 
 \subsection*{SPDHG using a warm start vs a cold start}
 
@@ -787,8 +797,45 @@ which leads to overhead due to gradient-based updates.
 However, we expect that, once properly implemented on GPUs, this overhead will be small compared to
 the time needed to calculate the actual TOF projections.
 
+\subsection*{Reconstrution of NEMQ IQ phantom data}
+
+\begin{figure*}
+  \centering
+    \includegraphics[width=1.0\textwidth]{figure7_NEMA_DMI.png}
+  \caption{\added[id=GS]{
+           Convergence of LM-SPDHG for reconstruction of real 3D TOF data from an acqusition of
+           the NEMA image quality phantom on a GE Discovey MI 4 ring TOF PET system with a TV prior
+           and $\beta = 6$ with 2.2e7 true (4.7e7 prompt) counts.
+           First column, top two rows: transaxial and coronal slice of reference LM-PDHG 
+           reconstruction using 20000 iterations and 1 subset. 
+           Second column, top two rows: LM-SPDHG reconstruction using 100 iterations and
+           224 subsets. 
+           Third column, top two rows: EMTV reconstruction using 100 iterations and
+           1 subset. 
+           Fourth column, top two rows: EMTV reconstruction using 100 iterations and
+           28 subsets. 
+           Fist column, bottom two rows: relative cost and PSNR to reference reconstruction.
+           Second, third, fourth column, bottom two rows: absolute difference compared to
+           reference reconstruction.
+           }}
+  \label{fig:nema}
+\end{figure*}
+
+\added[id=GS]{
+Figure~\ref{fig:nema} shows the results of the reconstructions of the listmode data from the 
+acquisition of the NEMA image quality phantom on the GE Discovey MI 4 ring TOF PET system.
+After 100 iterations, LM-SPDHG using 224 subsets has lower cost compared to both EMTV
+reconstructions and is closest to the referene reconstruction in terms of PSNR.
+From the differene images it can be seen that the stochastic LM-SDPHG mostly differs from the
+reference in the background outside the phantom.
+In contrast, both EMTV reconstructions show bigger residual differences within the phantom 
+which are most pronounced in the ``warm'' background for EMTV using 28 subsets and in the 
+``cold'' central insert for EMTV using 1 subset.
+}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\clearpage
 
 \section{Discussion}
 
