@@ -31,7 +31,7 @@
 ## Minor (mainly typos)
 
 1. P2 l12: The convex functions in this argument are D and beta * R but their notation suggests these were x \to D(Px + s) and x \to beta * R(Kx)
-<span style="color:dimgray">*Our reply*</span>
+<span style="color:dimgray">*We have updated the notation accordingly.*</span>
 
 2. P2 l41: "10 complete projections … are sufficient". This sounds to be rather optimistic and perhaps wrong. Better "10 complete projections … can be sufficient"
 <span style="color:dimgray">*"are" was replaced by "can be"*</span>

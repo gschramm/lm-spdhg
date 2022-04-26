@@ -43,10 +43,11 @@ purely gradient-based optimization algorithms to solve \eqref{eq:primal}.
 
 \subsection*{PDHG and SPDHG for PET reconstruction with non-smooth priors}
 
-Using the fact that $D(Px + s) = \sum_i D_i((Px + s)_i)$ and $\beta R(Kx)$ are convex functions and thus are
-equal to their convex biconjugates 
-$D^{**}(Px + s) = \sup_y \langle Px + s, y \rangle - \sum_{i=1}^{m} D_i^*(y_i)$ 
-and $(\beta R)^{**}(Kx) = \sup_w \langle Kx, w \rangle - (\beta R)^*(w)$, respectively, 
+Using the fact that \replaced[id=MH]{$z \mapsto D(z) := \sum_{i=1}^m D_i(z_i)$ and $z \mapsto \beta R(z)$}{$D(Px + s) = \sum_i D_i((Px + s)_i)$ and $\beta R(Kx)$} are convex\added[id=MH]{, lower-semicontinuous} functions and thus are
+equal to their convex biconjugates
+\replaced[id=MH]{$D^{**}(z) = \sup_y \langle z, y \rangle - \sum_{i=1}^{m} D_i^*(y_i)$ 
+and $(\beta R)^{**}(z) = \sup_w \langle z, w \rangle - (\beta R)^*(w)$}{$D^{**}(Px + s) = \sup_y \langle Px + s, y \rangle - \sum_{i=1}^{m} D_i^*(y_i)$ 
+and $(\beta R)^{**}(Kx) = \sup_w \langle Kx, w \rangle - (\beta R)^*(w)$}, respectively, 
 where $D_i^*$ and $(\beta R)^*$ are the convex conjugates,
 and that $(\beta R)^*(w) = \beta R^*(w / \beta)$, 
 we can rewrite \eqref{eq:primal} as the saddle point problem
@@ -61,15 +62,15 @@ introducing the dual variables $y$ and $w$, and the convex dual of the Poisson l
 \begin{equation}
 D_i^*(y_i) =
 \begin{cases}
--d_i + d_i \log \left( \frac{d_i}{1-y_i} \right) & \text{if } y_i < 1 \text{ and } d_i > 0 \\
-0 & \text{if } y_i \leq 1 \text{ and } d_i = 0 \\
+-d_i + d_i \log \left( \frac{d_i}{1-y_i} \right) & \text{if } y_i < 1 \text{ and } d_i > 0\added[id=MH]{,} \\
+0 & \text{if } y_i \leq 1 \text{ and } d_i = 0\added[id=MH]{,} \\
 \infty & \text{else} \ .
 \end{cases}
 \end{equation}
 %for $d_i >0$ and $D_i^*(y_i) = 0$ if $y_i \leq 1$ and $D_i^*(y_i) = \infty$ if $y_i >1$ 
 % in the other case.
 %
-Under mild assumptions on $R$, which hold for all of above-mentioned smoothing priors, Problem \eqref{eq:saddle} is equivalent to \eqref{eq:primal} and
+Under mild assumptions on $R$, which hold for all of \added[id=MH]{the} above-mentioned smoothing priors, Problem \eqref{eq:saddle} is equivalent to \eqref{eq:primal} and
 %Problem \eqref{eq:saddle}, 
 can be solved even for non-smooth priors using the generic primal-dual hybrid gradient (PDHG) 
 algorithm by Chambolle and Pock \cite{Chambolle2011}.
@@ -313,7 +314,7 @@ data-vector of dimension $|N|$ via
 \label{eq:lmop}
 \end{equation}
 %
-where $i_e$ is the sinogram bin in which event $e$ was detected. \added[id=MH]{Also, we denote by $s^{LM}$ with $s^{LM} = s_{i_e}$ the listmode-based scatter and random estimate.}
+where $i_e$ is the sinogram bin in which event $e$ was detected. \added[id=MH]{Also, we denote by $s^{LM}$ with $s^{LM}_e = s_{i_e}$ the listmode-based scatter and random estimate.}
 
 Re-writing the gradient of the negative Poisson log likelihood using listmode data and the
 listmode operators is straightforward, such that any gradient-based PET reconstruction algorithm 
@@ -582,9 +583,10 @@ the acquisition contained 4.7e7 prompt (2.2e7 true) coincidences.
 Reconstructions using a TV prior with $\beta = 6$ were performed with EMTV using 100 
 iterations with 1 and 28 subsets, and with LM-SPDHG using 100 iterations and 224 subsets.
 We also performed a reconstruction of the same data set with LM-PDHG using 20000 iterations and 
-1 subset. 
-This reconstruction was used as a reference to calculate the relative cost and PSNR.
+1 subset.}
 
+\added[id=GS]{
+This reconstruction was used as a reference to calculate the relative cost and PSNR.
 All reconstruction algorithms used in this work were implemented in python3 the using the open-source
 ``parallelproj'' CUDA projector libraries available at \url{https://github.com/gschramm/parallelproj}.
 An Nvidia V100 GPU with 16\,GB RAM was used to perform all reconstructions.
