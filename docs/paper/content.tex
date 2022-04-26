@@ -8,7 +8,7 @@ To limit the transfer of the data noise into the image during model-based iterat
 reconstruction (MBIR), different strategies exist. 
 One possibility is to add a ``smoothing'' prior to the data fidelity term in the cost
 function that is being optimized.
-In general, we can formulate the resulting optimization problem for any imaging system where the
+In general, we can formulate the resulting optimization problem for any \added[id=MH]{PET} imaging system where the
 acquired data follow a Poisson distribution as
 %
 \begin{equation}
@@ -318,11 +318,11 @@ where $i_e$ is the sinogram bin in which event $e$ was detected. \added[id=MH]{A
 
 Re-writing the gradient of the negative Poisson log likelihood using listmode data and the
 listmode operators is straightforward, such that any gradient-based PET reconstruction algorithm 
-can be easily adapted to listmode data \added[id=GS]{as shown in appendix \ref{appendix:lm}}.
+can be easily adapted to listmode data.
 
 For a Bayesian approach with prior $R(K \cdot)$ as in \eqref{eq:primal} this is less immediate, 
 but we can show that indeed \eqref{eq:primal} can be equivalently re-written to a minimization 
-problem involving only the listmode forward operator that is of the same form as \eqref{eq:primal}. 
+problem involving only the listmode forward operator that is of the same form as \eqref{eq:primal}\added[id=GS]{, see appendix \ref{appendix:lm}}. 
 This allows us to extend the SPDHG algorithm for listmode data and yields the algorithm as shown 
 in Algorithm~\ref{alg:lmspdhg}.
 
