@@ -1,4 +1,5 @@
 %auto-ignore
+\\ \textbf{Objective:} 
 Complete time of flight (TOF) sinograms of state-of-the-art TOF PET scanners have a large memory 
 footprint.
 Currently, they contain ${\sim}4{\cdot}10^9$ data bins which amount to ${\sim}17$\,GB 
@@ -15,17 +16,24 @@ SPDHG requires the storage of additional sinograms in memory, which severely lim
 its application to data sets from state-of-the-art TOF PET systems using conventional
 computing hardware.
 
+\textbf{Approach:}
 Motivated by the generally sparse nature of the TOF sinograms, we propose and analyze a new 
 listmode (LM) extension of the SPDHG algorithm  for image reconstruction of sparse data 
 following a Poisson distribution.
-Based on realistic 2D and 3D simulations \added{as well as a real dataset acquired on a 
-state-of-the-art TOF PET/CT system}, we show that the speed of convergence of the proposed 
+\added{The new algorithm is evaluated based on realistic 2D and 3D simulationsn, 
+and a real dataset acquired on a state-of-the-art TOF PET/CT system.
+The performance of the newly proposed LM SPDHG algorithm is compared against
+the conventional sinogram SPDHG and the listmode EMTV algorithm.} 
+
+\textbf{Main results:}
+We show that the speed of convergence of the proposed 
 LM-SPDHG is equivalent the original SPDHG operating on binned data (TOF sinograms).
 However, we find that for a TOF PET system with 400\,ps TOF resolution and 25\,cm axial FOV,
 the proposed LM-SPDHG reduces the required memory from approximately 56\,GB to
 0.7\,GB for a short dynamic frame with $10^7$ prompt coincidences and to 12.4\,GB for a long 
 static acquisition with $5\cdot10^8$ prompt coincidences.
 
+\textbf{Significance:}
 In contrast to SPDHG, the reduced memory requirements of LM-SPDHG enables 
 a pure GPU implementation on state-of-the-art GPUs - avoiding memory transfers
 between host and GPU - which will substantially accelerate reconstruction times.
