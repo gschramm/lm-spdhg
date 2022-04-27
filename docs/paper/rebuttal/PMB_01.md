@@ -4,10 +4,13 @@
 <span style="color:dimgray">*We would like to thank all reviewers for the encouraging comments that helped us to improve the manuscript.*</span>
 
 ### Highlighting of changes
-<span style="color:dimgray">*Text that was added to the manuscript is in blue.*</span>
+<span style="color:dimgray">*Text that was changed (added, removed or replaced) is highlighted in blue.*</span>
 
 ### Reconstruction of real TOF PET data
 <span style="color:dimgray">*As requested by both reviewers, we have added the results of the reconstruction of a real data set (NEMA image quality phantom) acquired on GE DMI 4 ring TOF PET/CT. The results are shown in Figure 7. Note that for this data set we used a LM-PDHG reconstruction with 20000 iterations and 1 subset as reference. Doing the same with the sinogram PDHG was computationally not feasible.*</span>
+
+### Structured abstract
+<span style="color:dimgray">*The abstract is now structured into Objective, Approach, Main results, Significance*</span>
 
 
 * * *
