@@ -369,8 +369,7 @@ Moreover, the dual variable for the data fidelity is replaced by the list $y_N$,
 same length as the measured event list $N$.
 If an event with a fixed sinogram bin $i_e$ occurs more than once in the event list
 $N$, it is also forward and back-projected multiple times in steps 11 and 12.
-To compensate for this fact, the algorithm divides by the event count
-\footnote{\added{the event count $\mu_e$ represents the number of times the event $e$ 
+To compensate for this fact, the algorithm divides by the event count\footnote{\added{the event count $\mu_e$ represents the number of times the event $e$ 
 occurs in the event list $N$. For TOF PET, a data bin is characterized by the combination of geometrical LOR and the TOF bin along the LOR (a bin in a TOF sinogram).}}
 $\mu_e$ before back projection in line 12.
 Note that (i) as shown in Fig.~\ref{fig:sparsity} in most standard acquisitions the event count
@@ -581,7 +580,8 @@ Simulated listmode data were reconstructed using LM-SPDHG with \replaced{50}{100
 iterations and 224 subsets. 
 
 \added{Last but not least, we also reconstructed a real TOF PET data set of the NEMA image 
-quality phantom acquired on a GE Discovery 4 ring TOF PET/CT (sinogram dimension: 357 radial bins, 
+quality phantom acquired on a GE Discovery MI 4 ring TOF PET/CT \cite{Hsu2017} 
+(20\,cm axial FOV, sinogram dimension: 357 radial bins, 
 272 projection angles, 1261 direct and  oblique planes, 29 TOF bins, 400\,ps TOF resolution).
 The activity contrast between the sphere inserts and the background was 10:1 and
 the acquisition contained 4.7e7 prompt (2.2e7 true) coincidences.
@@ -591,7 +591,7 @@ We also performed a reconstruction of the same data set with LM-PDHG using 20000
 1 subset.
 This reconstruction was used as a reference to calculate the relative cost and PSNR.}
 
-\added{All reconstruction algorithms used in this work were implemented in python3 the using the 
+\added{All reconstruction algorithms used in this work were implemented in python3 using the 
 open-source ``parallelproj'' CUDA projector libraries available at 
 \url{https://github.com/gschramm/parallelproj}.
 An Nvidia V100 GPU with 16\,GB RAM was used to perform all reconstructions.
@@ -724,7 +724,7 @@ A comparison between the convergence of LM-SPDHG using 224 subsets and listmode
 EM-TV using 1, 7 and 28 subsets is shown in Fig.~\ref{fig:emtv}.
 In all sub figures, LM-SPDHG converges much faster than EM-TV.
 Interestingly, when using listmode EM-TV with more than one subset, the convergence
-metrics saturate meaning that the algorithm probably is stuck
+metrics saturate meaning that the algorithm \replaced{remains}{probably is stuck}
 on a limited cycle and the optimal solution is not reached.
 When using one subset, the convergence of EM-TV is much slower but does not seem
 to saturate after 100 iterations.
@@ -868,7 +868,8 @@ data is more complicated since more than 50\,GB of GPU is required.
 In this proof of concept work, we only used two non-smooth TV-like priors
 to benchmark LM-SPDHG. 
 Note that in general, SPDHG and LM-SPDHG can be also used for smooth priors as long
-as proximal operator of the convex dual of the prior can be efficiently calculated which is
+as \added{the} proximal operator of the convex dual of the prior\added{s} can be efficiently 
+calculated which is
 e.g. the case for prior penalizing the squared L2 norm or Huber TV.
 However, for smooth priors the speed of convergence of (LM)-SPDHG should be benchmarked against
 other stochastic gradient-based optimization techniques such as the stochastic variance reduced gradient (SVRG) \cite{Johnson2013} or SAGA \cite{Defazio2014} which is beyond the scope of this work.
