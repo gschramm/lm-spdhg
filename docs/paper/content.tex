@@ -585,7 +585,7 @@ quality phantom acquired on a GE Discovery 4 ring TOF PET/CT (sinogram dimension
 272 projection angles, 1261 direct and  oblique planes, 29 TOF bins, 400\,ps TOF resolution).
 The activity contrast between the sphere inserts and the background was 10:1 and
 the acquisition contained 4.7e7 prompt (2.2e7 true) coincidences.
-Reconstructions using a TV prior with $\beta = 6$ were performed with EMTV using 100 
+Reconstructions using a TV prior with $\beta = 6$ were performed with EM-TV using 100 
 iterations with 1 and 28 subsets, and with LM-SPDHG using 100 iterations and 224 subsets.
 We also performed a reconstruction of the same data set with LM-PDHG using 20000 iterations and 
 1 subset.
@@ -818,9 +818,9 @@ the time needed to calculate the actual TOF projections.
            reconstruction using 20000 iterations and 1 subset. 
            Second column, top two rows: LM-SPDHG reconstruction using 100 iterations and
            224 subsets. 
-           Third column, top two rows: EMTV reconstruction using 100 iterations and
+           Third column, top two rows: EM-TV reconstruction using 100 iterations and
            1 subset. 
-           Fourth column, top two rows: EMTV reconstruction using 100 iterations and
+           Fourth column, top two rows: EM-TV reconstruction using 100 iterations and
            28 subsets. 
            Fist column, bottom two rows: relative cost and PSNR to reference reconstruction.
            Second, third, fourth column, bottom two rows: absolute difference compared to
@@ -832,13 +832,13 @@ the time needed to calculate the actual TOF projections.
 \added{
 Figure~\ref{fig:nema} shows the results of the reconstructions of the listmode data from the 
 acquisition of the NEMA image quality phantom on the GE Discovey MI 4 ring TOF PET system.
-After 100 iterations, LM-SPDHG using 224 subsets has lower cost compared to both EMTV
+After 100 iterations, LM-SPDHG using 224 subsets has lower cost compared to both EM-TV
 reconstructions and is closest to the referene reconstruction in terms of PSNR.
 From the differene images it can be seen that the stochastic LM-SDPHG mostly differs from the
 reference in the background outside the phantom.
-In contrast, both EMTV reconstructions show bigger residual differences within the phantom 
-which are most pronounced in the ``warm'' background for EMTV using 28 subsets and in the 
-``cold'' central insert for EMTV using 1 subset.
+In contrast, both EM-TV reconstructions show bigger residual differences within the phantom 
+which are most pronounced in the ``warm'' background for EM-TV using 28 subsets and in the 
+``cold'' central insert for EM-TV using 1 subset.
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
