@@ -218,7 +218,7 @@ such as (low count) SPECT or photon counting CT.
 
 \begin{figure}
   \centering
-    \includegraphics[width=0.7\columnwidth]{./figure1_sparsity.png}
+    \includegraphics[width=0.7\columnwidth]{./figure1.png}
   \caption{Representative slices through a single view of an emission sinogram of a 
   80s [\textsuperscript{18}F]FDG acquisition of a liver bed position. 
   The scan was acquired 1\,h post injection with an injected dose of 323\,MBq on
@@ -604,7 +604,7 @@ reconstruction toolbox v2.17.}
 
 \begin{figure}
   \centering
-    \includegraphics[width=0.99\columnwidth]{./figure2_SPDHG_init_3.0E+05_224_3.0E-02_3.0E+00.png}
+    \includegraphics[width=0.99\columnwidth]{./figure2.png}
   \caption{Comparison of convergence of sinogram SPDHG using a cold and warm start
            for 3e5 counts and a TV prior with $\beta = 0.03$ using 224 subsets.
            For the warm start, $x^0$ was taken from 1 EM-TV iteration with 28 subsets
@@ -647,19 +647,19 @@ in the early iterations.
   \centering
   \begin{subfigure}[]{1.0\textwidth}
     \centering
-    \includegraphics[width=0.8\textwidth]{./figure3a_brain2d_counts_3.0E+05_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_100.png}
+    \includegraphics[width=0.8\textwidth]{./figure3a.png}
     \caption{3e5 true (5e5 prompt) counts, TV prior, $\beta = 0.03$}
   \end{subfigure}
   \vfill
   \begin{subfigure}[]{1.0\textwidth}
     \centering
-    \includegraphics[width=0.8\textwidth]{./figure3b_brain2d_counts_3.0E+06_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_100.png}
+    \includegraphics[width=0.8\textwidth]{./figure3b.png}
     \caption{3e6 true (5e6 prompt) counts, TV prior, $\beta = 0.03$}
   \end{subfigure}
   \vfill
   \begin{subfigure}[]{1.0\textwidth}
     \centering
-    \includegraphics[width=0.8\textwidth]{./figure3c_brain2d_counts_3.0E+05_seed_1_beta_1.0E-01_prior_DTV_niter_ref_20000_fwhm_4.5_4.5_niter_100.png}
+    \includegraphics[width=0.8\textwidth]{./figure3c.png}
     \caption{3e5 true (5e5 prompt) counts, DTV prior, $\beta = 0.1$}
   \end{subfigure}
   \caption{Comparison of convergence of sinogram SPDHG and LM-SPDHG
@@ -693,19 +693,19 @@ seen in the difference images with respect to the reference reconstruction.
   \centering
   \begin{subfigure}[]{1.0\textwidth}
     \centering
-    \includegraphics[width=0.8\textwidth]{./figure4a_brain2d_counts_3.0E+05_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_100_emtv.png}
+    \includegraphics[width=0.8\textwidth]{./figure4a.png}
     \caption{3e5 true (5e5 prompt) counts, TV prior, $\beta = 0.03$}
   \end{subfigure}
   \vfill
   \begin{subfigure}[]{1.0\textwidth}
     \centering
-    \includegraphics[width=0.8\textwidth]{./figure4b_brain2d_counts_3.0E+06_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_100_emtv.png}
+    \includegraphics[width=0.8\textwidth]{./figure4b.png}
     \caption{3e6 true (5e6 prompt) counts, TV prior, $\beta = 0.03$}
   \end{subfigure}
   \vfill
   \begin{subfigure}[]{1.0\textwidth}
     \centering
-    \includegraphics[width=0.8\textwidth]{./figure4c_brain2d_counts_3.0E+05_seed_1_beta_1.0E-01_prior_DTV_niter_ref_20000_fwhm_4.5_4.5_niter_100_emtv.png}
+    \includegraphics[width=0.8\textwidth]{./figure4c.png}
     \caption{3e5 true (5e5 prompt) counts, DTV prior, $\beta = 0.1$}
   \end{subfigure}
   \caption{Same as Fig.~\ref{fig:lm-spdhg-var} but comparing the convergence of LM-SPDHG using
@@ -736,25 +736,25 @@ to saturate after 100 iterations.
   \centering
   \begin{subfigure}[b]{0.23\textwidth}
     \centering
-    \includegraphics[width=1.0\textwidth]{./figure5a_brain2d_counts_3.0E+05_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_100_ss.pdf}
+    \includegraphics[width=1.0\textwidth]{./figure5a.pdf}
     \caption{3e5 true (5e5 prompt) counts, TV prior, $\beta = 0.03$}
   \end{subfigure}
   \hfill
   \begin{subfigure}[b]{0.23\textwidth}
     \centering
-    \includegraphics[width=1.0\textwidth]{./figure5b_brain2d_counts_3.0E+05_seed_1_beta_1.0E-01_prior_DTV_niter_ref_20000_fwhm_4.5_4.5_niter_100_ss.pdf}
+    \includegraphics[width=1.0\textwidth]{./figure5b.pdf}
     \caption{3e5 true (5e5 prompt) counts, DTV prior, $\beta = 0.1$}
   \end{subfigure}
   \hfill
   \begin{subfigure}[b]{0.23\textwidth}
     \centering
-    \includegraphics[width=1.0\textwidth]{./figure5c_brain2d_counts_3.0E+06_seed_1_beta_3.0E-02_prior_TV_niter_ref_20000_fwhm_4.5_4.5_niter_100_ss.pdf}
+    \includegraphics[width=1.0\textwidth]{./figure5c.pdf}
     \caption{3e6 true (5e5 prompt) counts, TV prior, $\beta = 0.03$}
   \end{subfigure}
   \hfill
   \begin{subfigure}[b]{0.23\textwidth}
     \centering
-    \includegraphics[width=1.0\textwidth]{./figure5d_brain2d_counts_3.0E+06_seed_1_beta_1.0E-01_prior_DTV_niter_ref_20000_fwhm_4.5_4.5_niter_100_ss.pdf}
+    \includegraphics[width=1.0\textwidth]{./figure5d.pdf}
     \caption{3e6 true (5e5 prompt) counts, DTV prior, $\beta = 0.1$}
   \end{subfigure}
 
@@ -780,7 +780,7 @@ For a fixed number of subsets, convergence is faster for high count compared to 
 
 \begin{figure*}
   \centering
-    \includegraphics[width=1.0\textwidth]{figure6_xcat_TV_3e-2_4e7.png}
+    \includegraphics[width=1.0\textwidth]{./figure6.png}
   \caption{Convergence of LM-SPDHG for reconstruction of 3D TOF data generated from the XCAT phantom
            using 4e7 true (7e7) prompt counts and a TV prior with $\beta = 0.03$.
            Left column: evolution of cost function. 
@@ -809,7 +809,7 @@ the time needed to calculate the actual TOF projections.
 
 \begin{figure*}
   \centering
-    \includegraphics[width=1.0\textwidth]{figure7_NEMA_DMI.png}
+    \includegraphics[width=1.0\textwidth]{figure7.png}
   \caption{\added{
            Convergence of LM-SPDHG for reconstruction of real 3D TOF data from an acqusition of
            the NEMA image quality phantom on a GE Discovey MI 4 ring TOF PET system with a TV prior
