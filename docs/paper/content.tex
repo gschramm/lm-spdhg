@@ -8,7 +8,7 @@ To limit the transfer of the data noise into the image during model-based iterat
 reconstruction (MBIR), different strategies exist. 
 One possibility is to add a ``smoothing'' prior to the data fidelity term in the cost
 function that is being optimized.
-In general, we can formulate the resulting optimization problem for any \added[id=MH]{PET} imaging system where the
+In general, we can formulate the resulting optimization problem for any imaging system where the
 acquired data follow a Poisson distribution as
 %
 \begin{equation}
@@ -43,9 +43,11 @@ purely gradient-based optimization algorithms to solve \eqref{eq:primal}.
 
 \subsection*{PDHG and SPDHG for PET reconstruction with non-smooth priors}
 
-Using the fact that \replaced[id=MH]{$z \mapsto D(z) := \sum_{i=1}^m D_i(z_i)$ and $z \mapsto \beta R(z)$}{$D(Px + s) = \sum_i D_i((Px + s)_i)$ and $\beta R(Kx)$} are convex\added[id=MH]{, lower-semicontinuous} functions and thus are
+Using the fact that \replaced{$z \mapsto D(z) := \sum_{i=1}^m D_i(z_i)$ and $z 
+\mapsto \beta R(z)$}{$D(Px + s) = \sum_i D_i((Px + s)_i)$ and $\beta R(Kx)$} are 
+convex\added{, lower-semicontinuous} functions and thus are
 equal to their convex biconjugates
-\replaced[id=MH]{$D^{**}(z) = \sup_y \langle z, y \rangle - \sum_{i=1}^{m} D_i^*(y_i)$ 
+\replaced{$D^{**}(z) = \sup_y \langle z, y \rangle - \sum_{i=1}^{m} D_i^*(y_i)$ 
 and $(\beta R)^{**}(z) = \sup_w \langle z, w \rangle - (\beta R)^*(w)$}{$D^{**}(Px + s) = \sup_y \langle Px + s, y \rangle - \sum_{i=1}^{m} D_i^*(y_i)$ 
 and $(\beta R)^{**}(Kx) = \sup_w \langle Kx, w \rangle - (\beta R)^*(w)$}, respectively, 
 where $D_i^*$ and $(\beta R)^*$ are the convex conjugates,
@@ -62,15 +64,15 @@ introducing the dual variables $y$ and $w$, and the convex dual of the Poisson l
 \begin{equation}
 D_i^*(y_i) =
 \begin{cases}
--d_i + d_i \log \left( \frac{d_i}{1-y_i} \right) & \text{if } y_i < 1 \text{ and } d_i > 0\added[id=MH]{,} \\
-0 & \text{if } y_i \leq 1 \text{ and } d_i = 0\added[id=MH]{,} \\
+-d_i + d_i \log \left( \frac{d_i}{1-y_i} \right) & \text{if } y_i < 1 \text{ and } d_i > 0{,} \\
+0 & \text{if } y_i \leq 1 \text{ and } d_i = 0\added{,} \\
 \infty & \text{else} \ .
 \end{cases}
 \end{equation}
 %for $d_i >0$ and $D_i^*(y_i) = 0$ if $y_i \leq 1$ and $D_i^*(y_i) = \infty$ if $y_i >1$ 
 % in the other case.
 %
-Under mild assumptions on $R$, which hold for all of \added[id=MH]{the} above-mentioned smoothing priors, Problem \eqref{eq:saddle} is equivalent to \eqref{eq:primal} and
+Under mild assumptions on $R$, which hold for all of \added{the} above-mentioned smoothing priors, Problem \eqref{eq:saddle} is equivalent to \eqref{eq:primal} and
 %Problem \eqref{eq:saddle}, 
 can be solved even for non-smooth priors using the generic primal-dual hybrid gradient (PDHG) 
 algorithm by Chambolle and Pock \cite{Chambolle2011}.
@@ -89,13 +91,13 @@ split into $n$ subsets, and that, in every update, only a random subset of the f
 and adjoint operator chosen according to a probability $p_k$ has to be evaluated.
 In \cite{Ehrhardt2019}, Ehrhardt et al. applied SPDHG to 3D non-TOF PET reconstruction with TV-like
 priors and showed that around 10 complete projections and back projections 
-\replaced[id=GS]{can be}{are} sufficient 
+\replaced{can be}{are} sufficient 
 to obtain reasonable convergence using SPDHG with 252 subsets.
 Moreover, the authors also demonstrated that preconditioning further accelerates convergence.
 The resulting SPDHG algorithm to solve \eqref{eq:saddle} is summarized in Algorithm \ref{alg:spdhg},
 where the proximal operator for a convex function $f$ using the weighted norm 
 $\| \cdot \|_M^2 = \langle M^{-1} \cdot, \cdot \rangle$ induced by a symmetric and 
-positive\added[id=GS]{-definite} matrix $M$ is defined as
+positive\added{-definite} matrix $M$ is defined as
 %
 \begin{equation}
 \prox_{f}^{M}(y) = \argmin_v \left( \frac{1}{2} \| v - y  \|_M^2 + f(v) \right) \ .
@@ -314,15 +316,18 @@ data-vector of dimension $|N|$ via
 \label{eq:lmop}
 \end{equation}
 %
-where $i_e$ is the sinogram bin in which event $e$ was detected. \added[id=MH]{Also, we denote by $s^{LM}$ with $s^{LM}_e = s_{i_e}$ the listmode-based scatter and random estimate.}
+where $i_e$ is the sinogram bin in which event $e$ was detected. 
+\added{Also, we denote by $s^{LM}$ with $s^{LM}_e = s_{i_e}$ the listmode-based scatter 
+and random estimate.}
 
 Re-writing the gradient of the negative Poisson log likelihood using listmode data and the
 listmode operators is straightforward, such that any gradient-based PET reconstruction algorithm 
 can be easily adapted to listmode data.
 
 For a Bayesian approach with prior $R(K \cdot)$ as in \eqref{eq:primal} this is less immediate, 
-but we can show that indeed \eqref{eq:primal} can be equivalently re-written to a minimization 
-problem involving only the listmode forward operator that is of the same form as \eqref{eq:primal}\added[id=GS]{, see appendix \ref{appendix:lm}}. 
+but we can show that indeed \eqref{eq:primal} can be equivalently re-written \replaced{into}{to} 
+a minimization problem involving only the listmode forward operator that is of the same form as 
+\eqref{eq:primal}\added{ as shown in appendix \ref{appendix:lm}}. 
 This allows us to extend the SPDHG algorithm for listmode data and yields the algorithm as shown 
 in Algorithm~\ref{alg:lmspdhg}.
 
@@ -339,7 +344,7 @@ in Algorithm~\ref{alg:lmspdhg}.
 	\State $x \gets \proj_{\geq 0} (x - T \overline{z})$
 	\State Select $i \in \{1,\ldots,n+1\}$ randomly according to $(p_i)_i$
   \If{$i \leq n$}
-	  \State $y_{N_i}^+ \gets \prox_{D^*}^{S_i} \left( y_{N_i} + S_i \left(P^{LM}_{N_i} x + \added[id=MH]{s^{LM}_{N_i}} \right) \right)$
+	  \State $y_{N_i}^+ \gets \prox_{D^*}^{S_i} \left( y_{N_i} + S_i \left(P^{LM}_{N_i} x + \added{s^{LM}_{N_i}} \right) \right)$
 	  \State $\delta z \gets {P^{LM}_{N_i}}^T \left(\frac{y_{N_i}^+ - y_{N_i}}{\mu_{N_i}}\right)$
 	  \State $y_{N_i} \gets y_{N_i}^+$
   \Else
@@ -365,7 +370,7 @@ same length as the measured event list $N$.
 If an event with a fixed sinogram bin $i_e$ occurs more than once in the event list
 $N$, it is also forward and back-projected multiple times in steps 11 and 12.
 To compensate for this fact, the algorithm divides by the event count
-\footnote{\added[id=GS]{the event count $\mu_e$ represents the number of times the event $e$ 
+\footnote{\added{the event count $\mu_e$ represents the number of times the event $e$ 
 occurs in the event list $N$. For TOF PET, a data bin is characterized by the combination of geometrical LOR and the TOF bin along the LOR (a bin in a TOF sinogram).}}
 $\mu_e$ before back projection in line 12.
 Note that (i) as shown in Fig.~\ref{fig:sparsity} in most standard acquisitions the event count
@@ -402,7 +407,7 @@ Hence, we recommend pre-computing the sensitivity image ($P^T 1$) and storing it
 In summary, compared to SPDHG, LM-SPDHG as shown in Algorithm~\ref{alg:lmspdhg} has the advantage
 that (i) only lists ($N$, $y_{N}$, $s_N$, $\mu_N$) instead of complete sinograms 
 ($y$ and $d$) have to be 
-stored in memory and (ii) all projections and back projection\added[id=GS]{s} can be performed 
+stored in memory and (ii) all projections and back projection\added{s} can be performed 
 using listmode projectors.
 This means that for all acquisitions where the number of detected events is substantially smaller than
 the number of data bins, the required memory and computation time is reduced.
@@ -426,14 +431,14 @@ acquisitions is listed in Table~\ref{tab:mem}.
 \begin{center}
 \footnotesize
 \begin{tabular}{ c c r r r}
-         &                       &            & counts      & \\ 
-         &                       & 5e8        & 7e7         & 1e7 \\ \hline
-         & 9 images              &   0.45\,GB  &   0.45\,GB   &   0.45\,GB \\
-SPDHG    & 1 uint, 3 float sino.&  55.6\,GB  &  55.6\,GB   &  55.6\,GB \\ \hline
-LM-      & 10 images              &   0.5\,GB  &   0.5\,GB   &   0.5\,GB \\
-SPDHG    & event list, 1 uint, 3 float lists &  12.0\,GB  &   1.7\,GB   &   0.3\,GB \\ \hline
-         & 9 images              &   0.45\,GB  &   0.45\,GB   &   0.45\,GB \\
-\added{EM-TV}    & event list, 2 float list &  9.0\,GB  &   1.3\,GB   &   0.2\,GB
+         &                                    &            & counts      &          \\ 
+         &                                    & 5e8        & 7e7         & 1e7      \\ \hline
+         & 9 images                           &   0.45\,GB &   0.45\,GB  & 0.45\,GB \\
+SPDHG    & 1 uint, 3 float sino.              &  55.6\,GB  &  55.6\,GB   & 55.6\,GB \\ \hline
+LM-      & 9 images                           &   0.45\,GB &   0.45\,GB  & 0.45\,GB \\
+SPDHG    & event list, 1 uint, 3 float lists  &  12.0\,GB  &   1.7\,GB   & 0.3\,GB  \\ \hline
+         & 9 images                           &   0.45\,GB &   0.45\,GB  & 0.45\,GB \\
+\added{EM-TV}    & event list, 2 float list   &  9.0\,GB   &   1.3\,GB   & 0.2\,GB
 \end{tabular}
 \end{center}
 \caption{Estimation of required memory for SPDHG and LM-SPDHG assuming an image size of (300,300,125)
@@ -563,19 +568,19 @@ However, we do not expect that this fact strongly affects the convergence proper
 SPDHG and LM-SPDHG. 
 
 To demonstrate that LM-SPDHG also works for realistic 3D TOF PET listmode data,
-we \deleted[id=GS]{finally} simulated and reconstructed 3D TOF PET data based on the 3D 
+we \deleted{finally} simulated and reconstructed 3D TOF PET data based on the 3D 
 XCAT \cite{Segars2010} phantom  and a state-of-the-art
 TOF PET scanner with 20\,cm axial field of view, a ring diameter of 650\,mm and a 400\,ps TOF 
 resolution (sinogram dimension: 357 radial bins, 224 projection angles, 1296 direct and  
 oblique planes, 27 TOF bins).
-As before, the data simulation included the effects of attenuation, finite resolution and a
+As before, he data simulation included the effects of attenuation, finite resolution and a
 flat contamination with a contamination fraction of 42\%.
 In total, 7e7 prompt counts were simulated corresponding approximately to a standard 
 80\,s 1\,h p.i. FDG liver bed position acquisition.
-Simulated listmode data were reconstructed using LM-SPDHG with \replaced[id=GS]{50}{100} 
+Simulated listmode data were reconstructed using LM-SPDHG with \replaced{50}{100} 
 iterations and 224 subsets. 
 
-\added[id=GS]{Last but not least, we also reconstructed a real TOF PET data set of the NEMA image 
+\added{Last but not least, we also reconstructed a real TOF PET data set of the NEMA image 
 quality phantom acquired on a GE Discovery 4 ring TOF PET/CT (sinogram dimension: 357 radial bins, 
 272 projection angles, 1261 direct and  oblique planes, 29 TOF bins, 400\,ps TOF resolution).
 The activity contrast between the sphere inserts and the background was 10:1 and
@@ -583,12 +588,12 @@ the acquisition contained 4.7e7 prompt (2.2e7 true) coincidences.
 Reconstructions using a TV prior with $\beta = 6$ were performed with EMTV using 100 
 iterations with 1 and 28 subsets, and with LM-SPDHG using 100 iterations and 224 subsets.
 We also performed a reconstruction of the same data set with LM-PDHG using 20000 iterations and 
-1 subset.}
+1 subset.
+This reconstruction was used as a reference to calculate the relative cost and PSNR.}
 
-\added[id=GS]{
-This reconstruction was used as a reference to calculate the relative cost and PSNR.
-All reconstruction algorithms used in this work were implemented in python3 the using the open-source
-``parallelproj'' CUDA projector libraries available at \url{https://github.com/gschramm/parallelproj}.
+\added{All reconstruction algorithms used in this work were implemented in python3 the using the 
+open-source ``parallelproj'' CUDA projector libraries available at 
+\url{https://github.com/gschramm/parallelproj}.
 An Nvidia V100 GPU with 16\,GB RAM was used to perform all reconstructions.
 Upon publication of this article, an open-source implementation of the LM-SPDHG algorithm will be
 made availalbe in the associated ``pyparallelproj'' python package.
@@ -611,7 +616,7 @@ reconstruction toolbox v2.17.}
            Third column: Reconstructions after 3 iterations with cold start (top) and warm
            start (bottom).
            Fourth column: Reconstructions after 20 iterations.
-           \added[id=GS]{Fifth and sixth column: Absolute differences of the SPDHG reconstructions with
+           \added{Fifth and sixth column: Absolute differences of the SPDHG reconstructions with
            respect to the reference PDHG reconstruction.
            The range of the color map for the difference images is $\pm$10\% of the
            maximum of the reference reconstruction.}
@@ -805,7 +810,7 @@ the time needed to calculate the actual TOF projections.
 \begin{figure*}
   \centering
     \includegraphics[width=1.0\textwidth]{figure7_NEMA_DMI.png}
-  \caption{\added[id=GS]{
+  \caption{\added{
            Convergence of LM-SPDHG for reconstruction of real 3D TOF data from an acqusition of
            the NEMA image quality phantom on a GE Discovey MI 4 ring TOF PET system with a TV prior
            and $\beta = 6$ with 2.2e7 true (4.7e7 prompt) counts.
@@ -824,7 +829,7 @@ the time needed to calculate the actual TOF projections.
   \label{fig:nema}
 \end{figure*}
 
-\added[id=GS]{
+\added{
 Figure~\ref{fig:nema} shows the results of the reconstructions of the listmode data from the 
 acquisition of the NEMA image quality phantom on the GE Discovey MI 4 ring TOF PET system.
 After 100 iterations, LM-SPDHG using 224 subsets has lower cost compared to both EMTV
@@ -882,7 +887,7 @@ behaviour of OSEM.
 Whether the difference between the limit cycle and the true optimal solution is of importance
 for a given count level and clinical task, should be investigated in the future.
 
-\added[id=GS]{As shown in Fig.~\ref{fig:num_subsets}, choosing the ``optimal'' number of subsets 
+\added{As shown in Fig.~\ref{fig:num_subsets}, choosing the ``optimal'' number of subsets 
 for LM-SPDHG seems to depend on the prior and the number of acquired counts.
 For a reconstruction of a high-count scan with DTV, it is possible that LM-SPDHG with more
 than 224 subsets converges even faster.
@@ -915,7 +920,7 @@ This work was supported in part by the NIH grant 1P41EB017183-01A1.
 
 \section{Listmode re-formulation of the sinogram-based minimization problem}
 \label{appendix:lm}
-\added[id=MH]{
+\added{
 Here, as basis for the proposed LM-SPDHG algorithm, we provide details on the listmode re-formulation 
 of the sinogram-based minimization problem \eqref{eq:primal}. To this aim, we denote the dependence 
 of $D_i(\dot)$ on the data $d_i$ explicitly via $D(\cdot; d_i)$. Further, recall that for $N$ the list 
@@ -940,7 +945,7 @@ where $d^{LM}_e=1$ for $e \in N$, $d_{e_0}^{LM} = 0$, $s^{LM}$ with $s^{LM}_e = 
 The last step uses the rescaled operator $ \hat P^{LM} $ and the rescaled estimate  $\hat s^{LM}$ defined as $ (\hat P^{LM} u)_e= (P^{LM} u)_e/d_{i_e}$ and $(\hat s^{LM})_e = s^{LM}/ d_{i_e}$ for $e \in N$, and $ (\hat P^{LM} u)_{e_0} = (P^{LM} u)_{e_0}$ and $(\hat s^{LM})_{e_0} = 0$, respectively.
 }
 
-\added[id=MH]{
+\added{
 Now the last line of the above reformulation provides an equivalent data term which (after removing 
 the constant $\sum_{e \in N} \log (d_{i_e})$) can be used to obtain an equivalent list-mode-based 
 reformulation of \eqref{eq:primal}.  
