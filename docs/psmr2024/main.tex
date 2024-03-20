@@ -1,0 +1,65 @@
+\documentclass[lettersize,journal]{IEEEtran}
+\usepackage{amsmath,amsfonts}
+%\usepackage{algorithmic}
+\usepackage{array}
+\usepackage[caption=false,font=normalsize,labelfont=sf,textfont=sf]{subfig}
+\usepackage{textcomp}
+\usepackage{stfloats}
+\usepackage{url}
+\usepackage{verbatim}
+\usepackage{graphicx}
+\hyphenation{op-tical net-works semi-conduc-tor IEEE-Xplore}
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+\usepackage{balance}
+
+%%%%
+%%%%
+%%%%
+% define float env for algorithm
+\usepackage{algpseudocode}
+\usepackage{float}
+\floatstyle{ruled}
+\newfloat{algorithm}{h}{loa}
+\floatname{algorithm}{Algorithm}
+
+% custom definitions
+\DeclareMathOperator{\proj}{proj}
+\DeclareMathOperator{\prox}{prox}
+\DeclareMathOperator*{\argmin}{argmin}
+\DeclareMathOperator{\KL}{KL}
+
+\usepackage[backend=bibtex,minnames=3,maxnames=3,isbn=false,url=false,eprint=false,giveninits=true,sorting=none,citestyle=numeric-comp]{biblatex}
+\addbibresource{main.bib}
+
+\renewcommand*{\bibfont}{\footnotesize}
+%%%%
+%%%%
+%%%%
+
+\begin{document}
+\title{Fast and memory-efficient reconstruction of sparse Poisson data in listmode with non-smooth priors with application to time-of-flight PET}
+\author{Georg Schramm and Martin Holler
+\thanks{GS is with the Department of Imaging and Pathology, Division of Nuclear Medicine, KU Leuven, Belgium. 
+MH is with the Institute of Mathematics and Scientific Computing, University of Graz, Austria.}}
+
+%\markboth{Journal of \LaTeX\ Class Files,~Vol.~18, No.~9, September~2020}%
+%{How to Use the IEEEtran \LaTeX \ Templates}
+
+\maketitle
+
+%\begin{abstract}
+%This document describes the most common article elements and how to use the IEEEtran class with \LaTeX \ to produce files that are suitable for submission to the Institute of Electrical and Electronics Engineers (IEEE).  IEEEtran can produce conference, journal and technical note (correspondence) papers with a suitable choice of class options.
+%\end{abstract}
+
+%\begin{IEEEkeywords}
+%Class, IEEEtran, \LaTeX, paper, style, template, typesetting.
+%\end{IEEEkeywords}
+
+\input{content.tex}
+
+\printbibliography
+
+\end{document}
+
+
